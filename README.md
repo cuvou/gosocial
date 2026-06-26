@@ -4,6 +4,14 @@
 down, 'white labeled' version of a successful production website which was
 launched in August 2022 and grew to a community of 12,000 members by June 2026.
 
+> **Live Demo:** The fully featured branch of GoSocial has a live demo instance
+> at the following link:
+>
+> **[GoSocial.Cuvou.com](https://gosocial.cuvou.com)**
+>
+> You can sign up a test account with a random fake e-mail address and look
+> around! Test accounts are deleted automatically after a while.
+
 * [Setup Guide](#setup-guide)
 * [Features](#features)
 * [Tech Stack](#tech-stack)
