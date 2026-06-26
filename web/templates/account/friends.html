@@ -1,0 +1,243 @@
+{{define "title"}}{{if .FilterMutual}}Mutual f{{else}}F{{end}}riends of {{.User.Username}}{{end}}
+{{define "content"}}
+<style type="text/css">
+    {{template "profile-theme-hero-style" .ProfileTheme}}
+</style>
+<div class="container">
+    {{$Root := .}}
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-user-group mr-2"></i>
+                    {{template "title" .}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4 mb-0">
+        {{template "profile-tabs" .}}
+    </div>
+
+    <div class="p-4">
+
+        <!-- Privacy Setting disclaimer -->
+        {{if .IsSelf}}
+            <div class="block">
+                <strong class="has-text-private">
+                    <i class="fa fa-info-circle mr-1"></i>
+                    Privacy:
+                </strong>
+                {{if eq .PrivacySetting.FriendsList "me"}}
+                    Only you can see your friend list.
+                {{else if eq .PrivacySetting.FriendsList "friends"}}
+                    Only your friends can see who else is on your friends list.
+                {{else}}
+                    Any certified member of {{PrettyTitle}} can see your friends list.
+                {{end}}
+                [<a href="/settings/privacy#friends">edit</a>]
+            </div>
+        {{else if and .ProfileTabCount.Friends (not .Pager.Total)}}
+            <div class="block">
+                <strong class="has-text-warning">
+                    <i class="fa fa-info-circle mr-1"></i>
+                    Notice:
+                </strong>
+                {{.User.Username}} does not make their Friends List visible to you.
+            </div>
+        {{else if and .CurrentUser.IsAdmin .PrivacySetting.FriendsList}}
+            <div class="block">
+                <strong class="has-text-warning">
+                    <i class="fa fa-peace mr-1"></i>
+                    Privacy:
+                </strong>
+                {{.User.Username}} has their Friends List visibility set to: "{{.PrivacySetting.FriendsList}}"
+                (admins can still see).
+            </div>
+        {{end}}
+
+        <div class="block">
+            Found {{FormatNumberCommas .Pager.Total}} {{if .FilterMutual}}mutual{{end}} friend{{Pluralize64 .Pager.Total}}
+            (page {{.Pager.Page}} of {{.Pager.Pages}}).
+
+            <!-- Mutuals? -->
+            {{if .FriendListVisible}}
+                {{if .FilterMutual}}
+                    <a href="{{.Request.URL.Path}}">Show all {{FormatNumberCommas .ProfileTabCount.Friends}} friends instead?</a>
+                {{else if .MutualFriendCount}}
+                    You share <a href="{{.Request.URL.Path}}?{{QueryPlus "mutual" "true"}}">{{.MutualFriendCount}} mutual friend{{Pluralize64 .MutualFriendCount}}.</a>
+                {{end}}
+            {{end}}
+
+            <!-- Admin links -->
+            {{if .CurrentUser.HasAdminScope "admin.changelog"}}
+            <a href="/admin/changelog?table_name=friends&about_user_id={{.User.ID}}" class="button is-small has-text-warning ml-2">
+                <span class="icon"><i class="fa fa-peace"></i></span>
+                <span>Change Log</span>
+            </a>
+            {{end}}
+        </div>
+
+        <!-- Quick Filters -->
+        {{if and .FriendListVisible .MutualFriendCount}}
+            <div class="block">
+                <label class="label">Quick Filters</label>
+                <div class="columns is-mobile is-multiline is-gapless">
+
+                    <div class="column is-narrow mx-1 mb-2">
+                        {{if .FilterMutual}}
+                            <a href="{{.Request.URL.Path}}?{{QueryPlus "mutual" ""}}"
+                                class="tag is-link">
+                                <i class="fa fa-user-group mr-1"></i>
+                                Mutual friends
+                                {{if .MutualFriendCount}}({{.MutualFriendCount}}){{end}}
+                            </a>
+                        {{else}}
+                            <a href="{{.Request.URL.Path}}?{{QueryPlus "mutual" "true"}}"
+                                class="tag">
+                                <i class="fa fa-user-group mr-1 has-text-link"></i>
+                                Mutual friends
+                                {{if .MutualFriendCount}}({{.MutualFriendCount}}){{end}}
+                            </a>
+                        {{end}}
+                    </div>
+
+                    {{if .FilterMutual}}
+                    <div class="column is-narrow mx-1 mb-2">
+                        <a href="{{.Request.URL.Path}}"
+                            class="tag is-grey">
+                            <i class="fa fa-xmark mr-1"></i>
+                            Clear
+                        </a>
+                    </div>
+                    {{end}}
+
+                </div>
+            </div>
+        {{end}}
+
+        <div class="columns is-mobile">
+            <div class="column is-narrow pr-1">
+                Sort by:
+            </div>
+            <div class="column is-narrow pl-1">
+                <div class="dropdown">
+                    <div class="dropdown-trigger">
+                        <button type="button" class="button is-small" aria-haspopup="true" aria-controls="friend-sort-menu">
+                            <span>
+                                {{if eq .Sort "updated_at desc"}}
+                                    Most recent
+                                {{else if eq .Sort "updated_at asc"}}
+                                    Oldest
+                                {{else if eq .Sort "users.username asc"}}
+                                    Username (A-Z)
+                                {{else if eq .Sort "users.username desc"}}
+                                    Username (Z-A)
+                                {{else}}
+                                    Sort by...
+                                {{end}}
+                            </span>
+                            <i class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </i>
+                        </button>
+                        <div class="dropdown-menu" id="friend-sort-menu" role="menu">
+                            <div class="dropdown-content">
+                                <a href="?{{QueryPlus "sort" "updated_at desc"}}" class="dropdown-item">Most recent</a>
+                                <a href="?{{QueryPlus "sort" "updated_at asc"}}" class="dropdown-item">Oldest</a>
+                                <a href="?{{QueryPlus "sort" "users.username asc"}}" class="dropdown-item">Username (A-Z)</a>
+                                <a href="?{{QueryPlus "sort" "users.username desc"}}" class="dropdown-item">Username (Z-A)</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="block">
+            {{SimplePager .Pager}}
+        </div>
+
+        <div class="columns is-multiline">
+
+            {{range .Friends}}
+            <div class="column is-half-tablet is-one-third-desktop">
+
+                <form action="/friends/add" method="POST">
+                    {{InputCSRF}}
+                    <input type="hidden" name="username" value="{{.Username}}">
+
+                    <div class="card">
+                        <div class="card-content">
+                            <div class="media block">
+                                <div class="media-left">
+                                    {{template "avatar-64x64" .}}
+
+                                    <!-- Friendship badge -->
+                                    {{if $Root.FriendMap.Get .ID}}
+                                    <div class="has-text-centered">
+                                        <span class="is-size-7 has-text-warning">
+                                            <i class="fa fa-user-group" title="Friends"></i>
+                                            Friends
+                                        </span>
+                                    </div>
+                                    {{end}}
+                                </div>
+                                <div class="media-content">
+                                    <p class="title is-4">
+                                        <a href="/u/{{.Username}}" class="has-text-dark">
+                                            {{if ne .Status "active"}}
+                                                <del>{{.NameOrUsername}}</del>
+                                            {{else}}
+                                                {{.NameOrUsername}}
+                                            {{end}}
+                                        </a>
+                                        {{if eq .Visibility "private"}}
+                                            <sup class="fa fa-mask is-size-7" title="Private Profile"></sup>
+                                        {{end}}
+                                    </p>
+                                    <p class="subtitle is-6 mb-2">
+                                        <span class="icon"><i class="fa fa-user"></i></span>
+                                        <a href="/u/{{.Username}}">{{.Username}}</a>
+                                    </p>
+                                    {{if .GetProfileField "city"}}
+                                    <p class="subtitle is-6 mb-2">
+                                        {{.GetProfileField "city"}}
+                                    </p>
+                                    {{end}}
+                                    <p class="subtitle is-7 mb-2">
+                                        {{if or (ne .GetDisplayAge "n/a")}}
+                                        <span class="mr-2">{{.GetDisplayAge}}</span>
+                                        {{end}}
+
+                                        {{if .GetProfileField "gender"}}
+                                        <span class="mr-2">{{.GetProfileField "gender"}}</span>
+                                        {{end}}
+
+                                        {{if .GetProfileField "pronouns"}}
+                                        <span class="mr-2">{{.GetProfileField "pronouns"}}</span>
+                                        {{end}}
+
+                                        {{if .GetProfileField "orientation"}}
+                                        <span class="mr-2">{{.GetProfileField "orientation"}}</span>
+                                        {{end}}
+                                    </p>
+                                </div>
+                            </div><!-- media-block -->
+                        </div>
+                    </div>
+
+                </form>
+
+            </div>
+            {{end}}<!-- range .Friends -->
+        </div>
+
+        <div class="block">
+            {{SimplePager .Pager}}
+        </div>
+
+    </div>
+</div>
+{{end}}

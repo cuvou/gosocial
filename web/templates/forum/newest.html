@@ -1,0 +1,443 @@
+{{define "title"}}Newest Posts - Forums{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <h1 class="title">
+                <span class="icon mr-4"><i class="fa fa-comments"></i></span>
+                <span>Forums</span>
+            </h1>
+            <h2 class="subtitle">
+                Newest Posts
+            </h2>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <!-- Tab bar -->
+    {{template "ForumTabs" .}}
+
+    <!-- Display Options -->
+    <div class="px-4">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    Found {{FormatNumberCommas .Pager.Total}} {{if .AllComments}}posts{{else}}threads{{end}} (page {{.Pager.Page}} of {{.Pager.Pages}})
+                </div>
+            </div>
+
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="columns align-right">
+
+                        {{if .FeatureUserForumsEnabled}}
+                        <div class="column is-narrow">
+                            <label class="label">Which forums:</label>
+                            <div class="tabs is-toggle is-small">
+                                <ul>
+                                    <li {{if eq .WhichForums "all"}}class="is-active"{{end}}>
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "which" "all"}}">All</a>
+                                    </li>
+                                    <li {{if eq .WhichForums "official"}}class="is-active"{{end}}>
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "which" "official"}}">Official</a>
+                                    </li>
+                                    <li {{if eq .WhichForums "community"}}class="is-active"{{end}}>
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "which" "community"}}">Community</a>
+                                    </li>
+                                    {{if .CurrentUser.HasForumSubscriptions}}
+                                    <li {{if eq .WhichForums "followed"}}class="is-active"{{end}}>
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "which" "followed"}}">My List</a>
+                                    </li>
+                                    {{end}}
+                                </ul>
+                            </div>
+                        </div>
+                        {{end}}
+                
+                        <div class="column is-narrow">
+                            <label class="label">Show:</label>
+                            <div class="tabs is-toggle is-small">
+                                <ul>
+                                    <li {{if not .AllComments}}class="is-active"{{end}}>
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "all" ""}}">By thread</a>
+                                    </li>
+                                    <li {{if .AllComments}}class="is-active"{{end}}>
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "all" "true"}}">All posts</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-4">
+        {{if not .AllComments}}
+            <!-- Default view is to deduplicate and show only threads and their newest comment -->
+            Showing only the latest comment per thread. <a href="?{{QueryPlus "all" "true"}}">Show all comments instead?</a>
+        {{else}}
+            Showing <strong>all</strong> forum posts by most recent. <a href="{{.Request.URL.Path}}?{{QueryPlus "all" ""}}">Deduplicate by thread?</a>
+        {{end}}
+    </div>
+
+    <!-- Attached photo display toggle -->
+    <div class="p-4">
+        {{if eq .AttachedPhotos "hide"}}
+            <a href="{{.Request.URL.Path}}?{{QueryPlus "photos" "show"}}">
+                <i class="fa-regular fa-square mr-1"></i>
+                Show attached photo thumbnails
+            </a>
+        {{else}}
+            <a href="{{.Request.URL.Path}}?{{QueryPlus "photos" "hide"}}">
+                <i class="fa-regular fa-square-check mr-1"></i>
+                Show attached photo thumbnails
+            </a>
+        {{end}}
+    </div>
+
+    <div class="p-4">
+        {{SimplePager .Pager}}
+    </div>
+
+    <div class="p-4">
+        {{range .RecentPosts}}
+        {{$User := .Thread.Comment.User}}
+        <div class="card block gosocial-forum-box-1">
+            <div class="card-content">
+                <div class="columns">
+                    <div class="column is-narrow has-text-centered pt-0 pb-1">
+                        <a href="/u/{{$User.Username}}">
+                            {{template "avatar-96x96" $User}}
+                            <div>
+                                <a href="/u/{{$User.Username}}" class="is-size-7">{{or $User.Username "[unavailable]"}}</a>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="column py-0">
+                        <h2 class="is-size-4 pt-0">
+                            <a href="/forum/thread/{{.ThreadID}}" class="has-text-dark has-text-weight-bold">
+                                {{.Thread.Title}}
+
+                                {{if .Thread.Pinned}}
+                                <sup class="has-text-success fa fa-thumbtack is-size-6 ml-1"></sup>
+                                {{end}}
+
+                                {{if .Thread.PollID}}
+                                <sup class="has-text-info fa fa-poll is-size-6 ml-1"></sup>
+                                {{end}}
+
+                                {{if .Thread.Explicit}}
+                                <sup class="has-text-danger fa fa-fire is-size-6 ml-1"></sup>
+                                {{end}}
+
+                                {{if .Thread.NoReply}}
+                                <sup class="has-text-warning fa fa-ban is-size-6 ml-1"></sup>
+                                {{end}}
+                            </a>
+                        </h2>
+
+                        <a href="/forum/thread/{{.ThreadID}}" class="has-text-dark">
+                            {{TrimEllipses (DeMarkify .Thread.Comment.Message) 256}}
+                        </a>
+
+                        {{$Photos := $Root.PhotoMap.Get .Thread.Comment.ID}}
+                        {{$ExplicitThread := or .Thread.Explicit .Forum.Explicit}}
+                        {{if $Photos}}
+                            <div class="is-size-7 mt-2 has-text-success">
+                                <i class="fa fa-image pr-1"></i>
+                                Photo attachment
+                            </div>
+                            {{if ne $Root.AttachedPhotos "hide"}}
+                                {{range $Photos}}
+                                <div>
+                                    {{if ne .Status "approved"}}
+                                        <div class="my-4">
+                                            {{if eq .Status "pending"}}
+                                                <span class="tag is-info">
+                                                    <i class="fa fa-clock mr-2"></i>
+                                                    Photo Pending Approval
+                                                </span>
+                                            {{else if eq .Status "rejected"}}
+                                                <span class="tag is-dark">
+                                                    <i class="fa fa-link mr-2"></i>
+                                                    Attached photo is not available
+                                                </span>
+                                            {{else}}
+                                                <span class="tag is-info">
+                                                    <i class="fa fa-clock mr-2"></i>
+                                                    Status: {{.Status}}
+                                                </span>
+                                            {{end}}
+                                        </div>
+                                    {{else if .ExpiredAt.IsZero}}
+                                        <!-- GIF video? -->
+                                        {{if HasSuffix .Filename ".mp4"}}
+                                        <div class="mt-4 is-clipped forum-thumbnail-img">
+                                            <video loop controls controlsList="nodownload" playsinline
+                                                {{if or IsSafeMode (and $ExplicitThread (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true"))}} class="blurred-explicit"{{end}}
+                                                {{if and (not IsSafeMode) (not (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true")) (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay{{end}}
+                                                >
+                                                <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                                            </video>
+                                        </div>
+                                        {{else}}
+                                        <div class="mt-4 is-clipped forum-thumbnail-img">
+                                            <a href="/go/comment?id={{.CommentID}}">
+                                                <img src="{{PhotoURL .Filename}}" loading="lazy"{{if or IsSafeMode (and $ExplicitThread (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true"))}} class="blurred-explicit"{{end}}>
+                                            </a>
+                                        </div>
+                                        {{end}}
+                                    {{end}}
+                                </div>
+                                {{end}}
+                            {{end}}<!-- /not hiding attached photos -->
+                        {{end}}
+
+                        <div class="is-size-7 is-italic is-grey pt-1">
+                            {{if eq .Comment.ID .Thread.CommentID}}new {{end}}thread by {{.Thread.Comment.User.Username}}
+                            in <a href="/f/{{.Forum.Fragment}}">
+                                {{.Forum.Title}}
+
+                                {{if .Forum.Privileged}}
+                                <small class="has-text-warning fa fa-peace"></small>
+                                {{end}}
+
+                                {{if .Forum.Explicit}}
+                                <small class="has-text-danger fa fa-fire"></small>
+                                {{end}}
+
+                                {{if .Forum.Private}}
+                                <small class="has-text-private fa fa-lock"></small>
+                                {{end}}
+                            </a>
+                            &ndash;
+                            {{SincePrettyCoarse .Thread.Comment.UpdatedAt}} ago
+                            <i class="fa fa-eye ml-3 mr-1"></i>
+                            {{FormatNumberCommas .Thread.Views}}
+                        </div>
+
+                        <!-- If a reply to a thread, show the reply too -->
+                        {{if ne .Comment.ID .Thread.CommentID}}
+                            <hr class="has-background-grey my-2">
+
+                            <div class="columns is-multiline is-gapless mb-0">
+                                <div class="column is-narrow">
+                                    <a href="/go/comment?id={{.Comment.ID}}" class="has-text-grey">
+                                        <h2 class="is-size-5 py-0 is-italic has-text-grey">
+                                            <span class="icon"><i class="fa fa-reply"></i></span>
+                                            Comment added by
+                                        </h2>
+                                    </a>
+                                </div>
+                                <div class="column is-narrow">
+
+                                    <div class="columns is-gapless is-mobile">
+                                        <div class="column is-narrow mx-2">
+                                            <a href="/u/{{.Comment.User.Username}}">
+                                                {{template "avatar-32x32" .Comment.User}}
+                                            </a>
+                                        </div>
+                                        <div class="column is-narrow">
+                                            <h2 class="is-size-5 py-0">
+                                                <a href="/u/{{.Comment.User.Username}}" class="has-text-dark">{{.Comment.User.Username}}</a>
+                                            </h2>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <a href="/go/comment?id={{.Comment.ID}}" class="has-text-dark">
+                                {{TrimEllipses (DeMarkify .Comment.Message) 256}}
+                            </a>
+
+                            {{$Photos := $Root.PhotoMap.Get .Comment.ID}}
+                            {{if $Photos}}
+                                <div class="is-size-7 mt-2 has-text-success">
+                                    <i class="fa fa-image pr-1"></i>
+                                    Photo attachment
+                                </div>
+                                {{if ne $Root.AttachedPhotos "hide"}}
+                                    {{range $Photos}}
+                                    <div>
+                                        {{if ne .Status "approved"}}
+                                            <div class="my-4">
+                                                {{if eq .Status "pending"}}
+                                                    <span class="tag is-info">
+                                                        <i class="fa fa-clock mr-2"></i>
+                                                        Photo Pending Approval
+                                                    </span>
+                                                {{else if eq .Status "rejected"}}
+                                                    <span class="tag is-dark">
+                                                        <i class="fa fa-link mr-2"></i>
+                                                        Attached photo is not available
+                                                    </span>
+                                                {{else}}
+                                                    <span class="tag is-info">
+                                                        <i class="fa fa-clock mr-2"></i>
+                                                        Status: {{.Status}}
+                                                    </span>
+                                                {{end}}
+                                            </div>
+                                        {{else if .ExpiredAt.IsZero}}
+                                            <!-- GIF video? -->
+                                            {{if HasSuffix .Filename ".mp4"}}
+                                            <div class="mt-4 is-clipped forum-thumbnail-img">
+                                                <video loop controls controlsList="nodownload" playsinline
+                                                    {{if or IsSafeMode (and $ExplicitThread (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true"))}} class="blurred-explicit"{{end}}
+                                                    {{if and (not IsSafeMode) (not (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true")) (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay{{end}}
+                                                    >
+                                                    <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                                                </video>
+                                            </div>
+                                            {{else}}
+                                            <div class="mt-4 is-clipped forum-thumbnail-img">
+                                                <a href="/go/comment?id={{.CommentID}}">
+                                                    <img src="{{PhotoURL .Filename}}" loading="lazy"{{if or IsSafeMode (and $ExplicitThread (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true"))}} class="blurred-explicit"{{end}}>
+                                                </a>
+                                            </div>
+                                            {{end}}
+                                        {{end}}
+                                    </div>
+                                    {{end}}
+                                {{end}}<!-- /not hiding attached photos -->
+                            {{end}}
+
+                            <div class="is-size-7 is-italic is-grey mt-1">
+                                {{SincePrettyCoarse .Comment.UpdatedAt}} ago
+                            </div>
+                        {{end}}
+
+                        <!-- Mute this thread? -->
+                        <p class="block mt-2">
+                            <a href="/users/mutelist/add?context=forum_newest&id={{.ThreadID}}&next=/forum/newest" class="is-size-7 has-text-warning">
+                                <i class="fa fa-microphone-slash mr-1"></i> Mute this thread
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{end}}
+    </div>
+
+    {{range .Categories}}
+        <div class="block p-4">
+            <h1 class="title">{{.Category}}</h1>
+
+            {{if eq (len .Forums) 0}}
+                <em>
+                    There are no forums under this category.
+                    {{if not $Root.CurrentUser.Explicit}}Your content filters (non-explicit) may be hiding some forums.{{end}}
+                </em>
+            {{else}}
+                {{range .Forums}}
+                {{$Stats := $Root.ForumMap.Get .ID}}
+                <div class="card block has-background-primary-light">
+                    <div class="card-content">
+                        <div class="columns">
+                            <div class="column is-3 pt-0 pb-1">
+
+                                <h2 class="is-size-4">
+                                    <strong><a href="/f/{{.Fragment}}">{{.Title}}</a></strong>
+                                </h2>
+
+                                <div class="content mb-1">
+                                    {{if .Description}}
+                                        {{ToMarkdown .Description}}
+                                    {{else}}
+                                        <em>No description</em>
+                                    {{end}}
+                                </div>
+
+                                <div>
+                                    {{if .Explicit}}
+                                    <span class="tag is-danger is-light">
+                                        <span class="icon"><i class="fa fa-fire"></i></span>
+                                        <span>Explicit</span>
+                                    </span>
+                                    {{end}}
+
+                                    {{if .Privileged}}
+                                    <span class="tag is-warning is-light">
+                                        <span class="icon"><i class="fa fa-peace"></i></span>
+                                        <span>Privileged</span>
+                                    </span>
+                                    {{end}}
+                                </div>
+
+                            </div>
+                            <div class="column py-1">
+                                <div class="box has-background-success-light">
+                                    <h2 class="subtitle mb-1">Latest Post</h2>
+                                    {{if $Stats.RecentThread}}
+                                    <a href="/forum/thread/{{$Stats.RecentThread.ID}}">
+                                        <strong>{{$Stats.RecentThread.Title}}</strong>
+                                    </a>
+                                    <em>by {{$Stats.RecentThread.Comment.User.Username}}</em>
+                                    <div>
+                                        <em>
+                                        {{if and $Stats.RecentPost (not (eq $Stats.RecentPost.ID $Stats.RecentThread.CommentID))}}
+                                            <small>Last comment by {{$Stats.RecentPost.User.Username}}</small>
+                                        {{end}}
+                                        <small title="{{$Stats.RecentThread.UpdatedAt.Format "2006-01-02 15:04:05"}}">{{SincePrettyCoarse $Stats.RecentThread.UpdatedAt}} ago</small>
+                                        </em>
+                                    </div>
+                                    {{else}}
+                                        <em>No posts found.</em>
+                                    {{end}}
+                                </div>
+                            </div>
+                            <div class="column is-3 py-1">
+                                <div class="columns is-mobile is-gapless">
+                                    <div class="column has-text-centered mr-1">
+                                        <div class="box has-background-warning-light p-2">
+                                            <p class="is-size-7">Topics</p>
+                                            {{if $Stats}}
+                                                {{$Stats.Threads}}
+                                            {{else}}
+                                                err
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                    <div class="column has-text-centered mx-1">
+                                        <div class="box has-background-warning-light p-2">
+                                            <p class="is-size-7">Posts</p>
+                                            {{if $Stats}}
+                                                {{$Stats.Posts}}
+                                            {{else}}
+                                                err
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                    <div class="column has-text-centered ml-1">
+                                        <div class="box has-background-warning-light p-2">
+                                            <p class="is-size-7">Users</p>
+                                            {{if $Stats}}
+                                                {{$Stats.Users}}
+                                            {{else}}
+                                                err
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            {{end}}
+        </div>
+    {{end}}<!-- range .Categories -->
+
+    <div class="p-4">
+        {{SimplePager .Pager}}
+    </div>
+</div>
+
+{{end}}

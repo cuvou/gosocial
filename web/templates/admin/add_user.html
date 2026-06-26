@@ -1,0 +1,154 @@
+{{define "title"}}Admin - Create User Account{{end}}
+{{define "content"}}
+{{$Root := .}}
+<div class="container">
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Create User Accont
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <form method="POST" action="{{.Request.URL.Path}}">
+        {{InputCSRF}}
+        <div class="p-4">
+
+            <p class="block">
+                This page allows you to create a new user account. A common use case may include
+                when a new user was trying to sign up, but couldn't receive the confirmation e-mail,
+                and they reached out to have their account created manually.
+            </p>
+
+            <p class="block">
+                <strong>Important:</strong> we want all users to have verified e-mail addresses. This
+                form should generally only be used when somebody has e-mailed our support@ address and
+                we will use their sender e-mail address for the account.
+            </p>
+
+            <div class="field">
+                <label class="label" for="email">Email address:</label>
+                <input type="email" class="input"
+                    placeholder="name@domain.com"
+                    name="email"
+                    id="email">
+            </div>
+
+            <div class="field">
+                <label class="label" for="username">Username:</label>
+                <input type="text" class="input"
+                    name="username"
+                    id="username">
+                <small class="has-text-grey">Usernames are 3 to 32 characters a-z 0-9 . -</small>
+
+                <!-- Username checking -->
+                <div class="notification is-info is-light py-2 px-4 mt-1"
+                    id="username-checking" style="display: none">
+                    <i class="fa fa-spinner fa-spin mr-1"></i> Checking username...
+                </div>
+                <div class="notification is-success is-light py-2 px-4 mt-1"
+                    id="username-ok" style="display: none">
+                    <i class="fa fa-check mr-1"></i> Looks good!
+                </div>
+                <div class="notification is-danger is-light py-2 px-4 mt-1"
+                    id="username-error" style="display: none">
+                    <i class="fa fa-xmark mr-1"></i> That username is already taken!
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label" for="password">Password:</label>
+                <input type="text" class="input"
+                    name="password"
+                    id="password">
+                <a href="#" id="random-password" class="has-text-warning is-size-7">
+                    <i class="fa fa-refresh"></i> Random password
+                </a>
+            </div>
+
+            <div class="block">
+                <button type="submit" class="button is-primary"
+                    name="intent" value="save">
+                    Save Settings
+                </button>
+            </div>
+
+        </div>
+
+</div>
+{{end}}
+{{define "scripts"}}
+<script>
+    window.addEventListener("DOMContentLoaded", (event) => {
+        // Password randomization.
+        const $password = document.querySelector("#password"),
+            $randomize = document.querySelector("#random-password");
+            alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789";
+        $randomize.addEventListener("click", (e) => {
+            e.preventDefault();
+            let password = "";
+            for (let i = 0; i < 16; i++) {
+                password += alphabet[parseInt(Math.random() * alphabet.length)];
+            }
+            $password.value = password;
+        });
+
+        // Set up username checking script.
+        const $username = document.querySelector("#username"),
+            $unCheck = document.querySelector("#username-checking"),
+            $unOK = document.querySelector("#username-ok"),
+            $unError = document.querySelector("#username-error");
+    
+        let onChange = (e) => {
+            $unCheck.style.display = "block";
+            $unOK.style.display = "none";
+            $unError.style.display = "none";
+    
+            if ($username.value.length < 3) {
+                $unCheck.style.display = "none";
+                return;
+            };
+    
+            return fetch("/v1/users/check-username", {
+                method: "POST",
+                mode: "same-origin",
+                cache: "no-cache",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    "username": $username.value,
+                }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.StatusCode !== 200) {
+                    modalAlert({message: data.data.error});
+                    return;
+                }
+    
+                let result = data.data;
+                if (result.OK) {
+                    $unOK.style.display = "block";
+                    $unError.style.display = "none";
+                } else {
+                    $unOK.style.display = "none";
+                    $unError.style.display = "block";
+                }
+            }).catch(resp => {
+                console.error(resp);
+            }).finally(() => {
+                $unCheck.style.display = "none";
+            })
+        };
+    
+        if ($username != undefined) {
+            $username.addEventListener("change", onChange);
+            $username.addEventListener("blur", onChange);
+        }
+    });
+</script>
+{{end}}

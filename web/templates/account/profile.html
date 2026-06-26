@@ -1,0 +1,655 @@
+{{define "title"}}{{.User.Username}}{{end}}
+{{define "content"}}
+{{template "profile-theme-style" .ProfileTheme}}
+<div class="container">
+    <section class="hero {{if and .LoggedIn (not .IsPrivate)}}is-info{{else}}is-light is-bold{{end}} {{if not (or .IsExternalView .IsPrivate)}}user-theme-hero{{end}}">
+        <div class="hero-body">
+            <div class="container">
+                <div class="columns">
+                    <div class="column is-narrow has-text-centered">
+                        <figure class="profile-photo is-inline-block is-clipped">
+                            {{if .IsBlocked}}
+                            <img src="/static/img/shy.png" data-photo-id="{{.User.ProfilePhoto.ID}}">
+                            {{else if or (not .CurrentUser) .IsExternalView}}
+                            <img src="{{VisibleAvatarURL .User nil}}" data-photo-id="{{.User.ProfilePhoto.ID}}"{{if IsSafeMode}} class="blurred-explicit"{{end}}>
+                            {{else}}
+                            <a href="/go/profile-photo/{{.User.Username}}">
+                                <img src="{{VisibleAvatarURL .User .CurrentUser}}" data-photo-id="{{.User.ProfilePhoto.ID}}"{{if BlurExplicit .User.ProfilePhoto}} class="blurred-explicit"{{end}}>
+                            </a>
+                            {{end}}
+
+                            <!-- CurrentUser can upload a new profile pic -->
+                            {{if and .LoggedIn (eq .CurrentUser.ID .User.ID) (not .IsPrivate)}}
+                            <span class="corner">
+                                <a href="/photo/upload?intent=profile_pic" class="button is-small p-1 is-success" title="Upload a new Profile Picture">
+                                    <i class="fa fa-camera"></i>
+                                </a>
+                            </span>
+                            {{end}}
+                        </figure>
+                    </div>
+
+                    <div class="column">
+                        <h1 class="title">
+                            {{.User.NameOrUsername}}
+                            {{if eq .User.Visibility "private"}}<sup class="fa fa-mask ml-2 is-size-6" title="Private Profile"></sup>{{end}}
+                        </h1>
+                        {{if or (not .LoggedIn) .IsPrivate}}
+                            <h2 class="subtitle">is on {{PrettyTitle}}, {{.Subtitle}}.</h2>
+                            {{if .IsBlocked}}
+                                    <form action="/users/block" method="POST">
+                                        {{InputCSRF}}
+                                        <input type="hidden" name="username" value="{{.User.Username}}">
+                                        <input type="hidden" name="goto-profile" value="true">
+
+                                        <button type="submit" class="button gosocial-confirm-submit"
+                                            name="unblock" value="true"
+                                            data-confirm="Are you sure you want to UNBLOCK {{.User.Username}}?">
+                                            <span class="icon-text">
+                                                <span class="icon">
+                                                    <i class="fa fa-hand"></i>
+                                                </span>
+                                                <span>
+                                                    Blocked
+                                                </span>
+                                            </span>
+                                        </button>
+                                    </form>
+                            {{else}}
+                            <p>
+                                Join <strong>{{.User.Username}}</strong> and the others on this site by
+                                <a href="/signup"><ins>creating an account</ins></a> and sending them a friend request! Please
+                                see <a href="/"><ins>the home page</ins></a> for all the details.
+                            </p>
+                            {{end}}
+                        {{else}}
+                            {{if .User.GetProfileField "headline"}}
+                                <h2 class="subtitle">
+                                    {{.User.GetProfileField "headline"}}
+                                </h2>
+                            {{end}}
+                        {{end}}
+                    </div>
+
+                    {{if and .LoggedIn (not .IsPrivate)}}
+                    <div class="column is-narrow">
+                        <div class="box">
+                            <div>
+                                Member since:
+                                <span title="Since {{.User.CreatedAt.Format "Jan _2 2006"}}">
+                                    {{SincePrettyCoarse .User.CreatedAt}} ago
+                                </span>
+                            </div>
+                            <div>
+                                Last logged in:
+                                <span title="On {{.User.LastLoginAt.Format "Jan _2 2006 15:04:05 MST"}}">
+                                    {{SincePrettyCoarse .User.LastLoginAt}} ago
+                                </span>
+                            </div>
+                            {{if .OnChat}}
+                            <div class="my-1">
+                                <span class="tag is-success is-light">
+                                    <i class="fa fa-user mr-2"></i> Currently on chat!
+                                </span>
+                            </div>
+                            {{end}}
+
+                            {{if .User.IsAdmin}}
+                            <div class="pt-1">
+                                <div class="icon-text has-text-danger">
+                                    <a href="/admin/transparency/{{.User.Username}}" class="has-text-danger">
+                                        <span class="icon">
+                                            <i class="fa fa-peace"></i>
+                                        </span>
+                                        <strong class="has-text-danger">Admin</strong>
+                                        <sup class="fa fa-info-circle ml-1 is-size-7 has-text-success"></sup>
+                                    </a>
+                                </div>
+                            </div>
+                            {{end}}
+
+                            {{if ne .User.Status "active"}}
+                            <div class="pt-2">
+                                <span class="tag is-danger">
+                                    <i class="fa fa-peace mr-1"></i>
+                                    Status: {{.User.Status}}
+                                </span>
+                            </div>
+                            {{end}}
+
+                            {{if or .IsBlocking .IsBlocked}}
+                            <div class="pt-2">
+                                <span class="tag is-warning">
+                                    <i class="fa fa-hand mr-1"></i>
+                                    {{if .IsBlocking}}Blocks you{{else}}Blocked{{end}}
+                                </span>
+                            </div>
+                            {{end}}
+
+                            <!-- Follows You badge. -->
+                            {{if .FollowMap.IsFollower .User.ID}}
+                            <div class="pt-2">
+                                <span class="tag is-success">
+                                    <i class="fa-regular fa-star-half-stroke mr-1"></i>
+                                    Follows you
+                                </span>
+                            </div>
+                            {{else if .FollowMap.IsMutual .User.ID}}
+                            <div class="pt-2">
+                                <span class="tag is-success">
+                                    <i class="fa fa-star mr-1"></i>
+                                    Mutual Followers
+                                </span>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{end}}<!-- if .LoggedIn -->
+                </div>
+
+                {{if and .LoggedIn (not .IsExternalView) (ne .CurrentUser.ID .User.ID)}}
+                <div class="columns is-centered is-gapless">
+
+                    <!-- Friends button -->
+                    <div class="column is-narrow has-text-centered">
+                        <form action="/friends/add" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="username" value="{{.User.Username}}">
+
+                            <!-- If you are already friends, the button will remove them -->
+                            {{if eq .IsFriend "approved"}}
+                            <input type="hidden" name="verdict" value="remove">
+                            {{end}}
+
+                            <input type="hidden" name="message" id="friendRequestMessage">
+
+                            <button type="submit" class="button is-fullwidth"
+                                id="friendRequestButton" data-username="{{.User.Username}}" data-friendship-status="{{.IsFriend}}"
+                                {{if not (eq .IsFriend "none")}}title="Friendship {{.IsFriend}}"{{end}}>
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        {{if eq .IsFriend "approved"}}
+                                        <i class="fa fa-check has-text-success"></i>
+                                        {{else if eq .IsFriend "pending"}}
+                                        <i class="fa fa-paper-plane"></i>
+                                        {{else if eq .IsFriend "requested"}}
+                                        <i class="fa-regular fa-question-circle has-text-warning"></i>
+                                        {{else}}
+                                        <i class="fa fa-plus"></i>
+                                        {{end}}
+                                    </span>
+                                    <span>Friend{{if eq .IsFriend "approved"}}s{{end}}</span>
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Follow button -->
+                    {{if and (eq .PrivacySetting.FollowMe "friends") (not (eq .IsFriend "approved")) (not .IsFollowing) (not (.FollowMap.IsFollower .User.ID))}}
+                        <!-- Friends only -->
+                    {{else}}
+                    <div class="column is-narrow has-text-centered">
+                        <form action="/following/add" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="username" value="{{.User.Username}}">
+
+                            <!-- Unfollow? -->
+                            {{if .IsFollowing}}
+                                <input type="hidden" name="unfollow" value="true">
+                            {{end}}
+
+                            <button type="submit" class="button is-fullwidth gosocial-confirm-submit"
+                                {{if .IsFollowing}}data-confirm="Do you want to unfollow {{.User.Username}}?\n\nYou will no longer receive notifications when they post a new photo, video or blog."{{end}}>
+                                <span class="icon-text">
+                                    {{if .IsFollowing}}
+                                        <span class="icon">
+                                            <i class="fa fa-star has-text-success"></i>
+                                        </span>
+                                        <span>
+                                            Following
+                                        </span>
+                                    {{else}}
+                                        <span class="icon">
+                                            <i class="fa-regular fa-star"></i>
+                                        </span>
+                                        <span>Follow</span>
+                                    {{end}}
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                    {{end}}
+
+                    <!-- DM button -->
+                    {{if and (eq .PrivacySetting.FirstMessages "friends") (not (eq .IsFriend "approved")) (not .CurrentUser.IsAdmin)}}
+                        <!-- Only friends can send them a DM -->
+                    {{else if and (eq .PrivacySetting.FirstMessages "nobody") (not .CurrentUser.IsAdmin)}}
+                        <!-- They set "Nobody" can send them a DM -->
+                    {{else}}
+                        <div class="column is-narrow has-text-centered">
+                            <a href="/messages/compose?to={{.User.Username}}" class="button is-fullwidth">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="fa fa-message"></i>
+                                    </span>
+                                    <span>Message</span>
+                                </span>
+                            </a>
+                        </div>
+                    {{end}}
+
+                    <!-- Like button -->
+                    {{if not .IsPrivate}}
+                        {{$Like := .LikeMap.Get .User.ID}}
+                        <div class="column is-narrow has-text-centered">
+                            <button type="button" class="button is-fullwidth gosocial-like-button"
+                                data-table-name="users" data-table-id="{{.User.Username}}"
+                                title="Like this profile">
+                                <span class="icon{{if $Like.UserLikes}} has-text-danger{{end}}"><i class="fa fa-heart"></i></span>
+                                <span class="gosocial-likes">
+                                    Like
+                                    {{if gt $Like.Count 0}}
+                                        ({{$Like.Count}})
+                                    {{end}}
+                                </span>
+                            </button>
+                        </div>
+                    {{end}}
+
+                    <div class="column is-narrow has-text-centered">
+                        <form action="/users/block" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="username" value="{{.User.Username}}">
+                            <input type="hidden" name="goto-profile" value="true">
+
+                            <button type="submit" class="button is-fullwidth gosocial-confirm-submit"
+                                data-confirm="Are you sure you want to {{if .IsBlocked}}UNBLOCK {{.User.Username}}?{{else}}BLOCK {{.User.Username}}?\n\nBlocking {{.User.Username}} will prevent them from seeing your profile page or any of your content around the website, and vice versa: you will no longer see {{.User.Username}} anywhere except on your Blocked List page.\n\nPlease confirm that you wish to block {{.User.Username}}.{{end}}"
+                                {{if .IsBlocked}}name="unblock" value="true"{{end}}>
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="fa fa-hand"></i>
+                                    </span>
+                                    <span>
+                                        Block{{if .IsBlocked}}ed{{end}}
+                                    </span>
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="column is-narrow has-text-centered">
+                        <a href="/contact?intent=report&subject=report.user&id={{.User.Username}}" class="button is-fullwidth">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="fa fa-flag"></i>
+                                </span>
+                                <span>Report</span>
+                            </span>
+                        </a>
+                    </div>
+
+                </div><!-- columns -->
+                {{end}}<!-- if .LoggedIn -->
+            </div>
+        </div>
+    </section>
+
+    {{if or (not .LoggedIn) .IsPrivate}}
+        <div class="py-6"></div>
+    {{else if .IsPrivate}}
+    <div class="block p-4">
+        <div class="notification block is-warning">
+            <i class="fa fa-mask"></i> This member's profile page is <strong>private.</strong> You may send them
+            a friend request, and only if approved, you may then view their profile page and photo gallery.
+        </div>
+    </div>
+    {{else}}
+    <div class="block p-4">
+        {{template "profile-tabs" .}}
+
+        <div class="columns mt-4 mb-2 is-centered is-gapless is-size-7">
+            <div class="column is-narrow">
+                <div class="user-theme-bgcolor-fix">
+                    <div class="columns is-gapless">
+                        <div class="column is-narrow">
+                            <!-- Show who likes this user -->
+                            {{template "like-example" .}}
+                        </div>
+
+                        <!-- Mutual friends count -->
+                        {{if .MutualFriendCount}}
+                            <div class="column is-narrow ml-2 has-text-centered">
+                                You share <a href="/u/{{.User.Username}}/friends?mutual=true"><small class="fa fa-user-group"></small> {{.MutualFriendCount}} friend{{Pluralize64 .MutualFriendCount}} in common</a>.
+                            </div>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="columns is-multiline mt-1">
+
+            <div class="column is-12 is-8-desktop">
+                <div class="card block">
+                    <header class="card-header has-background-link user-theme-card-title">
+                        <div class="card-header-title">
+                            <div class="columns is-mobile is-gapless gosocial-fullwidth">
+                                <div class="column">
+                                    About Me
+                                </div>
+                                {{if eq .CurrentUser.ID .User.ID}}
+                                <div class="column is-narrow">
+                                    <a href="/settings/look#profile" class="button is-outlined is-small mr-2">
+                                        <i class="fa fa-palette"></i>
+                                    </a>
+                                    <a href="/settings/essays#about_me" class="button is-outlined is-small">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="card-content user-theme-card-body">
+                        <div class="content">
+                            {{or (ReSignPhotoLinks (ToMarkdownWithGalleryLinksInline .Request .CurrentUser (.User.GetLongProfileField "about_me"))) "n/a"}}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card block">
+                    <header class="card-header has-background-link user-theme-card-title">
+                        <div class="card-header-title">
+                            <div class="columns is-mobile is-gapless gosocial-fullwidth">
+                                <div class="column">
+                                    My Interests
+                                </div>
+                                {{if eq .CurrentUser.ID .User.ID}}
+                                <div class="column is-narrow">
+                                    <a href="/settings/essays#interests" class="button is-outlined is-small">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="card-content user-theme-card-body">
+                        <div class="content">
+                            {{or (ReSignPhotoLinks (ToMarkdownWithGalleryLinksInline .Request .CurrentUser (.User.GetLongProfileField "interests"))) "n/a"}}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card block">
+                    <header class="card-header has-background-link user-theme-card-title">
+                        <div class="card-header-title">
+                            <div class="columns is-mobile is-gapless gosocial-fullwidth">
+                                <div class="column">
+                                    Music/Bands/Movies
+                                </div>
+                                {{if eq .CurrentUser.ID .User.ID}}
+                                <div class="column is-narrow">
+                                    <a href="/settings/essays#music_movies" class="button is-outlined is-small">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="card-content user-theme-card-body">
+                        <div class="content">
+                            {{or (ReSignPhotoLinks (ToMarkdownWithGalleryLinksInline .Request .CurrentUser (.User.GetLongProfileField "music_movies"))) "n/a"}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column is-12 is-4-desktop">
+                <div class="card block">
+                    <header class="card-header has-background-info user-theme-card-title">
+                        <div class="card-header-title">
+                            <div class="columns is-mobile is-gapless gosocial-fullwidth">
+                                <div class="column">
+                                    About {{.User.Username}}
+                                </div>
+                                {{if eq .CurrentUser.ID .User.ID}}
+                                <div class="column is-narrow">
+                                    <a href="/settings/profile" class="button is-outlined is-small">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="card-content user-theme-card-body user-theme-monochrome">
+                        <table class="table is-fullwidth" style="font-size: small">
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Age:</label>
+                                </td>
+                                <td>
+                                    <!-- The user's display age (or 'n/a' if don't have or they hide it) -->
+                                    {{.User.GetDisplayAge}}
+
+                                    <!-- Admin version always shows it -->
+                                    {{if .CurrentUser.HasAdminScope "admin.user.insights"}}
+                                        <small class="has-text-danger" title="{{.User.Birthdate.Format "2006-01-02"}}">
+                                            {{if not .User.Birthdate.IsZero}}
+                                                ({{ComputeAge .User.Birthdate}})
+                                            {{else}}
+                                                (n/a)
+                                            {{end}}
+                                        </small>
+                                    {{end}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Gender:</label>
+                                </td>
+                                <td>
+                                    {{or (.User.GetProfileField "gender") "n/a"}}
+                                    <small class="ml-3">{{.User.GetProfileField "pronouns"}}</small>
+                                </td>
+                            </tr>
+                            {{if .UserLocation}}
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Location:</label>
+                                </td>
+                                <td>
+                                    {{.UserLocation}}
+                                    <a href="/faq#locations" target="_blank" class="fa fa-info-circle ml-2 is-size-7"></a>
+                                </td>
+                            </tr>
+                            {{end}}
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Hometown:</label>
+                                </td>
+                                <td>
+                                    {{or (.User.GetProfileField "city") "n/a"}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Job:</label>
+                                </td>
+                                <td>
+                                    {{or (.User.GetProfileField "job") "n/a"}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Marital&nbsp;status:</label>
+                                </td>
+                                <td>
+                                    {{or (.User.GetProfileField "marital_status") "n/a"}}
+                                    {{if .User.GetProfileField "relationship_type"}}({{.User.GetProfileField "relationship_type"}}){{end}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Orientation:</small>
+                                </td>
+                                <td>
+                                    {{or (.User.GetProfileField "orientation") "n/a"}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Here for:</label>
+                                </td>
+                                <td>
+                                    {{$Value := (.User.GetProfileField "here_for")}}
+                                    {{if $Value}}
+                                        {{range Split $Value ","}}
+                                        <div class="tag">{{.}}</div>
+                                        {{end}}
+                                    {{else}}
+                                        n/a
+                                    {{end}}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="has-text-right">
+                                    <strong class="is-size-7">Languages:</label>
+                                </td>
+                                <td>
+                                    {{$Value := (.User.GetProfileField "spoken_languages")}}
+                                    {{if $Value}}
+                                        {{range Split $Value ","}}
+                                        <div class="tag">{{.}}</div>
+                                        {{end}}
+                                    {{else}}
+                                        n/a
+                                    {{end}}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card block">
+                    <header class="card-header has-background-info user-theme-card-title">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-chart-line pr-2"></i>
+                            Activity
+                        </p>
+                    </header>
+
+                    <div class="card-content user-theme-card-body user-theme-monochrome">
+
+                        <!-- Lazy load the statistics card-->
+                        <div hx-get="/htmx/user/profile/activity?username={{.User.Username}}" hx-trigger="revealed">
+                            <i class="fa fa-spinner fa-spin mr-1"></i> Loading...
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Admin Actions-->
+                {{if .CurrentUser.IsAdmin}}
+                <div class="card block">
+                    <header class="card-header has-background-danger">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-peace pr-2"></i>
+                            Admin
+                        </p>
+                    </header>
+
+                    <div class="card-content">
+                        <aside class="menu">
+                            <ul class="menu-list">
+                                <p class="menu-label">Profile Information</p>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.insights")}}class="line-through"{{end}}>
+                                    <a href="/admin/user-action?intent=insights&user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-search"></i></span>
+                                        <span>Admin insights <small>(block lists, etc.)</small></span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.changelog")}}class="line-through"{{end}}>
+                                    <a href="/admin/changelog?about_user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-clipboard-list"></i></span>
+                                        <span>Change logs about this user</span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.changelog")}}class="line-through"{{end}}>
+                                    <a href="/admin/changelog?table_name=users&table_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-clipboard-list"></i></span>
+                                        <span>User account history</span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.messages")}}class="line-through"{{end}}>
+                                    <a href="/admin/message-reader?user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-envelope-open"></i></span>
+                                        <span>Message insights</span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.insights")}}class="line-through"{{end}}>
+                                    <a href="/admin/ip-addresses?user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-network-wired"></i></span>
+                                        <span>IP address insights</span>
+                                    </a>
+                                </li>
+
+                                <p class="menu-label">Admin Actions</p>
+                                <li {{if not (.CurrentUser.HasAdminScope "social.moderator.photo")}}class="line-through"{{end}}>
+                                    <a href="/settings/essays?user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-pencil"></i></span>
+                                        <span>Edit their profile text</span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.impersonate")}}class="line-through"{{end}}>
+                                    <a href="/admin/user-action?intent=impersonate&user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-ghost"></i></span>
+                                        <span>Impersonate this user</span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.ban")}}class="line-through"{{end}}>
+                                    <a href="/admin/user-action?intent=ban&user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-ban"></i></span>
+                                        <span>Ban/unban this user</span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.promote")}}class="line-through"{{end}}>
+                                    <a href="/admin/user-action?intent=promote&user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-peace"></i></span>
+                                        <span>Add/Remove admin rights</span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.password")}}class="line-through"{{end}}>
+                                    <a href="/admin/user-action?intent=password&user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-lock"></i></span>
+                                        <span>Reset Password</span>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.delete")}}class="line-through"{{end}}>
+                                    <a href="/admin/user-action?intent=delete&user_id={{.User.ID}}">
+                                        <span class="icon"><i class="fa fa-trash"></i></span>
+                                        <span>Delete user account</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </aside>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div><!-- /columns-->
+    </div>
+    {{end}}<!-- not IsPrivate -->
+</div>
+{{end}}
+{{define "scripts"}}
+<script type="text/javascript" src="/static/js/friend-request.js?build={{.BuildHash}}"></script>
+{{end}}

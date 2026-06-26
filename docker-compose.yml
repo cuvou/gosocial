@@ -1,0 +1,51 @@
+version: "3"
+
+# include:
+#   - infra.yml
+
+# Named volumes to let the apps store their own data persistently on disk
+# between reboots. They end up somewhere at /var/lib/docker/volumes on the
+# host filesystem, useful for self-contained apps.
+volumes:
+  postgres-data:
+    driver: local
+
+services:
+
+  # gosocial web server
+  web:
+    build: .
+    container_name: gosocial_web
+    ports:
+      - "8000:8080"  # host:container
+    volumes:
+      - "./settings-docker.json:/app/settings.json:z"
+      - "./web/static/photos:/app/web/static/photos:z"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # Redis cache.
+  redis:
+    image: "redis:alpine"
+    container_name: gosocial_redis
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:17.2-alpine
+    container_name: gosocial_postgres
+    restart: always
+    environment:
+      - "POSTGRES_USER=gosocial"
+      - "POSTGRES_PASSWORD=gosocial"
+      - "POSTGRES_DB=gosocial"
+    volumes:
+      - "postgres-data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s

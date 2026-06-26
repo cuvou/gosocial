@@ -1,0 +1,37 @@
+<!-- Alert, Confirm & Prompt modals to replace native browser features. -->
+
+{{define "alert-modal"}}
+<div class="modal gosocial-important-modal" id="gosocial-alert-modal">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+        <div class="card">
+            <div class="card-header has-background-warning">
+                <p class="card-header-title has-text-dark-dark">
+                    <span id="gosocial-alert-modal-title">Alert</span>
+                </p>
+            </div>
+            <div class="card-content content">
+                <div id="gosocial-alert-modal-body">Alert</div>
+
+                <!-- Form inputs for Confirm-type prompts -->
+                <input id="gosocial-alert-modal-input" type="text" class="input mt-4">
+                <textarea id="gosocial-alert-modal-textarea" class="textarea mt-4" cols="20" rows="4"></textarea>
+                <div id="gosocial-alert-modal-select" class="select mt-4">
+                    <select></select>
+                </div>
+            </div>
+            <div class="card-footer has-text-centered">
+                <div class="card-footer-item">
+                    <button type="button" class="button is-success gosocial-alert-ok-button">
+                        Ok
+                    </button>
+                    <button type="button" class="button ml-4 gosocial-alert-cancel-button">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/static/js/alert-modal.js?build={{.BuildHash}}"></script>
+{{end}}

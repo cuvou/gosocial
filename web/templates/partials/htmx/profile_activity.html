@@ -1,0 +1,198 @@
+{{define "base"}}
+<strong class="has-text-info">Statistics</strong>
+<table class="table is-fullwidth" style="font-size: small">
+    <tr>
+        <td width="50%">
+            <strong class="is-size-7">Photos shared:</label>
+        </td>
+        <td>
+            <a href="/u/{{.User.Username}}/photos" class="has-text-info">
+                <i class="fa fa-image mr-1"></i>
+                {{FormatNumberCommas .UserStats.PhotoCount}}
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td width="50%">
+            <strong class="is-size-7">Blogs written:</label>
+        </td>
+        <td>
+            <a href="/u/{{.User.Username}}/blogs" class="has-text-info">
+                <i class="fa fa-blog mr-1"></i>
+                {{FormatNumberCommas .UserStats.BlogCount}}
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Forum threads written:</label>
+        </td>
+        <td>
+            <a href="/forum/search?username={{.User.Username}}&type=threads" class="has-text-info">
+                <i class="fa fa-comment mr-1"></i>
+                {{FormatNumberCommas .UserStats.ForumThreadCount}}
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Forum comments:</label>
+        </td>
+        <td>
+            <a href="/forum/search?username={{.User.Username}}" class="has-text-info">
+                <i class="fa fa-comments mr-1"></i>
+                {{FormatNumberCommas .UserStats.ForumReplyCount}}
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Forum photos:</label>
+        </td>
+        <td>
+            <a href="/forum/search?username={{.User.Username}}&photos=true" class="has-text-info">
+                <i class="fa fa-image mr-1"></i>
+                {{FormatNumberCommas .UserStats.CommentPhotoCount}}
+            </a>
+        </td>
+    </tr>
+</table>
+
+<strong class="has-text-info">Social</strong>
+<table class="table is-fullwidth" style="font-size: small">
+    <tr>
+        <td width="50%">
+            <strong class="is-size-7">Friends:</label>
+        </td>
+        <td>
+            <a href="/u/{{.User.Username}}/friends" class="has-text-info">
+                <i class="fa fa-user-group mr-1"></i> {{FormatNumberCommas .UserStats.FriendCount}}
+            </a>
+
+            {{if .MutualFriendCount}}
+                <small>
+                    <a href="/u/{{.User.Username}}/friends?mutual=true">
+                        ({{FormatNumberCommas .MutualFriendCount}} mutual{{Pluralize64 .MutualFriendCount}})
+                    </a>
+                </small>
+            {{end}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Photo comments written:</label>
+        </td>
+        <td>
+            <i class="fa fa-comments mr-1"></i> {{FormatNumberCommas .UserStats.PhotoCommentCount}}
+            {{if .UserStats.OurCommentsReceived}}
+                <small>({{FormatNumberCommas .UserStats.OurCommentsReceived}} on mine)</small>
+            {{end}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Photo comments received:</label>
+        </td>
+        <td>
+            <i class="fa fa-comments mr-1"></i> {{FormatNumberCommas .UserStats.CommentsReceivedCount}}
+            {{if .UserStats.OurCommentsGiven}}
+                <small>({{FormatNumberCommas .UserStats.OurCommentsGiven}} from me)</small>
+            {{end}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Likes given:</label>
+        </td>
+        <td>
+            <i class="fa fa-heart mr-1"></i> {{FormatNumberCommas .UserStats.LikesGivenCount}}
+            {{if .UserStats.OurLikesReceived}}
+                <small>({{FormatNumberCommas .UserStats.OurLikesReceived}} for me)</small>
+            {{end}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Likes received:</label>
+        </td>
+        <td>
+            <i class="fa fa-heart mr-1"></i> {{FormatNumberCommas .UserStats.LikesReceivedCount}}
+            {{if .UserStats.OurLikesGiven}}
+                <small>({{FormatNumberCommas .UserStats.OurLikesGiven}} from me)</small>
+            {{end}}
+        </td>
+    </tr>
+</table>
+
+{{if ne .CurrentUser.ID .User.ID}}
+<strong class="has-text-info">Between Us</strong>
+<table class="table is-fullwidth" style="font-size: small">
+    {{if .FriendsSince}}
+    <tr>
+        <td width="50%">
+            <strong class="is-size-7">Friends since:</label>
+        </td>
+        <td>
+            <i class="fa fa-user-group mr-1"></i>
+            <small title="{{.FriendsTime.Format "2006-01-02 15:04:05"}}">{{.FriendsSince}} ago.</small>
+        </td>
+    </tr>
+    {{end}}
+    <tr>
+        <td width="50%">
+            <strong class="is-size-7">Messages exchanged:</label>
+        </td>
+        <td>
+            <i class="fa fa-envelope mr-1"></i>
+            {{FormatNumberCommas .UserStats.OurMessages}}
+        </td>
+    </tr>
+    <tr>
+        <td width="50%">
+            <strong class="is-size-7">Chat Room DMs:</label>
+        </td>
+        <td>
+            <i class="fa fa-message mr-1"></i>
+            {{FormatNumberCommas .UserStats.OurChatMessages}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Photo comments received:</label>
+        </td>
+        <td>
+            <i class="fa fa-comments mr-1"></i> {{FormatNumberCommas .UserStats.OurCommentsGiven}}
+            <small>from me</small>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Photo comments given:</label>
+        </td>
+        <td>
+            <i class="fa fa-comments mr-1"></i> {{FormatNumberCommas .UserStats.OurCommentsReceived}}
+            <small>on mine</small>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Likes received:</label>
+        </td>
+        <td>
+            <i class="fa fa-heart mr-1"></i> {{FormatNumberCommas .UserStats.OurLikesGiven}}
+            <small>from me</small>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <strong class="is-size-7">Likes given:</label>
+        </td>
+        <td>
+            <i class="fa fa-heart mr-1"></i> {{FormatNumberCommas .UserStats.OurLikesReceived}}
+            <small>on my content</small>
+        </td>
+    </tr>
+</table>
+{{end}}
+
+{{end}}

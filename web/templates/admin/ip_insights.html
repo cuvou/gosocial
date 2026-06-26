@@ -1,0 +1,354 @@
+{{define "title"}}Admin - IP Address Insights{{end}}
+{{define "content"}}
+{{$Root := .}}
+{{$UserMap := .UserMap}}
+<div class="container">
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-network-wired mr-2"></i>
+                    IP Address Insights
+                </h1>
+                {{if .User}}
+                <h2 class="subtitle">
+                    User: @{{.User.Username}}
+                </h2>
+                {{end}}
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-three-quarters">
+
+                <div class="card">
+                    <header class="card-header has-background-danger">
+                        <p class="card-header-title">
+                            <i class="fa fa-network-wired mr-2"></i>
+                            IP Address Insights
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        {{if .User}}
+                        <div class="media block">
+                            <div class="media-left">
+                                {{template "avatar-64x64" .User}}
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-4">{{.User.NameOrUsername}}</p>
+                                <p class="subtitle is-6">
+                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                    <a href="/u/{{.User.Username}}" target="_blank">{{.User.Username}}</a>
+                                </p>
+                            </div>
+                        </div>
+                        {{end}}
+
+                        <!-- Danger Zone: Past the Gatekeeper -->
+                        <div class="tabs is-boxed">
+                            <ul>
+                                <li{{if and (not .User) (not .Address)}} class="is-active"{{end}}>
+                                    <a href="{{.Request.URL.Path}}">
+                                        <i class="fa fa-home mr-2"></i>
+                                        Dashboard
+                                    </a>
+                                </li>
+
+                                {{if .User}}
+                                <li class="is-active">
+                                    <a href="{{.Request.URL.Path}}?user_id={{.User.ID}}">
+                                        <i class="fa fa-message mr-2"></i>
+                                        User IPs: {{.User.Username}}
+                                    </a>
+                                </li>
+                                {{end}}
+
+                                {{if .Address}}
+                                <li class="is-active">
+                                    <a href="{{.Request.URL.Path}}?ip={{.Address}}">
+                                        <i class="fa fa-network-wired mr-2"></i>
+                                        IP: {{.Address}}
+                                    </a>
+                                </li>
+                                {{end}}
+                            </ul>
+                        </div>
+
+                        <!-- Viewing a specific user's IP addresses? -->
+                        {{if .User}}
+                        <div class="block">
+                            <p class="block">
+                                Found {{FormatNumberCommas .Pager.Total}} IP address{{Pluralize64 .Pager.Total "" "es"}} (page {{.Pager.Page}} of {{.Pager.Pages}})
+                            </p>
+
+                            <div class="columns is-mobile">
+                                <div class="column is-narrow pr-1">
+                                    Sort by:
+                                </div>
+                                <div class="column is-narrow pl-1">
+                                    <div class="dropdown">
+                                        <div class="dropdown-trigger">
+                                            <button type="button" class="button is-small" aria-haspopup="true" aria-controls="ip-sort-menu">
+                                                <span>
+                                                    {{if eq .Sort "updated_at desc"}}
+                                                        Most recently seen
+                                                    {{else if eq .Sort "created_at desc"}}
+                                                        First seen (most recent)
+                                                    {{else if eq .Sort "number_visits desc"}}
+                                                        Most visited by
+                                                    {{else}}
+                                                        Sort by...
+                                                    {{end}}
+                                                </span>
+                                                <i class="icon is-small">
+                                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                                </i>
+                                            </button>
+                                            <div class="dropdown-menu" id="ip-sort-menu" role="menu">
+                                                <div class="dropdown-content">
+                                                    <a href="?{{QueryPlus "sort" "updated_at desc"}}" class="dropdown-item">Most recently seen</a>
+                                                    <a href="?{{QueryPlus "sort" "created_at desc"}}" class="dropdown-item">First seen (most recent)</a>
+                                                    <a href="?{{QueryPlus "sort" "number_visits desc"}}" class="dropdown-item">Most visited by</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{SimplePager .Pager}}
+
+                            <table class="table is-striped is-fullwidth">
+                                <thead>
+                                    <tr>
+                                        <th>IP</th>
+                                        <th>GeoIP</th>
+                                        <th>Visits</th>
+                                        <th>Dates</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{range .IPs}}
+                                    <tr>
+                                        <td>
+                                            <small>
+                                                <a href="{{$Root.Request.URL.Path}}?ip={{.IPAddress}}">{{.IPAddress}}</a>
+
+                                                {{if $Root.BannedMap.Get .IPAddress}}
+                                                    <span class="tag is-danger ml-2">banned</span>
+                                                {{end}}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {{$Insights := $Root.InsightsMap.Get .IPAddress}}
+                                            {{if $Insights}}
+                                                {{$Insights.String}}
+                                            {{else}}
+                                                <em>no info</em>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{.NumberVisits}}
+                                        </td>
+                                        <td>
+                                            <div class="is-size-7">
+                                                First seen:
+                                            </div>
+                                            <div>
+                                                {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+                                            </div>
+                                            <div class="is-size-7">
+                                                Last seen:
+                                            </div>
+                                            <div>
+                                                {{.UpdatedAt.Format "2006-01-02 15:04:05"}}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+
+                            {{SimplePager .Pager}}
+                        </div>
+
+                        <!-- Viewing paginated Users by IP address? -->
+                        {{else if .Address}}
+                        <div class="block">
+                            <p class="block">
+                                Found {{FormatNumberCommas .Pager.Total}} user{{Pluralize64 .Pager.Total}} (page {{.Pager.Page}} of {{.Pager.Pages}})
+                            </p>
+
+                            <div class="columns is-mobile">
+                                <div class="column is-narrow pr-1">
+                                    Sort by:
+                                </div>
+                                <div class="column is-narrow pl-1">
+                                    <div class="dropdown">
+                                        <div class="dropdown-trigger">
+                                            <button type="button" class="button is-small" aria-haspopup="true" aria-controls="ip-sort-menu">
+                                                <span>
+                                                    {{if eq .Sort "last_login_at desc"}}
+                                                        Last logged in
+                                                    {{else if eq .Sort "created_at desc"}}
+                                                        Recently signed up
+                                                    {{else}}
+                                                        Sort by...
+                                                    {{end}}
+                                                </span>
+                                                <i class="icon is-small">
+                                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                                </i>
+                                            </button>
+                                            <div class="dropdown-menu" id="ip-sort-menu" role="menu">
+                                                <div class="dropdown-content">
+                                                    <a href="?{{QueryPlus "sort" "last_login_at desc"}}" class="dropdown-item">Last logged in</a>
+                                                    <a href="?{{QueryPlus "sort" "created_at desc"}}" class="dropdown-item">Recently signed up</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{SimplePager .Pager}}
+
+                            <table class="table is-striped is-fullwidth">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Status</th>
+                                        <th>Certified?</th>
+                                        <th>Their IPs</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{range .Users}}
+                                    <tr>
+                                        <td>
+                                            {{template "avatar-16x16" .}}
+                                            <a href="/u/{{.Username}}">{{.Username}}</a>
+                                        </td>
+                                        <td>
+                                            {{if eq .Status "active"}}
+                                                <span class="tag is-success">Active</span>
+                                            {{else if eq .Status "banned"}}
+                                                <span class="tag is-danger">Banned</span>
+                                            {{else if eq .Status "disabled"}}
+                                                <span class="tag is-warning">Disabled</span>
+                                            {{else}}
+                                                {{.Status}}
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{if .Certified}}
+                                                <span class="tag is-success">Certified!</span>
+                                            {{else}}
+                                                <span class="tag is-danger">Not Certified!</span>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            <a href="{{$Root.Request.URL.Path}}?user_id={{.ID}}">View</a>
+                                        </td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+
+                            {{SimplePager .Pager}}
+                        </div>
+
+                        <!-- Default (Dashboard) View-->
+                        {{else}}
+                        <div class="block">
+
+                            <h2 class="is-size-5 block">Shared IPs</h2>
+
+                            <p class="block">
+                                Found {{FormatNumberCommas .Pager.Total}} IPs shared between multiple users (page {{.Pager.Page}} of {{.Pager.Pages}})
+                            </p>
+
+                            {{SimplePager .Pager}}
+
+                            <table class="table is-striped is-fullwidth">
+                                <thead>
+                                    <tr>
+                                        <th>IP</th>
+                                        <th>User Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{range .SharedIPs}}
+                                    <tr>
+                                        <td>
+                                            <small>
+                                                <a href="{{$Root.Request.URL.Path}}?ip={{.IPAddress}}">{{.IPAddress}}</a>
+
+                                                {{if $Root.BannedMap.Get .IPAddress}}
+                                                    <span class="tag is-danger ml-2">banned</span>
+                                                {{end}}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {{.UserCount}}
+                                        </td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+
+                            {{SimplePager .Pager}}
+
+                            <hr>
+
+                            <h2 class="is-size-5 block">Banned IPs</h2>
+
+                            <p class="block">
+                                Found {{len .BannedIPs}} banned IP addresses (page {{.Pager2.Page}} of {{.Pager2.Pages}}).
+                            </p>
+
+                            {{SimplePager .Pager2}}
+
+                            <table class="table is-striped is-fullwidth">
+                                <thead>
+                                    <tr>
+                                        <th>IP</th>
+                                        <th>Last Seen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{range .BannedIPs}}
+                                    <tr>
+                                        <td>
+                                            <small>
+                                                <a href="{{$Root.Request.URL.Path}}?ip={{.IPAddress}}">{{.IPAddress}}</a>
+                                            </small>
+                                            {{if $Root.BannedMap.Get .IPAddress}}
+                                                <span class="tag is-danger ml-2">banned</span>
+                                            {{end}}
+                                        </td>
+                                        <td>
+                                            {{.UpdatedAt.Format "2006-01-02 15:04:05"}}
+                                        </td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+
+                            {{SimplePager .Pager2}}
+
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{{end}}

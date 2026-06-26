@@ -1,0 +1,768 @@
+{{define "title"}}
+    {{.Thread.Title}} -
+    {{if .Place}}
+        {{.Place.Name}}
+    {{else}}
+        {{.Forum.Title}}
+    {{end}}
+{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <div class="level">
+                    <div class="level-left">
+                        <h1 class="title">
+                            {{if .Place}}
+                                <span class="icon mr-4"><i class="fa fa-map-location-dot"></i></span>
+                                <span>{{.Place.Name}}</span>
+                            {{else}}
+                                <span class="icon mr-4"><i class="fa fa-comments"></i></span>
+                                <span>{{.Forum.Title}}</span>
+                            {{end}}
+                        </h1>
+                    </div>
+
+                    <div class="level-right">
+                        <!-- Follow/Unfollow This Forum -->
+                        <form action="/forum/subscribe" method="POST" class="is-inline">
+                            {{InputCSRF}}
+                            <input type="hidden" name="fragment" value="{{.Forum.Fragment}}">
+
+                            {{if .IsForumSubscribed}}
+                                <button type="submit" class="button gosocial-confirm-submit"
+                                    name="intent" value="unfollow"
+                                    data-confirm="Do you want to remove this forum from your list?">
+                                    <span class="icon"><i class="fa fa-bookmark"></i></span>
+                                    <span>Followed</span>
+                                </button>
+                            {{else}}
+                                <button type="submit" class="button"
+                                    name="intent" value="follow">
+                                    <span class="icon"><i class="fa-regular fa-bookmark"></i></span>
+                                    <span>Follow</span>
+                                </button>
+                            {{end}}
+                        </form>
+                    </div>
+                </div>
+
+                {{if .Place}}
+                    {{$AvgRating := .Place.GetAverageReview}}
+                    <div class="columns">
+                        <div class="column is-narrow">
+                            <a href="{{.Place.URL}}/reviews" class="tag is-dark">
+                                {{$AvgRating.StarHTML}}
+                            </a>
+                        </div>
+                        <div class="column is-narrow">
+                            <a href="{{.Place.URL}}/reviews" class="has-text-light">
+                                {{$AvgRating.RatingPretty}} ({{$AvgRating.Total}} review{{Pluralize64 $AvgRating.Total}})
+                            </a>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="p-4">
+        <div class="columns">
+            <div class="column">
+                {{if .Place}}
+                    <nav class="breadcrumb" aria-label="breadcrumbs">
+                        <ul>
+                            <li><a href="/places">Places</a></li>
+                            <li><a href="{{.Place.URL}}">{{.Place.Name}}</a></li>
+                            <li><a href="{{.Place.URL}}/discussion">Discussion</a></li>
+                            <li class="is-active">
+                                <a href="{{.Place.URL}}/discussion" aria-current="page">{{or .Thread.Title "Untitled Thread"}}</a>
+                            </li>
+                        </ul>
+                    </nav>
+                {{else}}
+                    <nav class="breadcrumb" aria-label="breadcrumbs">
+                        <ul>
+                            <li><a href="/forum">Forums</a></li>
+                            <li><a href="/f/{{.Forum.Fragment}}">{{.Forum.Title}}</a></Li>
+                            <li class="is-active">
+                                <a href="{{.Request.URL.Path}}" aria-current="page">{{or .Thread.Title "Untitled Thread"}}</a>
+                            </li>
+                        </ul>
+                    </nav>
+                {{end}}
+            </div>
+            <div class="column is-narrow">
+                {{if not .Thread.NoReply}}
+                <a href="/forum/post?to={{.Forum.Fragment}}&thread={{.Thread.ID}}" class="button is-link">
+                    <span class="icon"><i class="fa fa-reply"></i></span>
+                    <span>Add Reply</span>
+                </a>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <h1 class="title px-4">
+        {{if .Thread.Pinned}}<sup class="fa fa-thumbtack has-text-success mr-2 is-size-5" title="Pinned"></sup>{{end}}
+        {{or .Thread.Title "Untitled Thread"}}
+    </h1>
+
+    <div class="px-4">
+        {{if .Thread.Pinned}}
+            <span class="tag is-success is-light mr-2">
+                <span class="icon"><i class="fa fa-thumbtack"></i></span>
+                <span>Pinned</span>
+            </span>
+        {{end}}
+
+        {{if .Thread.Explicit}}
+            <span class="tag is-danger is-light mr-2">
+                <span class="icon"><i class="fa fa-fire"></i></span>
+                <span>NSFW</span>
+            </span>
+        {{end}}
+
+        {{if .Thread.NoReply}}
+            <span class="tag is-warning is-light mr-2" title="This thread can not be replied to.">
+                <span class="icon"><i class="fa fa-ban"></i></span>
+                <span>No Reply</span>
+            </span>
+        {{end}}
+
+        <span class="tag is-grey is-light has-text-dark mr-2" title="This thread can not be replied to.">
+            <span class="icon"><i class="fa fa-eye"></i></span>
+            <span>{{FormatNumberCommas .Thread.Views}} View{{PluralizeU64 .Thread.Views}}</span>
+        </span>
+
+        <em title="{{.Thread.UpdatedAt.Format "2006-01-02 15:04:05"}}">
+            Updated {{SincePrettyCoarse .Thread.UpdatedAt}} ago
+        </em>
+    </div>
+
+    <p class="block p-4 mb-0">
+        Found <strong>{{.Pager.Total}}</strong> post{{Pluralize64 .Pager.Total}} on this thread
+        (page {{.Pager.Page}} of {{.Pager.Pages}}).
+    </p>
+
+    <p class="block px-4 mb-4">
+        <a href="/comments/subscription?table_name=threads&table_id={{.Thread.ID}}&next={{UrlEncode .Request.URL.String}}&subscribe={{if not .IsSubscribed}}true{{else}}false{{end}}">
+            <span class="icon"><i class="fa fa-bell{{if not .IsSubscribed}}-slash{{end}}"></i></span>
+            <span>
+                {{if .IsSubscribed}}
+                Disable notifications about this thread
+                {{else}}
+                Enable notifications about this thread
+                {{end}}
+            </span>
+        </a>
+    </p>
+
+    <div class="block p-2">
+        {{SimplePager .Pager}}
+    </div>
+
+    {{$Root := .}}
+    <div class="block p-2">
+    {{range $i, $c := .Comments}}
+        <div class="box gosocial-forum-box-1 has-text-dark" id="p{{.ID}}">
+            <div class="columns">
+                <div class="column is-2 has-text-centered">
+                    <!-- Thread starter is blocked? -->
+                    {{if .User.UserRelationship.IsBlocked}}
+                        <div>
+                            {{template "avatar-64x64"}}
+                        </div>
+                        [unavailable]
+                    {{else}}
+                        <!-- User has no display name distinct from their username? -->
+                        {{ $NoDisplayName := eq $c.User.NameOrUsername $c.User.Username }}
+
+                        <div>
+                            <a href="/u/{{$c.User.Username}}">
+                                {{template "avatar-96x96" $c.User}}
+                            </a>
+                        </div>
+                        {{if $c.User.Username}}
+                            <a href="/u/{{$c.User.Username}}">
+                                {{- if $NoDisplayName}}<small class="is-size-7">@</small>{{end -}}
+                                {{$c.User.NameOrUsername}}
+                            </a>
+                        {{else}}
+                            <small>[unavailable]</small>
+                        {{end}}
+
+                        <!-- Username if the display name wasn't identical -->
+                        {{if not $NoDisplayName}}
+                        <div class="is-size-7">
+                            @{{$c.User.Username}}
+                        </div>
+                        {{end}}
+                    {{end}}
+
+                    {{if $c.User.IsAdmin}}
+                    <div class="is-size-7 mt-2">
+                        <span class="tag is-danger is-light">
+                            <span class="icon"><i class="fa fa-peace"></i></span>
+                            <span>Admin</span>
+                        </span>
+                    </div>
+                    {{end}}
+                </div>
+                <div class="column content">
+                    {{ToMarkdown $c.Message}}
+
+                    {{if $c.IsEdited}}
+                    <div class="mt-4">
+                        <em title="{{$c.UpdatedAt.Format "2006-01-02 15:04:05"}}">
+                            <small>Edited {{SincePrettyCoarse $c.UpdatedAt}} ago</small>
+                        </em>
+                    </div>
+                    {{end}}
+
+                    <div class="mt-2">
+                        <!-- Google Translate link -->
+                        <a href="https://translate.google.com/?sl=auto&tl=en&text={{.Message}}&op=translate"
+                            target="_blank" class="is-small is-size-7 has-text-success">
+                            <i class="fab fa-google mr-1"></i> Open in Google Translate <i class="fa fa-external-link ml-1"></i>
+                        </a>
+                    </div>
+
+                    <!-- Poll attachment? -->
+                    <!-- Show on Page 1, Comment 0, when a PollID is set and the OP Comment has a UserID. -->
+                    <!-- This way if the OP has blocked the viewer and their comment is hidden, so too is the poll. -->
+                    {{if and (eq $Root.Pager.Page 1) (eq $i 0) $Root.Thread.PollID .UserID}}
+                        <h2>Poll</h2>
+
+                        <!-- Get the results -->
+                        {{$Poll := $Root.Thread.Poll}}
+                        {{$PollResult := $Poll.Result $Root.CurrentUser}}
+
+                        <form name="ballot" action="/poll/vote" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="poll_id" value="{{$Root.Thread.PollID}}">
+                            <input type="hidden" name="from_thread_id" value="{{$Root.Thread.ID}}">
+
+                            <!-- Poll is open? -->
+                            {{if $PollResult.AcceptingVotes}}
+                                {{range $Poll.Options}}
+                                <div class="control">
+                                    <label class="{{$Poll.InputType}} box gosocial-fullwidth p-3 mb-3">
+                                        <input type="{{$Poll.InputType}}"
+                                            name="answer"
+                                            value="{{.}}">
+                                        {{.}}
+                                    </label>
+                                </div>
+                                {{end}}
+
+                                {{if $Poll.MultipleChoice}}
+                                <div class="mt-2 mb-4">
+                                    <strong>Multiple choice:</strong> select all the answers you want before casting your vote!
+                                </div>
+                                {{end}}
+
+                                <div class="mb-4">
+                                    {{if and ($Poll.Expires) (not $Poll.IsExpired)}}
+                                        Poll expires in about <span title="{{$Poll.ExpiresAt.Format "2006-01-02 15:04:05"}}">{{SincePrettyCoarse $Root.Thread.Poll.ExpiresAt}}</span>.
+                                        Vote or wait to see the responses.
+                                    {{else}}
+                                        Poll doesn't expire. Vote to see the responses.
+                                    {{end}}
+                                </div>
+
+                                <button type="submit"
+                                    class="button is-primary is-outline">
+                                    Submit response
+                                </button>
+                            {{else}}
+                                {{range $Poll.Options}}
+                                <div class="columns mb-0">
+                                    <div class="column is-one-quarter">
+                                        {{.}}
+                                        <small class="has-text-grey">({{FormatNumberCommas ($PollResult.GetCount .)}})</small>
+                                    </div>
+                                    <div class="column">
+                                        <progress class="{{$PollResult.GetClass .}}" value="{{$PollResult.GetPercent .}}" max="100">{{$PollResult.GetPercent .}}%</progress>
+                                    </div>
+                                    <div class="column is-1">
+                                        {{$PollResult.GetPercent .}}%
+                                    </div>
+                                </div>
+                                {{end}}
+
+                                <em>
+                                    {{$PollResult.TotalVotes}} vote{{Pluralize $PollResult.TotalVotes}}.
+                                    {{if $Poll.IsExpired}}
+                                        Poll ended <span title="{{$Poll.ExpiresAt.Format "2006-01-02 15:04:05"}}">{{SincePrettyCoarse $Root.Thread.Poll.ExpiresAt}} ago</span>.
+                                    {{end}}
+                                </em>
+                            {{end}}
+
+
+                        </form>
+                    {{end}}
+
+                    <!-- Photo attachments? -->
+                    {{$Photos := $Root.PhotoMap.Get $c.ID}}
+                    {{$IsOwnPost := eq $c.UserID $Root.CurrentUser.ID}}
+                    {{if $Photos}}
+                        {{range $Photos}}
+
+                            {{if not .ExpiredAt.IsZero}}
+                                <div class="mt-4">
+                                    <span class="tag is-dark">
+                                        <i class="fa fa-link mr-2"></i>
+                                        Attached photo deleted on {{.ExpiredAt.Format "2006-01-02"}}
+                                    </span>
+                                </div>
+                            {{else}}
+                                <!-- GIF video? -->
+                                {{if HasSuffix .Filename ".mp4"}}
+                                <div class="mt-4 is-clipped">
+                                    <video loop controls controlsList="nodownload" playsinline
+                                        {{if or IsSafeMode (and (or $Root.Forum.Explicit $Root.Thread.Explicit) (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true"))}} class="blurred-explicit"{{end}}
+                                        {{if and (not IsSafeMode) (not (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true")) (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay{{end}}
+                                        >
+                                        <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                                    </video>
+                                </div>
+                                {{else}}
+                                <div class="mt-4 is-clipped">
+                                    <img src="{{PhotoURL .Filename}}" loading="lazy"{{if or IsSafeMode (and (or $Root.Forum.Explicit $Root.Thread.Explicit) (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true"))}} class="blurred-explicit"{{end}}>
+                                </div>
+                                {{end}}
+                            {{end}}
+                        {{end}}
+                    {{end}}
+
+                    <!-- Gallery Permalink referenced attachments -->
+                    {{LazyLoadGalleryLinksFooter .Message}}
+
+                    <hr class="has-background-grey mb-2">
+
+                    <div class="columns is-mobile is-multiline is-size-7 mb-0">
+                        <div class="column is-narrow">
+                            <span title="{{.CreatedAt.Format "2006-01-02 15:04:05"}}">
+                                {{SincePrettyCoarse .CreatedAt}} ago
+                            </span>
+                        </div>
+
+                        {{if .ID}}
+                        <div class="column is-narrow">
+                            {{$Like := $Root.LikeMap.Get .ID}}
+                            <a href="#" class="has-text-dark gosocial-like-button"
+                                data-table-name="comments" data-table-id="{{.ID}}"
+                                title="Like">
+                                <span class="icon{{if $Like.UserLikes}} has-text-danger{{end}}"><i class="fa fa-heart"></i></span>
+                                <span class="gosocial-likes">
+                                    Like
+                                    {{if gt $Like.Count 0}}
+                                        ({{$Like.Count}})
+                                    {{end}}
+                                </span>
+                            </a>
+                        </div>
+                        {{end}}
+
+                        {{if .ID}}
+                        <div class="column is-narrow">
+                            <!-- Button to inspect the likes -->
+                            <a href="#" class="has-text-dark"
+                                onclick="ShowLikeModal('comments', {{.ID}}); return false">
+                                <span class="icon"><i class="fa fa-eye"></i></span>
+                                <span>Likes</span>
+                            </a>
+                        </div>
+                        {{end}}
+
+                        {{if and .ID (not $Root.Thread.NoReply)}}
+                        <div class="column is-narrow">
+                            <a href="/forum/post?to={{$Root.Forum.Fragment}}&thread={{$Root.Thread.ID}}&quote={{.ID}}"
+                                class="has-text-dark gosocial-quote-button" data-quote-body="{{.Message}}" data-reply-to="{{.User.Username}}" data-comment-id="{{.ID}}">
+                                <span class="icon"><i class="fa fa-quote-right"></i></span>
+                                <span>Quote</span>
+                            </a>
+                        </div>
+                        <div class="column is-narrow">
+                            <a href="/forum/post?to={{$Root.Forum.Fragment}}&thread={{$Root.Thread.ID}}"
+                                class="has-text-dark gosocial-reply-button" data-reply-to="{{.User.Username}}" data-comment-id="{{.ID}}">
+                                <span class="icon"><i class="fa fa-reply"></i></span>
+                                <span>Reply</span>
+                            </a>
+                        </div>
+                        {{end}}
+
+                        {{if or ($Root.CurrentUser.HasAdminScope "social.moderator.forum") (eq $Root.CurrentUser.ID .User.ID)}}
+                        <div class="column is-narrow">
+                            <a href="/forum/post?to={{$Root.Forum.Fragment}}&thread={{$Root.Thread.ID}}&edit={{.ID}}" class="has-text-dark">
+                                <span class="icon"><i class="fa fa-edit"></i></span>
+                                <span>Edit</span>
+                            </a>
+                        </div>
+                        {{end}}
+
+                        {{if or $Root.CanModerate ($Root.CurrentUser.HasAdminScope "social.moderator.forum") (eq $Root.CurrentUser.ID .User.ID)}}
+                        <div class="column is-narrow">
+                            <a href="/forum/post?to={{$Root.Forum.Fragment}}&thread={{$Root.Thread.ID}}&edit={{.ID}}&delete=true"
+                                data-confirm="Are you sure you want to delete this comment?"
+                                class="has-text-dark gosocial-confirm-submit">
+                                <span class="icon"><i class="fa fa-trash"></i></span>
+                                <span>Delete</span>
+                            </a>
+                        </div>
+                        {{end}}
+
+                        {{if .ID}}
+                        <div class="column is-narrow">
+                            <a href="/contact?intent=report&subject=report.comment&id={{.ID}}" class="has-text-dark">
+                                <span class="icon"><i class="fa fa-flag"></i></span>
+                                <span>Report</span>
+                            </a>
+                        </div>
+                        {{end}}
+
+                        <!-- Copy link to clipboard -->
+                        {{if .ID}}
+                        <div class="column is-narrow">
+                            <a href="/go/comment?id={{.ID}}" onclick="navigator.clipboard.writeText(this.href); window.location='#p{{.ID}}'; return false"
+                                class="has-text-dark"
+                                title="Copy link to clipboard">
+                                <span class="icon"><i class="fa fa-paragraph"></i></span>
+                                <span>Link</span>
+                            </a>
+                        </div>
+                        {{end}}
+
+                        <!-- Admin: history -->
+                        {{if $Root.CurrentUser.HasAdminScope "admin.changelog"}}
+                        <div class="column is-narrow">
+                            <a href="/admin/changelog?table_name=comments&table_id={{.ID}}" class="has-text-warning">
+                                <span class="icon"><i class="fa fa-clipboard-list"></i></span>
+                                <span>Change log</span>
+                            </a>
+                        </div>
+                        {{end}}
+                    </div>
+
+                    {{if $Root.CurrentUser.IsAdmin}}
+                    <div>
+                        <span class="tag is-primary is-light">
+                            <span class="icon"><i class="fa fa-database"></i></span>
+                            <span>ID: {{.ID}}</span>
+                        </span>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    {{end}}
+    </div>
+
+    <div class="block p-2">
+        {{SimplePager .Pager}}
+    </div>
+
+    <!-- Moderator controls -->
+    {{if .CanModerate}}
+        <div class="block p-2">
+            <form method="POST" action="/forum/thread/{{.Thread.ID}}/moderate">
+                {{InputCSRF}}
+
+                <div class="field has-addons">
+                    <p class="control">
+                        <button type="button" class="button is-small has-text-info"
+                            onclick="modalAlert({message: 'Note: These are your moderator controls for this forum thread.'}); return false">
+                            <span class="icon is-small">
+                                <i class="fa fa-user-tie"></i>
+                            </span>
+                        </button>
+                    </p>
+
+                    <!-- Pin/Unpin -->
+                    {{if or (eq .Forum.OwnerID .CurrentUser.ID) (.CurrentUser.HasAdminScope "admin.forum.manage")}}
+                    <p class="control">
+                        <button type="submit" class="button is-small has-text-success gosocial-confirm-submit"
+                            name="intent"
+                            value="{{if .Thread.Pinned}}un{{end}}pin"
+                            data-confirm="Are you sure you want to {{if .Thread.Pinned}}un{{end}}pin this thread to the top of the forum?">
+                            <span class="icon is-small">
+                                <i class="fas fa-thumbtack{{if .Thread.Pinned}}-slash{{end}}"></i>
+                            </span>
+                            <span>{{if .Thread.Pinned}}Unp{{else}}P{{end}}in</span>
+                        </button>
+                    </p>
+                    {{end}}
+
+                    <!-- Mark Explicit -->
+                    {{if and IsFeatureFlagExplicitEnabled (or (eq .Forum.OwnerID .CurrentUser.ID) (.CurrentUser.HasAdminScope "admin.forum.manage"))}}
+                    <p class="control">
+                        <button type="submit" class="button is-small has-text-danger gosocial-confirm-submit"
+                            name="intent"
+                            value="{{if .Thread.Explicit}}un{{end}}explicit"
+                            data-confirm="Are you sure you want to {{if .Thread.Explicit}}un{{end}}mark this thread as Explicit?">
+                            <span class="icon is-small">
+                                <i class="fa fa-fire{{if .Thread.Explicit}}-flame-simple{{end}}"></i>
+                            </span>
+                            <span>{{if .Thread.Explicit}}Un-{{end}}Explicit</span>
+                        </button>
+                    </p>
+                    {{end}}
+
+                    <!-- Lock/Unlock -->
+                    <p class="control">
+                        <button type="submit" class="button is-small has-text-warning gosocial-confirm-submit"
+                            name="intent"
+                            value="{{if .Thread.NoReply}}un{{end}}lock"
+                            data-confirm="Do you want to {{if .Thread.NoReply}}UN{{end}}LOCK this thread?\n\nA locked thread will not accept any new replies.">
+                            <span class="icon is-small">
+                                <i class="fa fa-ban"></i>
+                            </span>
+                            <span>{{if .Thread.NoReply}}Unl{{else}}L{{end}}ock</span>
+                        </button>
+                    </p>
+
+                    <!-- Move Thread: Global forum admins only -->
+                    {{if .CurrentUser.HasAdminScope "social.moderator.forum"}}
+                    <p class="control">
+                        <a href="/forum/admin/move-thread?thread_id={{.Thread.ID}}"
+                            class="button is-small has-text-danger">
+                            <span class="icon is-small">
+                                <i class="fa fa-peace"></i>
+                            </span>
+                            <span>Move</span>
+                        </a>
+                    </p>
+                    {{end}}
+                </div>
+            </form>
+        </div>
+    {{end}}
+
+    {{if .Thread.NoReply}}
+        <div class="block notification is-warning is-light">
+            <i class="fa fa-ban pr-2"></i>
+            This thread is not accepting any new replies.
+        </div>
+    {{else}}
+        <div class="block p-2" id="reply">
+            <div class="card">
+                <header class="card-header has-background-link">
+                    <p class="card-header-title has-text-light">
+                        <i class="fa fa-comment mr-2"></i>
+                        Reply to Thread
+                    </p>
+                </header>
+
+                <div class="card-content">
+                    <form action="/forum/post?to={{.Forum.Fragment}}&thread={{.Thread.ID}}" method="POST" enctype="multipart/form-data">
+                        {{InputCSRF}}
+
+                        <div class="field block">
+                            <label for="message" class="label">Message</label>
+                            {{template "markdown-editor" (
+                                NewHashMap "Name" "message"
+                                "ID" "message"
+                                "Required" (not .Forum.PermitPhotos)
+                                "Placeholder" "Write a response to this thread"
+                                "Rows" 8
+                                "GalleryLinks" "footer"
+                            )}}
+                            <p class="help">
+                                <a href="/markdown" target="_blank">Markdown formatting</a> supported with
+                                <a href="/faq#embed-photos" target="_blank">attachable gallery photos</a>.
+                            </p>
+                        </div>
+
+                        <!-- Photo board that allows attachments? -->
+                        {{if .Forum.PermitPhotos}}
+                        <div class="field block mb-4">
+                            <input type="hidden" name="photo_intent" id="photoIntent">
+
+                            <!-- Drag/Drop Modal -->
+                            <div class="modal" id="drop-modal">
+                                <div class="modal-background"></div>
+                                <div class="modal-content">
+                                    <div class="box content has-text-centered">
+                                        <h1><i class="fa fa-upload mr-2"></i> Drop image to select it for upload</h1>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <label class="label">Photo Attachment</label>
+
+                            <!-- Non-explicit Photo Notice -->
+                            {{if and IsFeatureFlagExplicitEnabled (not .ExplicitPhotoAllowed)}}
+                            <p class="help mb-4">
+                                <strong class="has-text-danger">
+                                    <i class="fa fa-ban mr-1"></i>
+                                    No Explicit Photos:
+                                </strong>
+
+                                This {{if not .Thread}}forum{{else}}thread{{end}} is not marked to accept Explicit
+                                photos being shared. If you are going to upload a picture, <strong>please make sure</strong>
+                                it is not an <a href="/faq#define-explicit">Explicit</a> photo. Thanks!
+                            </p>
+                            {{end}}
+
+                            <!-- User is over their quota? -->
+                            {{if .IsOverQuota}}
+                            <div class="notification is-warning is-light content">
+                                <p>
+                                    You have currently uploaded your maximum amount of allowed photos.
+                                </p>
+                                <p>
+                                    To free up some space to upload new photos, please visit
+                                    <a href="/photo/media" target="_blank"><strong>My Media</strong> <sup class="fa fa-external-link"></sup></a>
+                                    to manage your content.
+                                </p>
+                            </div>
+                            {{else}}
+                            <div class="file has-name is-fullwidth">
+                                <label class="file-label">
+                                    <input class="file-input" type="file"
+                                        name="file"
+                                        id="file"
+                                        accept=".jpg,.jpeg,.jpe,.png,.gif,.webp">
+                                    <span class="file-cta">
+                                        <span class="file-icon">
+                                            <i class="fas fa-upload"></i>
+                                        </span>
+                                        <span class="file-label">
+                                            Choose a file…
+                                        </span>
+                                    </span>
+                                    <span class="file-name" id="fileName">
+                                        Select a file
+                                    </span>
+                                </label>
+                            </div>
+                            <p class="help">
+                                Acceptable formats include: JPG, PNG, GIF, and WebP.
+                                <a href="/faq#photo-types" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                            </p>
+                            <p class="help">
+                                <strong class="has-text-success">
+                                    <i class="fa fa-info-circle mr-1"></i>
+                                    From your gallery:
+                                </strong>
+                                You may attach your Gallery photos instead of uploading them again!
+                                <a href="/faq#embed-photos" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                            </p>
+                            <p class="help">
+                                <strong class="has-text-success">
+                                    <i class="fa fa-info-circle mr-1"></i>
+                                    GIFs are supported:
+                                </strong>
+                                Try our <a href="/static/video2gif/" target="_blank">"Video to GIF" <sup class="fa fa-external-link"></sup></a> converter tool!
+                                <a href="/faq#gifs" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                            </p>
+                            {{end}}
+                        </div>
+                        {{end}}
+
+                        <div class="field has-text-centered">
+                            <button type="submit"
+                                name="intent"
+                                value="preview"
+                                class="button is-link gosocial-hide-on-load">
+                                Preview
+                            </button>
+                            <button type="submit"
+                                name="intent"
+                                value="submit"
+                                class="button is-success">
+                                Post Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {{end}}
+
+    <!-- Enhance inline Quote and Reply buttons to activate the on-page comment textarea. -->
+    <script src="/static/js/inline-replies.js?build={{.BuildHash}}"></script>
+
+    <!-- Compress images before uploading -->
+    <script src="/static/js/resize-image.js?build={{.BuildHash}}"></script>
+
+    <!-- Script for photo upload on photo boards -->
+    {{if .Forum.PermitPhotos}}
+    <script type="text/javascript">
+        window.addEventListener("DOMContentLoaded", (event) => {
+            let $file = document.querySelector("#file"),
+                $fileName = document.querySelector("#fileName"),
+                $dropArea = document.querySelector("#drop-modal"),
+                $photoIntent = document.querySelector("#photoIntent"),
+                $body = document.querySelector("body");
+
+            // Common handler for file selection (file input or drag/drop)
+            let onFile = async (file) => {
+                if (!file) return;
+
+                // Still images: compress them now.
+                const compressionResult = await CompressImageFile(file);
+                const compressedFileList = compressionResult.fileList;
+                const compressedFile = compressionResult.file;
+
+                // Too large of an upload?
+                if (compressedFile.size >= {{.MaxBodyBytes}}) {
+                    modalAlert({message: "That file is too large! Choose something less than {{.MaxBodyMegaBytes}} MB."});
+                    return;
+                }
+
+                $photoIntent.value = "upload";
+                $fileName.innerHTML = file.name;
+                $file.files = compressedFileList;
+            };
+
+            // Set up drag/drop file upload events.
+            $body.addEventListener("dragenter", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Chrome bug: do not manipulate the DOM on drag start or it'll fire dragleave right away.
+                window.requestAnimationFrame(() => {
+                    $dropArea.classList.add("is-active");
+                });
+            });
+            $body.addEventListener("dragover", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropArea.classList.add("is-active");
+            });
+            $body.addEventListener("dragleave", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropArea.classList.remove("is-active");
+            });
+            $body.addEventListener("drop", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropArea.classList.remove("is-active");
+
+                // Grab the file.
+                let dt = e.dataTransfer;
+                let file = dt.files[0];
+
+                // Set the file on the input field too.
+                $file.files = dt.files;
+
+                onFile(file);
+            });
+
+            // File input handler.
+            $file.addEventListener("change", function() {
+                let file = this.files[0];
+                onFile(file);
+            });
+        });
+    </script>
+    {{end}}<!-- .Forum.PermitPhotos -->
+</div>
+
+{{end}}

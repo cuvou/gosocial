@@ -1,0 +1,135 @@
+{{define "title"}}Blocked Users{{end}}
+{{define "content"}}
+<div class="container">
+    {{$Root := .}}
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-hand mr-2"></i>
+                    Blocked Users
+                </h1>
+                <h2 class="subtitle">
+                    View and manage your block list
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "blocklist")}}
+            </div>
+
+            <div class="column">
+
+                <div class="card">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-hand mr-2"></i>
+                            Blocked Users
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="block">
+                            This page lists members of {{PrettyTitle}} who you have "blocked."
+                        </div>
+
+                        <div class="block">
+                            When you block somebody, {{PrettyTitle}} will draw a <strong>hard line</strong> between the two
+                            of you and will make it so that you two <strong>do not see each other</strong> anywhere on
+                            the website. For example: you will not see each other on the Member Directory or Gallery, any comments
+                            or forum posts will be hidden, and you will not see each other on the chat room anymore.
+                            See <a href="/faq#blocking">this FAQ question</a> for details.
+                        </div>
+
+                        <div class="block">
+                            You have blocked {{.Pager.Total}} user{{Pluralize64 .Pager.Total}}
+                            (page {{.Pager.Page}} of {{.Pager.Pages}}).
+                        </div>
+
+                        <div class="columns block">
+                            <div class="column">
+                                <a href="/users/blocklist/add" class="button is-primary is-outlined">
+                                    <span class="icon"><i class="fa fa-plus"></i></span>
+                                    <span>Add someone to my block list</span>
+                                </a>
+                            </div>
+
+                            <div class="column is-narrow">
+                                <form method="GET" action="{{.Request.URL.Path}}">
+                                    <div class="field has-addons">
+                                        <div class="control">
+                                            <input type="text" class="input"
+                                                name="search"
+                                                autocomplete="off"
+                                                placeholder="Name or username"
+                                                value="{{.SearchString}}">
+                                        </div>
+                                        <div class="control">
+                                            <button type="submit" class="button is-primary">
+                                                Search
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="block">
+                            {{SimplePager .Pager}}
+                        </div>
+
+                        <div class="columns is-multiline">
+
+                            {{range .BlockedUsers}}
+                            <div class="column is-half-tablet is-one-third-desktop">
+
+                                <form action="/users/block" method="POST">
+                                    {{InputCSRF}}
+                                    <input type="hidden" name="username" value="{{.Username}}">
+
+                                <div class="card">
+                                    <div class="card-content">
+                                        <div class="media block">
+                                            <div class="media-left">
+                                                {{template "avatar-64x64" .}}
+                                            </div>
+                                            <div class="media-content">
+                                                <p class="title is-4">{{.NameOrUsername}}</p>
+                                                <p class="subtitle is-6">
+                                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                                    <a href="/u/{{.Username}}">{{.Username}}</a>
+
+                                                    {{if .IsAdmin}}
+                                                    <span class="has-text-danger">
+                                                        <span class="icon"><i class="fa fa-peace"></i></span>
+                                                        <span>Admin</span>
+                                                    </span>
+                                                    {{end}}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <footer class="card-footer">
+                                        <button type="submit" name="unblock" value="true" class="card-footer-item button is-danger">
+                                            <span class="icon"><i class="fa fa-xmark"></i></span>
+                                            <span>Unblock User</span>
+                                        </button>
+                                    </footer>
+                                </div>
+                                </form>
+
+                            </div>
+                            {{end}}<!-- range .BlockedUsers -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

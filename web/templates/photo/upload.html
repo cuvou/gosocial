@@ -1,0 +1,930 @@
+{{define "title"}}Upload a Photo{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    {{if .EditPhoto}}
+                        <i class="fa fa-edit mr-2"></i>
+                        Edit Photo
+                    {{else if eq .Intent "profile_pic"}}
+                        <i class="fa fa-id-badge mr-2"></i>
+                        My Profile Picture
+                    {{else}}
+                        <i class="fa fa-upload mr-2"></i>
+                        Upload a New Photo
+                    {{end}}
+                </h1>
+
+                {{if eq .Intent "profile_pic"}}
+                    <h2 class="subtitle">
+                        Upload a photo to use as your Default Profile Picture.
+                    </h2>
+                {{end}}
+            </div>
+        </div>
+    </section>
+
+    {{ $Root := . }}
+    {{ $User := .CurrentUser }}
+
+    <!-- Drag/Drop Modal -->
+    <div class="modal" id="drop-modal">
+        <div class="modal-background"></div>
+        <div class="modal-content">
+            <div class="box content has-text-centered">
+                <h1><i class="fa fa-upload mr-2"></i> Drop image to select it for upload</h1>
+            </div>
+        </div>
+    </div>
+
+    {{if .EditPhoto}}
+    <form action="/photo/edit" method="POST">
+        <input type="hidden" name="id" value="{{.EditPhoto.ID}}">
+    {{else}}
+    <form action="/photo/upload" method="POST" enctype="multipart/form-data">
+    {{end}}
+        {{InputCSRF}}
+        <input type="hidden" id="intent" name="intent" value="{{.Intent}}">
+
+        <div class="block p-4">
+            <!-- Upload disclaimers, but not if editing a photo -->
+            {{if not .EditPhoto}}
+            <div class="content block">
+
+                <p>
+                    You can use this page to upload a
+                    {{if eq .Intent "profile_pic"}}
+                        <strong>new default profile photo</strong>
+                    {{else}}
+                        new photo
+                    {{end}}
+                    to your gallery page. Please remember the rules below:
+                </p>
+
+                <ul>
+                    <li>
+                        🤳 <strong>Self pictures only:</strong> you may only upload pictures which depict
+                        <em>you</em> in them. If the picture also contains other people, be sure you
+                        have their consent to post it here!
+                    </li>
+                    {{if IsFeatureFlagExplicitEnabled}}
+                    <li>
+                        🔞 <strong>Mark whether your picture is explicit:</strong> adult content is allowed,
+                        but please mark it as Explicit so people who don't want to see that stuff don't have to!
+                    </li>
+                    {{end}}
+                    <li>
+                        🧑 <strong>Your main profile picture must show your face.</strong>
+                    </li>
+                    {{if ne .Intent "profile_pic"}}
+                    <li>
+                        <i class="fa fa-file-video mr-1 has-text-info"></i>
+                        <strong>Animated GIFs are supported!</strong>
+                        See <a href="/faq#gifs">this FAQ item</a> for details and a link to our
+                        <a href="/static/video2gif/" target="_blank">"Video to GIF" converter <sup class="fa fa-external-link"></sup></a>
+                        that can help you create GIFs from your personal videos!
+                    </li>
+                    {{end}}
+                </ul>
+
+                {{if and (not .EditPhoto) (ne .Intent "profile_pic")}}
+                <p class="help">
+                    <strong class="has-text-success">
+                        <i class="fa fa-question-circle mr-1"></i>
+                    </strong>
+                    Did you mean to <a href="{{.Request.URL.Path}}?intent=profile_pic">upload a new Default Profile Picture</a> instead?
+                </p>
+                {{else if eq .Intent "profile_pic"}}
+                <p>
+                    <strong class="has-text-success">
+                        <i class="fa fa-info-circle mr-1"></i>
+                        Note:
+                    </strong>
+                    You may also <a href="/u/{{.CurrentUser.Username}}/photos">select an existing photo from your gallery</a> and use it as
+                    your default profile picture by going to its "Edit" page.
+                </p>
+                {{end}}
+
+            </div>
+            {{else}}
+            <div class="content block">
+                <p>
+                    <strong class="has-text-success">
+                        <i class="fa fa-info-circle mr-1"></i> Pro Tip:
+                    </strong>
+                    To bump an old photo back to the front of your Gallery, just go to its "Edit" page and click "Save!"
+                </p>
+            </div>
+            {{end}}
+
+            <!-- Quota notification -->
+            {{if and (not .EditPhoto) .IsOverQuota}}
+                <div class="notification is-warning is-light block content">
+                    <p>
+                        You have currently uploaded your maximum amount of allowed photos.
+                    </p>
+
+                    <p>
+                        To free up some space to upload new photos, please visit <a href="/photo/media"><strong>My Media</strong></a>
+                        to manage your content.
+                    </p>
+                </div>
+            {{end}}
+
+            <!-- No profile picture and they aren't uploading one now? -->
+            {{if .NoProfilePicture}}
+                <div class="notification is-warning is-light block">
+                    <p class="block">
+                        <strong>Notice:</strong> you currently do not have a Default Profile Picture set up on your
+                        account. You can <a href="/photo/upload?intent=profile_pic">click here to upload a new one</a>
+                        or click the Edit button on <a href="/u/{{.CurrentUser.Username}}/photos">one of your existing photos</a>
+                        to crop a square profile picture from one of them.
+                    </p>
+                </div>
+            {{end}}
+
+            {{if or .EditPhoto (not .IsOverQuota)}}
+            <div class="columns">
+                <div class="column">
+
+                    <div class="card">
+                        <header class="card-header has-background-link">
+                            <p class="card-header-title has-text-light">
+                                <i class="fa fa-camera pr-2"></i>
+                                {{if .EditPhoto}}
+                                Your Photo
+                                {{else}}
+                                Select a Photo
+                                {{end}}
+                            </p>
+                        </header>
+
+                        <!-- Upload field, not when editing -->
+                        {{if not .EditPhoto}}
+                        <div class="card-content">
+                            <p class="block">
+                                Browse or drag a photo onto this page:
+                            </p>
+
+                            <div class="field block">
+                                <div class="file has-name is-fullwidth">
+                                    <label class="file-label">
+                                        <input class="file-input" type="file"
+                                            name="file"
+                                            id="file"
+                                            accept=".jpg,.jpeg,.jpe,.png,.webp{{if ne .Intent "profile_pic"}},.gif{{end}}"
+                                            required>
+                                        <span class="file-cta">
+                                            <span class="file-icon">
+                                                <i class="fas fa-upload"></i>
+                                            </span>
+                                            <span class="file-label">
+                                                Choose a file…
+                                            </span>
+                                        </span>
+                                        <span class="file-name" id="fileName">
+                                            Select a file
+                                        </span>
+                                    </label>
+                                </div>
+                                <p class="help">
+                                    Acceptable formats include: JPG, PNG{{if ne .Intent "profile_pic"}}, GIF{{end}}, and WebP.
+                                    <a href="/faq#photo-types" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                                </p>
+
+                                <!-- Video to GIF tool -->
+                                {{if and (not .EditPhoto) (ne .Intent "profile_pic")}}
+                                <p class="help">
+                                    <strong class="has-text-success">
+                                        <i class="fa fa-info-circle mr-1"></i>
+                                        GIFs are supported:
+                                    </strong>
+                                    Try our
+                                    <a href="/static/video2gif/" target="_blank">
+                                        "Video to GIF"
+                                        <sup class="fa fa-external-link"></sup>
+                                    </a>
+                                    converter tool!
+                                    <a href="/faq#gifs" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                                </p>
+                                {{end}}
+                            </div>
+
+                            <div class="box" id="imagePreview" style="display: none">
+                                <h3 class="subtitle">
+                                    {{if .NeedsCrop}}Crop image:{{else}}Selected image:{{end}}
+                                </h3>
+
+                                {{if .NeedsCrop}}
+                                <p class="block">
+                                    Select a square crop of this image for your profile picture. The full
+                                    image will go among the rest of your photos, and the square version
+                                    will be used as your profile pic and avatar.
+                                </p>
+                                {{end}}
+
+                                <!-- Container of img tags for the selected photo preview. -->
+                                <div id="previewBox" class="block"></div>
+
+                                {{if .NeedsCrop}}
+                                <div class="block has-text-centered">
+                                    <button type="button" class="button block is-info" onclick="resetCrop()">Reset</button>
+                                </div>
+                                {{end}}
+                            </div>
+
+                            <!-- Holder of image crop coordinates in x,y,w,h format. -->
+                            <input type="hidden" name="crop" id="cropCoords">
+                        </div>
+                        {{else}}<!-- when .EditPhoto -->
+                        <div class="card-content">
+                            <figure id="editphoto-preview" class="image block is-clipped">
+                                {{if HasSuffix .EditPhoto.Filename ".mp4"}}
+                                <video autoplay loop controls controlsList="nodownload" playsinline>
+                                    <source src="{{PhotoURL .EditPhoto.Filename}}" type="video/mp4">
+                                </video>
+                                {{else}}
+                                <img src="{{PhotoURL .EditPhoto.Filename}}" id="editphoto-img">
+                                {{end}}
+                            </figure>
+
+                            <!-- Photo edit controls (except GIFs): recrop for profile pic or rotate image -->
+                            {{if not (HasSuffix .EditPhoto.Filename ".mp4")}}
+                            <div class="block" id="editphoto-begin-crop">
+                                <div class="columns is-centered">
+                                    <div class="column is-narrow">
+                                        <button type="button" class="button" onclick="setProfilePhoto()">
+                                            <span class="icon"><i class="fa fa-crop-simple"></i></span>
+                                            <span>Set this as my profile photo (crop image)</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="column is-narrow">
+                                        <input type="hidden" name="rotation" id="rotation" value="">
+                                        <button type="button" class="button" onclick="setImageRotation()">
+                                            <span class="icon"><i class="fa fa-arrows-rotate"></i></span>
+                                            <span>Rotate image</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Post-Rotation Selection message -->
+                                <div class="notification is-info is-light content" id="post-rotation-alert" style="display: none">
+                                    <p>
+                                        <i class="fa fa-arrows-rotate mr-1"></i>
+                                        A <strong>preview of your rotation setting</strong> has been applied to the picture above.
+                                        If you are happy with its new rotation, click on the 'Save Changes' button to save the photo.
+                                    </p>
+                                    <p>
+                                        <strong>Important:</strong> your photo may lose visual quality after it has been rotated
+                                        and saved. Be sure that the rotation looks how you want it to, above, to minimize the
+                                        number of times you will need to rotate the photo and preserve its quality.
+                                    </p>
+                                </div>
+                            </div>
+                            {{end}}
+
+                            <div class="block" id="editphoto-cropping" style="display: none">
+
+                                <!-- Explicit photo disclaimer. -->
+                                {{if and IsFeatureFlagExplicitEnabled .EditPhoto .EditPhoto.Explicit}}
+                                <div class="block content">
+                                    <p>
+                                        <strong class="has-text-danger">
+                                            <i class="fa fa-info-circle mr-1"></i>
+                                            Notice:
+                                        </strong>
+                                        Your default profile picture <strong>should not</strong> be
+                                        <strong class="has-text-danger">
+                                            <i class="fa fa-fire"></i>
+                                            "Explicit!"
+                                        </strong>
+                                    </p>
+                                    <p class="help">
+                                        As you select where to your crop your Square Profile Pic, <strong>please</strong> avoid having it
+                                        show any <a href="/tos/photos#explicit" target="_blank">'explicit' <sup class="fa fa-external-link"></sup></a> content.
+                                    </p>
+                                </div>
+                                {{end}}
+
+                                <div class="has-text-centered">
+                                    <button type="button" class="button block is-info" onclick="resetCrop()">Reset</button>
+                                </div>
+                            </div>
+
+                            <!-- Holder of image crop coordinates in x,y,w,h format. -->
+                            <input type="hidden" name="crop" id="cropCoords">
+                        </div>
+                        {{end}}
+
+                    </div><!-- /card -->
+                </div><!-- /column -->
+
+                <div class="column">
+
+                    <div class="card">
+                        <header class="card-header has-background-link">
+                            <p class="card-header-title has-text-light">
+                                <i class="fa fa-pencil pr-2"></i>
+                                Photo Settings
+                            </p>
+                        </header>
+
+                        <div class="card-content">
+
+                            <div class="field mb-5">
+                                <label class="label" for="caption">Caption</label>
+                                <input type="text" class="input"
+                                    name="caption"
+                                    id="caption"
+                                    placeholder="A short sentence about this picture"
+                                    value="{{.EditPhoto.Caption}}">
+                            </div>
+
+                            <div class="field mb-5">
+                                <div class="columns is-mobile mb-0">
+                                    <div class="column">
+                                        <label class="label" for="alt_text">Alt Text</label>
+                                    </div>
+                                    <div class="column is-narrow">
+                                        <small id="alt_text_length">0/5000</small>
+                                    </div>
+                                </div>
+
+                                <textarea class="textarea"
+                                    name="alt_text"
+                                    id="alt_text"
+                                    cols="40"
+                                    rows="4"
+                                    placeholder="Write a description of this photo for the visually impaired"
+                                    >{{.EditPhoto.AltText}}</textarea>
+                                <p class="help">
+                                    Write a description of this photo to help people with disabilities (such as the
+                                    vision impaired) to understand the content and meaning of this photo.
+                                    Max 5,000 characters.
+                                    <a href="/faq#alt-text" target="_blank">Learn more <i class="fa fa-external-link"></i></a>
+                                </p>
+                            </div>
+
+                            <div class="field mb-5">
+                                <label class="label">
+                                    <i class="fa fa-images mr-2"></i>
+                                    Photo Album <span class="tag is-success ml-2">New!</span>
+                                </label>
+                                <div class="select is-fullwidth">
+                                    <select name="photo_album_id" id="photo_album_id">
+                                        <option value=""></option>
+                                        <optgroup label="Add to an Existing Album">
+                                            {{if not .MyPhotoAlbums}}
+                                                <option value="" disabled>(No albums available)</option>
+                                            {{end}}
+                                            {{range .MyPhotoAlbums}}
+                                                <option value="{{.ID}}">{{.Title}}</option>
+                                            {{end}}
+                                        </optgroup>
+                                        <optgroup label="Add to a New Album" id="photo_album_new_optgroup">
+                                            <option value="_new">Create a New Album</option>
+                                        </optgroup>
+                                    </select>
+                                    <input type="hidden" name="new_photo_album_name" id="new_photo_album_name">
+                                </div>
+                                <p class="help">
+                                    You may <strong>add this photo to an album</strong> by selecting
+                                    one (or creating a new one) above. Photos may be added to multiple
+                                    albums.
+                                    <a href="/faq#photo-albums" target="_blank">Learn more <i class="fa fa-external-link"></i></a>
+                                </p>
+                            </div>
+
+                            <div class="field mb-5">
+                                <label class="label">
+                                    <i class="fa fa-thumbtack mr-1 has-text-success"></i>
+                                    Pinned Photo
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="pinned"
+                                        value="true"
+                                        {{if .EditPhoto.Pinned}}checked{{end}}>
+                                    Keep this photo at the top of my gallery
+                                </label>
+                                <p class="help">
+                                    You may "pin" your favorite photos to keep them always at the front of
+                                    your photo gallery.
+                                </p>
+                            </div>
+
+                            <div class="field mb-5">
+                                <label class="label">Photo Visibility</label>
+                                <div>
+                                    <label class="radio">
+                                        <input type="radio"
+                                            name="visibility"
+                                            value="public"
+                                            {{if or (not .EditPhoto) (eq .EditPhoto.Visibility "public")}}checked{{end}}>
+                                        <strong class="has-text-link ml-1">
+                                            <span>Public <small>(members only)</small></span>
+                                            <span class="icon"><i class="fa fa-eye"></i></span>
+                                        </strong>
+                                    </label>
+                                    <p class="help">
+                                        This photo will appear on your profile page and can be seen by any
+                                        logged-in user account. It may also appear on the site-wide Photo
+                                        Gallery if that option is enabled, below.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="radio">
+                                        <input type="radio"
+                                            name="visibility"
+                                            value="friends"
+                                            {{if eq .EditPhoto.Visibility "friends"}}checked{{end}}>
+                                        <strong class="has-text-warning ml-1">
+                                            <span>Friends only</span>
+                                            <span class="icon"><i class="fa fa-user-group"></i></span>
+                                        </strong>
+                                    </label>
+                                    <p class="help">
+                                        Only users you have accepted as a friend can see this photo on your
+                                        profile page and on the site-wide Photo Gallery if that option is
+                                        enabled, below.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="radio">
+                                        <input type="radio"
+                                            name="visibility"
+                                            value="private"
+                                            {{if eq .EditPhoto.Visibility "private"}}checked{{end}}>
+                                        <strong class="has-text-private ml-1">
+                                            <span>Private</span>
+                                            <span class="icon"><i class="fa fa-lock"></i></span>
+                                        </strong>
+                                    </label>
+                                    <p class="help">
+                                        This photo is visible only to you and to users for whom you have
+                                        granted access
+                                        (<a href="/photo/private" target="_blank" class="has-text-private">manage grants <i class="fa fa-external-link"></i></a>).
+                                    </p>
+                                </div>
+
+                                <div class="has-text-warning is-size-7 mt-4">
+                                    <i class="fa fa-info-circle mr-1"></i>
+                                    <strong class="has-text-warning">Reminder:</strong> There are risks inherent with sharing
+                                    pictures on the Internet, and {{PrettyTitle}} can't guarantee that another member of the site
+                                    won't download and possibly redistribute your photos. You may mark your picture as "Friends only"
+                                    or "Private" to limit who on the website will see it, but anybody who <em>can</em> see it could potentially
+                                    save it to their computer. <a href="/faq#downloading" target="_blank">Learn more <i class="fa fa-external-link"></i></a>
+                                </div>
+
+                            </div>
+
+                            <div class="field mb-5">
+                                <label class="label">
+                                    <span>Site Photo Gallery</span>
+                                    <span class="icon"><i class="fa fa-image"></i></span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="gallery"
+                                        value="true"
+                                        {{if and (or .EditPhoto.Gallery (not .EditPhoto)) (not .SiteGalleryThrottled)}}checked{{end}}
+                                        {{if .SiteGalleryThrottled}}disabled{{end}}>
+                                    {{if .SiteGalleryThrottled}}<del>{{end}}
+                                        Show this photo in the site-wide Photo Gallery
+                                    {{if .SiteGalleryThrottled}}</del>{{end}}
+                                </label>
+
+                                {{if .SiteGalleryThrottled}}
+                                <p class="help has-text-warning">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                    You have shared too many photos with the Site Gallery recently!<br><br>
+                                    We currently limit members to featuring <strong>{{.SiteGalleryThrottleLimit}} photos</strong>
+                                    on the Site Gallery per day, so that one member doesn't dominate page after
+                                    page of the gallery by uploading <em>all</em> of their pictures at once.
+                                    <a href="/faq#site-gallery-throttle" target="_blank">Learn more <i class="fa fa-external-link"></i></a>
+                                    <br><br>
+                                    You may still upload all the photos you like to <em>your</em> gallery, but new ones can not be featured
+                                    on the Site Gallery until you have waited 24 hours. You MAY "edit" your recently posted photos
+                                    and un-check the Site Gallery box if you <em>really</em> want this one to be featured now.
+                                </p>
+                                {{else}}
+                                <p class="help">
+                                    Leave this box checked and your photo can appear in the site's Photo Gallery
+                                    page. Mainly your <strong class="has-text-link">Public</strong> photos will appear
+                                    on the Gallery, and your approved friends may see your
+                                    <strong class="has-text-warning">Friends-only</strong> photos there as well.
+                                    <strong class="has-text-private">Private</strong> photos may appear in
+                                    the gallery to users whom you have granted access. If this is undesirable,
+                                    un-check the Gallery box to skip the Site Gallery.
+                                </p>
+                                {{end}}
+                            </div>
+
+                            <!-- Explicit tag -->
+                            {{if IsFeatureFlagExplicitEnabled}}
+                            <div class="field mb-5">
+                                <label class="label has-text-danger">
+                                    <span>Explicit Content</span>
+                                    <span class="icon"><i class="fa fa-fire"></i></span>
+                                </label>
+
+                                <!-- Flagged Explicit photo: show a warning if this photo was recently flagged by the community. -->
+                                {{$IsFlagged := and .EditPhoto .EditPhoto.Flagged .EditPhoto.Explicit}}
+                                {{if $IsFlagged}}
+                                <div class="notification is-danger is-light py-3 px-3 has-text-smaller content">
+                                    <p>
+                                        <strong>
+                                            <i class="fa fa-exclamation-triangle"></i>
+                                            Notice:
+                                        </strong>
+                                        This photo was classified by the community as containing 'Explicit' content.
+                                    </p>
+
+                                    <p>
+                                        Please review <a href="/tos/photos#explicit" target="_blank">what {{.Title}} considers an 'Explicit' photo</a>
+                                        and if this photo fits the description, <strong>please</strong> leave this photo with the
+                                        'Explicit' box checked, below.
+                                    </p>
+
+                                    <p>
+                                        If you disagree that this photo should have been marked as 'Explicit,' you <strong>MAY</strong>
+                                        uncheck the box below and remove the Explicit status. <strong>Note:</strong> the website admin will
+                                        be notified to take a look as well if you do this, to verify that your photo has the correct 'Explicit'
+                                        setting.
+                                    </p>
+                                </div>
+                                {{end}}
+
+                                {{if eq .Intent "profile_pic"}}
+                                    <span class="has-text-danger">
+                                        Your default profile picture should
+                                        <strong class="has-text-danger">NOT</strong>
+                                        contain explicit content.
+                                    </span>
+                                {{else}}
+                                    <label class="checkbox"
+                                        {{if $IsFlagged}}title="You MAY remove this check if you disagree that this photo should be marked Explicit"{{end}}
+                                        >
+                                        <input type="checkbox"
+                                            name="explicit"
+                                            value="true"
+                                            {{if .EditPhoto.Explicit}}checked{{end}}>
+                                        {{if $IsFlagged}}<del class="cursor-not-allowed">{{end}}
+                                        This photo contains explicit content
+                                        {{if $IsFlagged}}</del>{{end}}
+                                    </label>
+                                    <p class="help">
+                                        Mark this box if this photo contains any explicit content, including an
+                                        erect penis, close-up of genitalia, or any depiction of sexual activity.
+                                        Use your best judgment.<br><br>
+                                        Please see
+                                        <a href="/tos/photos#explicit" target="_blank">what {{PrettyTitle}} considers to be an Explicit photo <i class="fa fa-external-link"></i></a>
+                                        on our <a href="/tos/photos" target="_blank">Photo Policy</a> page.
+                                    </p>
+                                {{end}}
+                            </div>
+                            {{end}}
+
+                            {{if not .EditPhoto}}
+                            <div class="field">
+                                <label class="label">Confirm Upload</label>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="confirm1"
+                                        value="true"
+                                        required>
+                                    I assert that this is a photo <strong>of myself</strong> and that I have
+                                    permission to upload this picture.
+                                </label>
+
+                                {{if eq .Intent "profile_pic"}}
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="confirm2"
+                                        value="true"
+                                        required>
+                                    I assert that this picture <strong>shows my face</strong> and is not explicit
+                                </label>
+                                {{else}}
+                                <input type="hidden" name="confirm2" value="true">
+                                {{end}}
+
+                                <p class="help my-4">
+                                    <i class="fa fa-info-circle has-text-danger"></i>
+                                    <strong class="has-text-danger">Reminder:</strong> your photos should be <strong>of yourself!</strong>
+                                    Landscape shots, memes, and other impersonal pictures are <strong>NOT ALLOWED</strong> on your photo gallery.
+                                    <a href="/tos/photos#acceptable" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                                </p>
+                            </div>
+                            {{end}}
+
+                            <div class="field">
+                                <button type="submit" class="button is-primary">
+                                    {{if .EditPhoto}}
+                                    Save Changes
+                                    {{else}}
+                                    Upload Photo
+                                    {{end}}
+                                </button>
+                            </div>
+
+                            <!-- Admin Labels -->
+                            {{if and IsFeatureFlagExplicitEnabled .EditPhoto (.RequestUser.HasAdminScope "social.moderator.photo")}}
+                                <hr>
+                                <div class="field">
+                                    <label class="label has-text-danger">
+                                        <span>Admin Labels</span>
+                                        <span class="icon"><i class="fa fa-peace"></i></span>
+                                    </label>
+
+                                    <p class="help">
+                                        The options below can apply moderation rules to this picture, especially regarding
+                                        its 'explicit' status. For example: if a community member flagged this picture as
+                                        explicit, but it does NOT need to be marked as such, select that label below: and
+                                        the website will no longer allow this photo to be flagged as explicit again.
+                                    </p>
+                                </div>
+
+                                <p class="help">
+                                    <strong>Reminder:</strong> click on 'Save Changes' to apply these labels!
+                                </p>
+
+                            {{end}}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div><!-- /columns -->
+            {{end}}<!-- if under quota -->
+        </div>
+    </form>
+
+    <!-- image cropper -->
+    <link rel="stylesheet" href="/static/js/croppr/croppr.min.css">
+    <script src="/static/js/croppr/croppr.js"></script>
+
+    <!-- Compress images before uploading -->
+    <script src="/static/js/resize-image.js?build={{.BuildHash}}"></script>
+
+    <!-- Photo album selector -->
+    <script src="/static/js/photo-album-selector.js?build={{.BuildHash}}"></script>
+
+    <script type="text/javascript">
+        var croppr = null;
+        const usingCroppr = {{if .NeedsCrop}}true{{else}}false{{end}};
+
+        function resetCrop() {
+            if (croppr !== null) {
+                croppr.reset();
+            }
+        }
+
+        {{if not .EditPhoto}}
+        window.addEventListener("DOMContentLoaded", (event) => {
+            let $file = document.querySelector("#file"),
+                $fileName = document.querySelector("#fileName"),
+                $hiddenPreview = document.querySelector("#imagePreview"),
+                $previewBox = document.querySelector("#previewBox"),
+                $cropField = document.querySelector("#cropCoords"),
+                $dropArea = document.querySelector("#drop-modal"),
+                $body = document.querySelector("body");
+
+            // Common handler for file selection, either via input
+            // field or drag/drop onto the page.
+            let onFile = async (file) => {
+                if (!file) return;
+
+                // Still images: compress them now.
+                const compressionResult = await CompressImageFile(file);
+                const compressedFileList = compressionResult.fileList;
+                const compressedFile = compressionResult.file;
+
+                // Too large of an upload?
+                if (compressedFile.size >= {{.MaxBodyBytes}}) {
+                    modalAlert({message: "That file is too large! Choose something less than {{.MaxBodyMegaBytes}} MB."});
+                    return;
+                }
+
+                $fileName.innerHTML = file.name;
+
+                // Set the file input's value to the compressed file.
+                $file.files = compressedFileList;
+
+                // Read the image to show the preview on-page.
+                const reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    const uploadedImg = reader.result;
+                    $hiddenPreview.style.display = "block";
+
+                    // Create a new <img> tag the first time.
+                    if (croppr !== null) {
+                        croppr.setImage(uploadedImg);
+                        croppr.reset();
+                        return;
+                    }
+
+                    // If not using croppr, flush the old img preview out.
+                    if (!usingCroppr) {
+                        $previewBox.innerHTML = "";
+                    }
+
+                    let img = document.createElement("img");
+                    img.src = uploadedImg;
+                    img.style.display = "block";
+                    img.style.maxWidth = "100%";
+                    img.style.height = "auto";
+
+                    // Add it to the wrapper div.
+                    $previewBox.appendChild(img);
+
+                    if (usingCroppr) {
+                        croppr = new Croppr(img, {
+                            aspectRatio: 1,
+                            minSize: [ 32, 32, 'px' ],
+                            returnMode: 'real',
+                            onCropStart: (data) => {
+                                // console.log(data);
+                            },
+                            onCropMove: (data) => {
+                                // console.log(data);
+                            },
+                            onCropEnd: (data) => {
+                                // console.log(data);
+                                $cropField.value = [
+                                    data.x, data.y, data.width, data.height
+                                ].join(",");
+                            },
+                            onInitialize: (inst) => {
+                                // Populate the default crop value into the form field.
+                                let data = inst.getValue();
+                                $cropField.value = [
+                                    data.x, data.y, data.width, data.height
+                                ].join(",");
+                            }
+                        });
+                    }
+                });
+                reader.readAsDataURL(compressedFile);
+            };
+
+            // Set up drag/drop file upload events.
+            $body.addEventListener("dragenter", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Chrome bug: do not manipulate the DOM on drag start or it'll fire dragleave right away.
+                window.requestAnimationFrame(() => {
+                    $dropArea.classList.add("is-active");
+                });
+            });
+            $body.addEventListener("dragover", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropArea.classList.add("is-active");
+            });
+            $body.addEventListener("dragleave", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropArea.classList.remove("is-active");
+            });
+            $body.addEventListener("drop", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $dropArea.classList.remove("is-active");
+
+                // Grab the file.
+                let dt = e.dataTransfer;
+                let file = dt.files[0];
+
+                // Set the file on the input field too.
+                $file.files = dt.files;
+
+                onFile(file);
+            });
+
+            // Clear the answer in case of page reload.
+            $cropField.value = "";
+
+            $file.addEventListener("change", function() {
+                let file = this.files[0];
+                onFile(file);
+            });
+        });
+        {{end}}
+
+        // Alt Text helper.
+        document.addEventListener("DOMContentLoaded", () => {
+            let $altText = document.querySelector("#alt_text"),
+                $length = document.querySelector("#alt_text_length"),
+                maxLength = 5000;
+
+            $altText.maxLength = maxLength;
+
+            $altText.addEventListener("keydown", (e) => {
+                if ($altText.value.length >= maxLength) {
+                    return false;
+                }
+            });
+
+            let update = () => {
+                $length.innerHTML = `${$altText.value.length}/${maxLength}`;
+            };
+
+            $altText.addEventListener("keyup", update);
+            $altText.addEventListener("change", update);
+            update();
+        });
+
+        // EditPhoto only: a button to crop their photo to set as a profile pic.
+        function setProfilePhoto() {
+            let $begin = document.querySelector("#editphoto-begin-crop"),
+                $cropRow = document.querySelector("#editphoto-cropping"),
+                $preview = document.querySelector("#editphoto-preview")
+                $cropField = document.querySelector("#cropCoords"),
+                $intent = document.querySelector("#intent");
+                img = document.querySelector("#editphoto-img");
+
+            // Toggle the button display, from begin crop to the crop reset button.
+            $begin.style.display = 'none';
+            $cropRow.style.display = 'block';
+
+            // Set intent to profile-pic so when the form posts the crop coords will
+            // create a new profile pic for this user.
+            $intent.value = "profile-pic";
+
+            // Note: if they were trying to rotate their picture too, cancel out of that;
+            // the UI to control that has gone away, and we avoid any messiness of trying
+            // to apply crop coordinates on the rotated image.
+            const $rotateInput = document.querySelector("#rotation"),
+                $postRotate = document.querySelector("#post-rotation-alert");
+            $rotateInput.value = '';
+            $postRotate.style.display = 'none';
+            img.style.rotate = 'none';
+
+            croppr = new Croppr(img, {
+                aspectRatio: 1,
+                minSize: [ 32, 32, 'px' ],
+                returnMode: 'real',
+                onCropStart: (data) => {
+                    // console.log(data);
+                },
+                onCropMove: (data) => {
+                    // console.log(data);
+                },
+                onCropEnd: (data) => {
+                    // console.log(data);
+                    $cropField.value = [
+                        data.x, data.y, data.width, data.height
+                    ].join(",");
+                },
+                onInitialize: (inst) => {
+                    // Populate the default crop value into the form field.
+                    let data = inst.getValue();
+                    $cropField.value = [
+                        data.x, data.y, data.width, data.height
+                    ].join(",");
+                }
+            });
+        }
+
+        // EditPhoto only: change the rotation of the image.
+        function setImageRotation() {
+            const $input = document.querySelector("#rotation"),
+                $img = document.querySelector("#editphoto-img"),
+                $postRotate = document.querySelector("#post-rotation-alert");
+
+            modalPrompt({
+                title: "Rotate Image",
+                message: "If your photo was rotated wrongly when it was uploaded, you can select an option below " +
+                    "to fix the rotation.\n\nNotice: your photo may lose quality after it has been re-saved by rotating it. " +
+                    "Only use this feature if your photo was rotated wrongly after it was uploaded, to adjust the rotation.\n\n" +
+                    "After making a selection and clicking 'Ok', you will see a PREVIEW of how your photo will look with the " +
+                    "selected rotation. You will need to click on the 'Save Changes' button to finish applying the rotation.",
+                type: "select",
+                options: [
+                    {value: "", label: "(Select a Rotation)"},
+                    {value: "90", label: "Rotate 90° Right"},
+                    {value: "270", label: "Rotate 90° Left"},
+                    {value: "180", label: "Rotate 180° (upside down)"},
+                ],
+            }).then(answer => {
+                $input.value = answer;
+
+                // Apply CSS to the image to preview the rotation.
+                if (!answer) {
+                    $img.style.rotate = 'none';
+                    $postRotate.style.display = 'none';
+                } else {
+                    $img.style.rotate = answer + 'deg';
+                    $postRotate.style.display = '';
+                }
+            });
+        }
+    </script>
+
+</div>
+{{end}}

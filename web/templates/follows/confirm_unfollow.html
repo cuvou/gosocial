@@ -1,0 +1,74 @@
+{{define "title"}}Unfollow {{.User.Username}}{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa-regular fa-star mr-2"></i>
+                    Unfollow {{.User.Username}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon mr-2"><i class="fa-regular fa-star"></i></span>
+                            <span>Unfollow {{.User.Username}}</span>
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="block">
+                            <p>
+                                Confirm that you wish to unfollow <strong>{{.User.Username}}</strong>
+                                by clicking the button below.
+                            </p>
+                            <p>
+                                Unfollowing them means you will no longer receive notifications when they
+                                post a new photo, video or blog.
+                            </p>
+                        </div>
+                        <div class="media block">
+                            <div class="media-left">
+                                {{template "avatar-64x64" .User}}
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-4">{{.User.NameOrUsername}}</p>
+                                <p class="subtitle is-6">
+                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                    <a href="/u/{{.User.Username}}" target="_blank">{{.User.Username}}</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <form action="/following/add" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="username" value="{{.User.Username}}">
+                            <input type="hidden" name="unfollow" value="true">
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success">
+                                    Continue
+                                </button>
+                                <a href="{{.NextURL}}" class="button">
+                                    Cancel
+                                </a>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

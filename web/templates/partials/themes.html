@@ -1,0 +1,167 @@
+<!-- Theme helpers -->
+
+<!-- Default profile header gradient colors -->
+{{define "--prof-colorA"}}#0f81cc{{end}}
+{{define "--prof-colorB"}}#7683cc{{end}}
+{{define "--prof-card-bg"}}#485fc7{{end}}
+{{define "--prof-card-fg"}}#f7f7f7{{end}}
+{{define "--prof-custom-bg"}}#ffffff{{end}}
+{{define "--prof-custom-fg"}}#4a4a4a{{end}}
+{{define "--prof-link-fg"}}#0099ff{{end}}
+
+{{define "profile-theme-hero-style"}}
+    {{$colorA := or .HeroColorStart "#0f81cc"}}
+    {{$colorB := or .HeroColorEnd "#7683cc"}}
+    section.hero {
+        position: relative;
+        background-image: linear-gradient(141deg, {{$colorA}}, {{$colorB}}) !important;
+    }
+    .hero h1, .hero h2 {
+        color: {{if .HeroTextDark}}#4a4a4a{{else}}#f5f5f5{{end}} !important;
+        text-shadow: 2px 2px 2px {{if .HeroTextDark}}#999{{else}}#4a4a4a{{end}};
+    }
+
+    /* Hero background image */
+    {{if .HeroFilename}}
+    section.hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: {{.HeroTransparency}};
+        z-index: 0;
+        background-image: url("{{PhotoURL .HeroFilename}}") !important;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        {{if IsSafeMode}}filter: blur(36px);{{end}}
+    }
+    section.hero > * {
+        position: relative;
+        z-index: 1;
+    }
+    {{end}}
+{{end}}
+
+<!-- Parameter: .User -->
+{{define "profile-theme-style"}}
+    {{$cardTitleBG := or .CardTitleBG "#485fc7"}}
+    {{$cardTitleFG := or .CardTitleFG "#f7f7f7"}}
+    {{$cardLinkFG := or .CardLinkColor "#0099ff"}}
+    {{$cardLightness := .CardLightness}}
+    {{$heroA := or .HeroColorStart "#0f81cc"}}
+    {{$heroB := or .HeroColorEnd "#7683cc"}}
+    <style type="text/css">
+        /* Hero banner */
+        .user-theme-hero {
+            position: relative;
+            background-image: linear-gradient(141deg, {{$heroA}}, {{$heroB}}) !important;
+
+            & .title, .subtitle {
+                color: {{if .HeroTextDark}}#4a4a4a{{else}}#f5f5f5{{end}} !important;
+            }
+        }
+
+        /* Hero background image */
+        {{if .HeroFilename}}
+        .user-theme-hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            opacity: {{.HeroTransparency}};
+            z-index: 0;
+            background-image: url("{{PhotoURL .HeroFilename}}") !important;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            {{if IsSafeMode}}filter: blur(36px);{{end}}
+        }
+        .user-theme-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+        {{end}}
+
+        /* Hero text color (drop shadows) */
+        .user-theme-hero h1, .user-theme-hero h2 {
+            text-shadow: 2px 2px 2px {{if .HeroTextDark}}#999{{else}}#4a4a4a{{end}};
+        }
+
+        /* Wallpaper image */
+        {{if and .WallpaperFilename (not IsSafeMode)}}
+        body {
+            background-image: url("{{PhotoURL .WallpaperFilename}}");
+            background-attachment: fixed;
+            background-position: center;
+            background-size: cover;
+        }
+        {{end}}
+
+        /* Card Title colors */
+        .user-theme-card-title {
+            background-color: {{$cardTitleBG}} !important;
+
+            & * {
+                color: {{$cardTitleFG}} !important;
+            }
+
+            & .button.is-outlined {
+                border-color: {{$cardTitleFG}} !important;
+            }
+        }
+
+        /* Card Body colors */
+        .user-theme-card-body {
+            & a {
+                color: {{$cardLinkFG}} !important;
+            }
+        }
+
+        /* Tweak Bulma tabs and footer in case of background images/mismatched colors */
+        footer, div.tabs li {
+            background-color: color-mix(in srgb, var(--bulma-scheme-main) 70%, transparent);
+        }
+
+        /* Background color fixes for readability (e.g. behind the likes & mutual friends text) */
+        .user-theme-bgcolor-fix {
+            background-color: color-mix(in srgb, var(--bulma-scheme-main) 70%, transparent);
+            padding: 0.2rem;
+            border-radius: 8px;
+        }
+
+        /* Forced light/dark/custom theme overrides */
+        {{if $cardLightness}}
+            .user-theme-card-body {
+                background-color: {{.GetCardBackgroundColor}};
+                color: {{.GetCardTextColor}};
+
+                & .content * {
+                    color: {{.GetCardTextColor}};
+                }
+
+                & a > * {
+                    color: {{$cardLinkFG}};
+                }
+
+                & blockquote, pre, code, .tag {
+                    background-color: rgba(0, 0, 0, 0.2);
+                    color: {{.GetCardTextColor}};
+                }
+                & pre > code {
+                    background-color: transparent;
+                }
+
+                & .table {
+                    background-color: inherit;
+                }
+            }
+
+            /* Monochrome (no BBCode colors) sections, such as About/Stats cards */
+            .user-theme-monochrome {
+                & * {
+                    color: {{.GetCardTextColor}} !important;
+                }
+            }
+        {{end}}
+    </style>
+{{end}}
+

@@ -1,0 +1,54 @@
+{{define "title"}}User Settings{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-gear mr-2"></i>
+                    User Settings
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div style="width: 100%; max-width: 640px">
+                    {{template "settings-menu" (NewHashMap "Expanded" true)}}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}
+{{define "scripts"}}
+<script>
+window.addEventListener("DOMContentLoaded", (event) => {
+
+    // Redirect legacy links from the old `/settings#profile` hashtag version
+    // to their new dedicated homes.
+    const tagMap = {
+        "#profile": "/settings/profile",
+        "#look": "/settings/look",
+        "#prefs": "/settings/prefs",
+        "#location": "/settings/location",
+        "#privacy": "/settings/privacy",
+        "#notifications": "/settings/notifications",
+        "#account": "/settings/account",
+        "#deactivate": "/settings/deactivate",
+    };
+
+    let hash = window.location.hash;
+    if (tagMap[hash] != undefined) {
+        window.location = tagMap[hash];
+    }
+});
+</script>
+{{end}}

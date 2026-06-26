@@ -1,0 +1,38 @@
+{{define "title"}}About{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-light is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">About {{PrettyTitle}}</h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="content">
+            {{$GoSocial := ToHTML `<strong style="color: #FF7700">Go</strong><strong style="color: #0077FF">Social</strong>`}}
+
+            <p>
+                {{$GoSocial}} is an open source social networking web app written in Go. It is a
+                pared down, 'white labeled' copy of a successful production website that was
+                first launched in August 2022 and which had organically gained 12,000 members
+                by June 2026.
+            </p>
+
+            <p>
+                If you are reading this, it means that you are either looking at the
+                <a href="https://gosocial.cuvou.com">{{$GoSocial}} Demo Website</a> or else the owner
+                of this website has not yet customized their About page.
+            </p>
+
+            <p>
+                See the <a href="/features">Features List</a> of {{$GoSocial}} for more information,
+                and check out its <a href="https://github.com/cuvou/gosocial">Open Source Project Page</a>
+                on <i class="fab fa-github"></i> GitHub.
+            </p>
+        </div>
+
+    </div>
+</div>
+{{end}}

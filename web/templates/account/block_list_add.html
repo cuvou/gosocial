@@ -1,0 +1,65 @@
+{{define "title"}}Add to Block List{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Add to Block List
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon mr-2"><i class="fa fa-eye"></i></span>
+                            <span>Add to Block List</span>
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <form action="/users/block" method="POST">
+                            {{InputCSRF}}
+
+                            <div class="field block">
+                                <label for="username" class="label">Block Username:</label>
+                                <input type="text" class="input"
+                                    name="username" id="username"
+                                    placeholder="username"
+                                    autocomplete="off">
+                            </div>
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success">
+                                    Continue
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    window.addEventListener("DOMContentLoaded", (event) => {
+        let $file = document.querySelector("#file"),
+            $fileName = document.querySelector("#fileName");
+
+        $file.addEventListener("change", function() {
+            let file = this.files[0];
+            $fileName.innerHTML = file.name;
+        });
+    });
+</script>
+{{end}}

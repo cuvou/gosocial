@@ -1,0 +1,68 @@
+{{define "title"}}Two-Factor Authentication{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-lock mr-2"></i>
+                    Two-Factor Authentication
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <div class="card">
+                    <div class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-lock mr-2"></i>
+                            Two-Factor Authentication
+                        </p>
+                    </div>
+
+                    <div class="card-content content">
+                        <form action="{{.Request.URL.Path}}" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="intent" value="two-factor">
+                            <input type="hidden" name="username" value="{{.Username}}">
+                            <input type="hidden" name="password" value="{{.Password}}">
+
+                            <p>
+                                Please enter the six-digit code from your Authenticator App. If you have
+                                lost access to your authenticator device, you may enter one of your
+                                Backup Codes here instead.
+                            </p>
+
+                            <p>
+                            <input type="text" class="input"
+                                placeholder="000000"
+                                name="code"
+                                maxlength="8"
+                                autocomplete="off"
+                                autofocus>
+                            </p>
+
+                            <p>
+                                <button type="submit" class="button is-primary">
+                                    Continue
+                                </button>
+                            </p>
+
+                            <p>
+                                <small>
+                                    <a href="/contact?subject=2FA&username={{.Username}}&email={{.Email}}">Lost your authenticator? Contact us!</a>
+                                </small>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,29 @@
+:root {
+    --bulma-link-text: hsl(233deg,0%,67%)
+}
+
+/*
+ * Forum Color overrides for dark theme.
+ */
+ .gosocial-forum-box-1 {
+    /* Outermost box: Forum or Thread top-level wrappers */
+    background-color: hsl(0, 0%, 16%);
+}
+.gosocial-forum-box-2 {
+    /* Nested box: "Latest Post" on Forum-level views */
+    background-color: hsl(12, 0%, 17%);
+}
+.gosocial-forum-box-3 {
+    /* Nested box: Topics/Posts/Users/View counters */
+    background-color: hsl(16, 0%, 12%);
+}
+
+/* Notifications header on dashboard page */
+.card-header.has-background-warning {
+    background-color: hsl(233deg,0%,37%) !important;
+}
+
+/* Search Filters headers */
+.card-header.has-background-link-light {
+    background-color: hsl(233deg,0%,20%) !important;
+}

@@ -1,0 +1,61 @@
+<!--
+A simple and generic Paginator row, with page buttons and Previous/Next
+
+Usage: [[SimplePager .Pager]]
+
+Give it your Pagination object (with .Previous, .Next, .Iter() and so on). It
+links to the current .Request.URL.Path and with all query parameters + the page
+added. Should be suitable for most pagers that don't need any specialized logic.
+
+See also: template_funcs.go for the SimplePager wrapper function.
+-->
+{{define "SimplePager"}}
+    {{if .Pager.Pages}}
+    <nav class="pagination is-small" role="navigation" aria-label="pagination">
+        <a class="pagination-previous{{if not .Pager.HasPrevious}} is-disabled{{end}}" title="Previous"
+            href="{{.Request.URL.Path}}?{{QueryPlus "page" .Pager.Previous}}">
+            Previous
+        </a>
+        <a class="pagination-next is-primary{{if not .Pager.HasNext}} is-disabled{{end}}" title="Next"
+            href="{{.Request.URL.Path}}?{{QueryPlus "page" .Pager.Next}}">
+            Next page
+        </a>
+        <ul class="pagination-list">
+            {{$Root := .}}
+
+            <!-- First Page button -->
+            <li>
+                <a class="pagination-link"
+                    aria-label="First page"
+                    title="First page"
+                    href="{{$Root.Request.URL.Path}}"
+                    {{if eq .Pager.Page 1}}disabled{{end}}>
+                    <i class="fa fa-angles-left"></i>
+                </a>
+            </li>
+
+            {{range .Pager.Iter}}
+            <li>
+                <a class="pagination-link{{if .IsCurrent}} is-current{{end}}"
+                    aria-label="Page {{.Page}}"
+                    title="Page {{.Page}}"
+                    href="{{$Root.Request.URL.Path}}?{{QueryPlus "page" .Page}}">
+                    {{.Page}}
+                </a>
+            </li>
+            {{end}}
+
+            <!-- Final Page button -->
+            <li>
+                <a class="pagination-link"
+                    aria-label="Final page"
+                    title="Final page ({{.Pager.Pages}})"
+                    href="{{$Root.Request.URL.Path}}?{{QueryPlus "page" .Pager.Pages}}"
+                    {{if ge .Pager.Page .Pager.Pages}}disabled{{end}}>
+                    <i class="fa fa-angles-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {{end}}
+{{end}}

@@ -1,0 +1,57 @@
+{{define "title"}}Reactivate Your Account{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero block is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">Welcome back!</h1>
+                <h2 class="subtitle">Reactivate your account?</h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block content p-4 mb-0">
+        <h1>Your account is currently deactivated</h1>
+
+        <p>
+            Welcome back to {{PrettyTitle}}! You had requested to deactivate your account before, and you must make
+            a decision as to how you want to proceed from here.
+        </p>
+
+        <h2>Reactivate Your Account?</h2>
+
+        <p>
+            If you wish to pick up where you left off, you may <strong>reactivate your account</strong> by clicking
+            on the button below. It will be as if you never left: your profile, photo gallery, friends, messages and
+            notifications will all be how you left them.
+        </p>
+
+        <p>
+            <a href="/account/reactivate" class="button is-success">Reactivate My Account</a>
+        </p>
+
+        <h2>Permanently Delete Your Account?</h2>
+
+        <p>
+            If you've decided you really <em>don't</em> want to have a {{PrettyTitle}} account anymore, you may
+            click the button below to <strong>permanently delete your account</strong> instead. We will delete your
+            profile, photos, and all the associated data we have about your account. This will be an irreversible
+            process!
+        </p>
+
+        <p>
+            <a href="/account/delete" class="button is-danger">Permanently Delete My Account</a>
+        </p>
+
+        <h2>Log Out</h2>
+
+        <p>
+            If you're not sure what to do, you may log out of your account and come back later.
+        </p>
+
+        <p>
+            <a href="/account/logout" class="button is-info">Log out of my account</a>
+        </p>
+    </div>
+</div>
+{{end}}

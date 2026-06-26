@@ -1,0 +1,99 @@
+{{define "title"}}Website Preferences{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-square-check mr-2"></i>
+                    Website Preferences
+                </h1>
+                <h2 class="subtitle">
+                    Explicit content filter, photo blur, GIFs.
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "prefs")}}
+            </div>
+
+            <div class="column">
+
+                <!-- Website Preferences -->
+                <div class="card mb-5" id="prefs">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-square-check pr-2"></i>
+                            Website Preferences
+                        </p>
+                    </header>
+
+                    <div class="card-content">
+                        <form method="POST" action="{{.Request.URL.Path}}">
+                            {{InputCSRF}}
+
+                            {{if IsFeatureFlagExplicitEnabled}}
+                            <div class="field">
+                                <label class="label">Explicit Content Filter</label>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="explicit"
+                                        value="true"
+                                        {{if .CurrentUser.Explicit}}checked{{end}}>
+                                    Show explicit content <i class="fa fa-fire has-text-danger ml-1"></i>
+                                </label>
+                                <p class="help">
+                                    Check this box if you are OK seeing explicit content on this site, which may
+                                    include erections or sexually charged content. These may appear on the Site
+                                    Gallery as well as user profile pages.
+                                </p>
+
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="blur_explicit"
+                                        value="true"
+                                        {{if eq (.CurrentUser.GetProfileField "blur_explicit") "true"}}checked{{end}}>
+                                    Blur explicit photos by default
+                                </label>
+                                <p class="help">
+                                    Explicit photos on Gallery pages will be blurred by default until clicked. Photos
+                                    on explicit Forum threads will also be blurred until clicked.
+                                </p>
+                            </div>
+                            {{end}}
+
+                            <div class="field">
+                                <label class="label">Display Settings</label>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="autoplay_gif"
+                                        value="true"
+                                        {{if not (eq (.CurrentUser.GetProfileField "autoplay_gif") "false")}}checked{{end}}>
+                                    Automatically play animated GIFs
+                                </label>
+                                <p class="help">
+                                    Uncheck this box to disable auto-play on GIFs.
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <button type="submit" class="button is-primary">
+                                    <i class="fa fa-save mr-2"></i> Save Website Preferences
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+{{end}}

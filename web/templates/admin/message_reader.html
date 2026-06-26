@@ -1,0 +1,338 @@
+{{define "title"}}Admin - Message Reader{{end}}
+{{define "content"}}
+{{$Root := .}}
+{{$UserMap := .UserMap}}
+<div class="container">
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-envelope-open mr-2"></i>
+                    Message Reader
+                </h1>
+                <h2 class="subtitle">
+                    User: @{{.User.Username}}
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-three-quarters">
+
+                <div class="card">
+                    <header class="card-header has-background-danger">
+                        <p class="card-header-title">
+                            <i class="fa fa-envelope-open mr-2"></i>
+                            {{if .Gatekeeper}}
+                                Access Request
+                            {{else}}
+                                Message Reader
+                            {{end}}
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="media block">
+                            <div class="media-left">
+                                {{template "avatar-64x64" .User}}
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-4">{{.User.NameOrUsername}}</p>
+                                <p class="subtitle is-6">
+                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                    <a href="/u/{{.User.Username}}" target="_blank">{{.User.Username}}</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Gatekeeper: Reason Prompt -->
+                        {{if .Gatekeeper}}
+                            <div class="content">
+                                <h5>Respect the privacy of our members</h5>
+                                <p>
+                                    This feature will allow you to read this user's messages, including
+                                    DMs on both the main website and the chat room.
+                                </p>
+                                <p>
+                                    To continue, <strong>please write a reason</strong> why you are accessing
+                                    their messages. It will be logged as an admin report for transparency among
+                                    the rest of the admin team.
+                                </p>
+                            </div>
+
+                            <form method="POST" action="{{.Request.URL.Path}}">
+                                {{InputCSRF}}
+                                <input type="hidden" name="user_id" value="{{.User.ID}}">
+                                <div class="field">
+                                    <label class="label" for="reason">Write a reason for this access:</label>
+                                    <textarea class="textarea" cols="80" rows="4"
+                                        name="reason"
+                                        id="reason"
+                                        required
+                                        placeholder="Please write a reason."></textarea>
+                                </div>
+
+                                <!-- Deep link: retain query parameters. -->
+                                <input type="hidden" name="view" value="{{.Request.FormValue "view"}}">
+                                <input type="hidden" name="sort" value="{{.Request.FormValue "sort"}}">
+                                <input type="hidden" name="page" value="{{.Request.FormValue "page"}}">
+                                <input type="hidden" name="partner_id" value="{{.Request.FormValue "partner_id"}}">
+                                <input type="hidden" name="channel_id" value="{{.Request.FormValue "channel_id"}}">
+
+                                <div class="field">
+                                    <button type="submit" class="button is-success">
+                                        Continue
+                                    </button>
+                                    <a href="/u/{{.User.Username}}" class="button is-info">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        {{else}}
+                            <!-- Danger Zone: Past the Gatekeeper -->
+
+                            <div class="tabs is-boxed">
+                                <ul>
+                                    <li{{if eq .TabView "website"}} class="is-active"{{end}}>
+                                        <a href="{{.Request.URL.Path}}?user_id={{.User.ID}}&view=website">
+                                            <i class="fa fa-envelope mr-2"></i>
+                                            Main Website
+                                            <span class="tag is-grey ml-2">
+                                                {{FormatNumberCommas (len .MessageInsights.Items)}}
+                                            </span>
+                                        </a>
+                                    </li>
+                                    <li{{if eq .TabView "chat"}} class="is-active"{{end}}>
+                                        <a href="{{.Request.URL.Path}}?user_id={{.User.ID}}&view=chat">
+                                            <i class="fa fa-message mr-2"></i>
+                                            Chat Room
+                                            <span class="tag is-grey ml-2">
+                                                {{FormatNumberCommas (len .ChatInsights.Items)}}
+                                            </span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Conversation View: Main Website -->
+                            {{if and (eq .TabView "website") .PartnerUser}}
+                                <div class="block">
+                                    <strong>Conversation with:</strong>
+                                    <a href="/u/{{.PartnerUser.Username}}">@{{.PartnerUser.Username}}</a>
+                                </div>
+
+                                <div class="block">
+                                    <strong>Sorted by:</strong>
+                                    {{if eq .Pager.Sort "created_at desc"}}
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" "created_at asc"}}"
+                                            class="tag is-success">
+                                            <i class="fa fa-sort mr-2"></i>
+                                            Newest first
+                                        </a>
+                                    {{else}}
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" "created_at desc"}}"
+                                            class="tag is-info">
+                                            <i class="fa fa-sort mr-2"></i>
+                                            Oldest first
+                                        </a>
+                                    {{end}}
+                                </div>
+
+                                {{SimplePager .Pager}}
+
+                                <hr>
+
+                                {{range .Messages}}
+                                    {{$SourceUser := $UserMap.Get .SourceUserID}}
+                                    <div class="columns is-mobile is-multiline">
+                                        <div class="column is-narrow">
+                                            <strong class="mr-2">From:</strong>
+                                            {{template "avatar-16x16" $SourceUser}}
+                                            <a href="/u/{{$SourceUser.Username}}">{{$SourceUser.Username}}</a>
+                                        </div>
+                                        <div class="column is-narrow pl-0">
+                                            <abbr title="{{.CreatedAt.Format "2006-01-02 15:04:05"}}">
+                                                {{SincePrettyCoarse .CreatedAt}} ago
+                                            </abbr>
+                                            
+                                            
+                                        </div>
+                                        {{if not .Read}}<div class="column is-narrow pl-0">
+                                            <span class="tag is-success ml-2">UNREAD</span>
+                                        </div>{{end}}
+                                    </div>
+                                    <div class="block content">
+                                        {{ToMarkdown .Message}}
+
+                                        <div class="my-4">
+                                            <!-- Google Translate link -->
+                                            <a href="https://translate.google.com/?sl=auto&tl=en&text={{.Message}}&op=translate"
+                                                target="_blank" class="is-small is-size-7 has-text-success">
+                                                <i class="fab fa-google mr-1"></i> Open in Google Translate <i class="fa fa-external-link ml-1"></i>
+                                            </a>
+                                        </div>
+
+                                        <!-- Attached Gallery photo previews -->
+                                        {{LazyLoadGalleryLinksFooter .Message}}
+                                    </div>
+                                <hr>
+                                {{end}}
+
+                                {{SimplePager .Pager}}
+                            
+                            <!-- Conversation View: Chat Room -->
+                            {{else if and (eq .TabView "chat") .PartnerUser}}
+                                <div class="block">
+                                    <strong>Conversation with:</strong>
+                                    <a href="/u/{{.PartnerUser.Username}}">@{{.PartnerUser.Username}}</a>
+                                </div>
+
+                                <div class="block">
+                                    <strong>Sorted by:</strong>
+                                    {{if eq .Pager.Sort "created_at desc"}}
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" "created_at asc"}}"
+                                            class="tag is-success">
+                                            <i class="fa fa-sort mr-2"></i>
+                                            Newest first
+                                        </a>
+                                    {{else}}
+                                        <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" "created_at desc"}}"
+                                            class="tag is-info">
+                                            <i class="fa fa-sort mr-2"></i>
+                                            Oldest first
+                                        </a>
+                                    {{end}}
+                                </div>
+
+                                {{SimplePager .Pager}}
+
+                                <hr>
+
+                                {{range .DirectMessages}}
+                                    <div>
+                                        <small class="has-text-grey">
+                                            {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+                                        </small>
+                                        {{if .DeletedAt.Valid}}<i class="fa fa-trash has-text-danger" title="Deleted {{.DeletedAt.Time.Format "2006-01-02 15:04:05"}}"></i>{{end}}
+                                        [<a href="/u/{{.Username}}">{{.Username}}</a>]
+                                        {{.Message}}
+                                    </div>
+                                {{end}}
+
+                                <hr>
+
+                                {{SimplePager .Pager}}
+
+                            <!-- Thread List: Main Website -->
+                            {{else if eq .TabView "website"}}
+                                <div class="block">
+                                    There are {{FormatNumberCommas (len .MessageInsights.Items)}} distinct username{{Pluralize (len .MessageInsights.Items)}} in their main website messages.
+                                </div>
+                                <div class="block">
+                                    Click on the "Open" button to read a conversation.
+                                </div>
+
+                                <table class="block table is-striped is-fullwidth">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Count</th>
+                                            <th>Replied?</th>
+                                            <th>Date</th>
+                                            <th>Open</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{range .MessageInsights.Items}}
+                                        <tr>
+                                            <td>
+                                                {{$User := .ContactUser}}
+                                                {{if $User}}
+                                                    <a href="/u/{{$User.Username}}" class="is-size-7">@{{$User.Username}}</a>
+                                                {{end}}
+                                            </td>
+                                            <td>
+                                                {{.MessageCount}}
+                                            </td>
+                                            <td>
+                                                {{if .HasReplied}}
+                                                <span class="tag is-info">YES</span>
+                                                {{else}}
+                                                <span class="tag is-primary">NO</span>
+                                                {{end}}
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    {{.LastMessageAt.Format "2006-01-02 15:04:05"}}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <a href="{{$Root.Request.URL.Path}}?{{QueryPlus "view" "website" "partner_id" .ContactUser.ID}}"
+                                                    class="button is-small is-warning">
+                                                    Open
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {{end}}
+                                    </tbody>
+                                </table>
+                            
+                            <!-- Thread List: Chat Room -->
+                            {{else if eq .TabView "chat"}}
+                                <div class="block">
+                                    There are {{FormatNumberCommas (len .ChatInsights.Items)}} distinct username{{Pluralize (len .ChatInsights.Items)}} in their Chat Room DMs.
+                                </div>
+                                <div class="block">
+                                    Click on the "Open" button to read a conversation.
+                                </div>
+
+                                <table class="block table is-striped is-fullwidth">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Count</th>
+                                            <th>Date</th>
+                                            <th>Open</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{range .ChatInsights.Items}}
+                                        <tr>
+                                            <td>
+                                                {{$User := .ContactUser}}
+                                                {{if $User}}
+                                                    <a href="/u/{{$User.Username}}" class="is-size-7">@{{$User.Username}}</a>
+                                                {{end}}
+                                            </td>
+                                            <td>
+                                                {{.MessageCount}}
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    {{.LastMessageAt.Format "2006-01-02 15:04:05"}}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <a href="{{$Root.Request.URL.Path}}?{{QueryPlus "view" "chat" "channel_id" .ContactUser.Username}}"
+                                                    class="button is-small is-warning">
+                                                    Open
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {{end}}
+                                    </tbody>
+                                </table>
+                            {{end}}
+                        {{end}}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{{end}}

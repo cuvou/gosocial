@@ -1,0 +1,32 @@
+{{define "content"}}
+<html>
+    <body bakground="#ffffff" color="#000000" link="#0000FF" vlink="#990099" alink="#FF0000">
+        <basefont face="Arial,Helvetica,sans-serif" size="3" color="#000000"></basefont>
+
+        <h1>User impersonate</h1>
+
+        <p>
+            Dear website administrators,
+        </p>
+
+        <p>
+            An admin user <strong>{{.Data.Impersonator.Username}}</strong> has used the "Impersonate user"
+            feature to become user <strong>{{.Data.User.Username}}</strong>. The reason they have listed
+            for doing so is as follows:
+        </p>
+
+        {{.Data.Reason}}
+
+        <hr>
+
+        <p>
+            To view this message on the admin dashboard, please visit:
+            <a href="{{.Data.AdminURL}}">{{.Data.AdminURL}}</a>
+        </p>
+
+        <p>
+        This is an automated e-mail; do not reply to this message.
+        </p>
+    </body>
+</html>
+{{end}}

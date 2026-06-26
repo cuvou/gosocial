@@ -1,0 +1,253 @@
+{{define "title"}}Private Photos{{end}}
+{{define "content"}}
+<div class="container">
+    {{$Root := .}}
+    <section class="hero is-private is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title has-text-light">
+                    <i class="fa fa-eye mr-2"></i>
+                    Private Photos
+                </h1>
+                <h2 class="subtitle has-text-light">
+                    Manage who can see your private photos
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "private-photos")}}
+            </div>
+
+            <div class="column">
+
+                <div class="card">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-eye mr-2"></i>
+                            Private Photos
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="p-4 is-text-centered">
+                            <div class="level">
+                                <div class="level-item">
+                                    <div class="tabs is-toggle">
+                                        <ul>
+                                            <li{{if not .IsGrantee}} class="is-active"{{end}}>
+                                                <a href="/photo/private">My Shares</a>
+                                            </li>
+                                            <li{{if .IsGrantee}} class="is-active"{{end}}>
+                                                <a href="/photo/private?view=grantee">
+                                                    Shared With Me
+                                                    {{if .CountGrantee}}
+                                                    <span class="tag is-grey ml-2">{{.CountGrantee}}</span>
+                                                    {{end}}
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4">
+
+                            <div class="block">
+                                {{if .IsGrantee}}
+                                    {{.Pager.Total}} member{{Pluralize64 .Pager.Total}}
+                                    {{Pluralize64 .Pager.Total "has" "have"}}
+                                    granted you access to see their private photos
+                                {{else}}
+                                    You have granted access to {{.Pager.Total}} member{{Pluralize64 .Pager.Total}}
+                                    to see your private photos
+                                {{end}}
+
+                                (page {{.Pager.Page}} of {{.Pager.Pages}}).
+                            </div>
+
+                            <!-- On the Shared With Me page, let the user know about the new privacy option. -->
+                            {{if .IsGrantee}}
+                            <div class="block has-text-smaller">
+                                <strong class="has-text-success">
+                                    <i class="fa fa-info-circle"></i>
+                                    Pro Tip:
+                                </strong>
+
+                                If you receive a lot of unsolicited private photo shares from people and you wish you could do something
+                                about that, check out the <a href="/settings/privacy">Privacy Settings</a> for an option to limit who is allowed
+                                to share their private gallery with you. For example, you can limit it to Friends only or to people who
+                                <em>you</em> had previously sent a DM to.
+                            </div>
+                            {{end}}
+
+                            {{if not .IsGrantee}}
+                            <div class="columns is-gapless is-centered">
+                                <div class="column is-narrow mx-1 my-2">
+                                    <a href="/photo/private/share" class="button is-primary is-outlined is-fullwidth">
+                                        <span class="icon"><i class="fa fa-plus"></i></span>
+                                        <span>Add new share</span>
+                                    </a>
+                                </div>
+                                <div class="column is-narrow mx-1 my-2">
+                                    <a href="/photo/private/share?intent=revoke-all" class="button is-danger is-outlined is-fullwidth gosocial-confirm-submit"
+                                        data-confirm="Are you sure you want to lock your Private Photos from ALL users?">
+                                        <span class="icon"><i class="fa fa-lock"></i></span>
+                                        <span>Revoke ALL Shares</span>
+                                    </a>
+                                </div>
+                            </div>
+                            {{end}}
+
+                            <div class="block">
+                                {{SimplePager .Pager}}
+                            </div>
+
+                            <div class="columns is-multiline">
+
+                                {{range .Users}}
+                                <div class="column is-half-tablet">
+
+                                    <form action="/photo/private/share" method="POST">
+                                        {{InputCSRF}}
+                                        <input type="hidden" name="to" value="{{.Username}}">
+
+                                    <div class="card">
+                                        <div class="card-content">
+                                            <div class="media block">
+                                                <div class="media-left">
+                                                    {{template "avatar-64x64" .}}
+
+                                                    <!-- Friendship badge -->
+                                                    {{if $Root.FriendMap.Get .ID}}
+                                                    <div>
+                                                        <span class="is-size-7 has-text-warning">
+                                                            <i class="fa fa-user-group" title="Friends"></i>
+                                                            Friends
+                                                        </span>
+                                                    </div>
+                                                    {{end}}
+
+                                                    <!-- Liked badge -->
+                                                    {{$LikedStats := $Root.LikedMap.Get .ID}}
+                                                    {{if $LikedStats.UserLikes}}
+                                                    <div>
+                                                        <span class="is-size-7">
+                                                            <i class="fa fa-heart has-text-danger" title="Friends"></i>
+                                                            Liked
+                                                        </span>
+                                                    </div>
+                                                    {{end}}
+                                                </div>
+                                                <div class="media-content">
+                                                    <p class="title is-4">
+                                                        <a href="/u/{{.Username}}" class="has-text-dark">
+                                                            {{.NameOrUsername}}
+                                                        </a>
+                                                        {{if eq .Visibility "private"}}
+                                                            <sup class="fa fa-mask is-size-7" title="Private Profile"></sup>
+                                                        {{end}}
+                                                    </p>
+                                                    <p class="subtitle is-6 mb-1">
+                                                        <span class="icon"><i class="fa fa-user"></i></span>
+                                                        <a href="/u/{{.Username}}">{{.Username}}</a>
+
+                                                        {{if .IsAdmin}}
+                                                        <span class="tag is-danger is-light p-1" style="font-size: x-small">
+                                                            <i class="fa fa-peace mr-1"></i>
+                                                            <span>Admin</span>
+                                                        </span>
+                                                        {{end}}
+
+                                                        <!-- Photo count pulled to the right -->
+                                                        {{if $Root.IsGrantee}}
+                                                        <a href="/u/{{.Username}}/photos?visibility=private" class="tag is-private is-light is-pulled-right">
+                                                            <i class="fa fa-camera mr-2"></i>
+                                                            {{$Root.PhotoCountMap.Get .ID}}
+                                                        </a>
+                                                        {{end}}
+                                                    </p>
+
+                                                    <!-- Indicator if they are sharing back -->
+                                                    {{if not $Root.IsGrantee}}
+                                                        <!-- "My Shares" tab - GranteeMap is whether they granted me back -->
+                                                        <div>
+                                                            {{if $Root.GranteeMap.Get .ID}}
+                                                            <span class="has-text-success">
+                                                                <i class="fa fa-check mr-1"></i>
+                                                                Sharing with me
+                                                            </span>
+                                                            {{else}}
+                                                            <span class="has-text-danger">
+                                                                <i class="fa fa-xmark mr-1"></i>
+                                                                Not sharing with me
+                                                            </span>
+                                                            {{end}}
+                                                        </div>
+                                                    {{else}}
+                                                        <!-- "Shared With Me" tab - GranteeMap is whether I granted them -->
+                                                        <div>
+                                                            {{if $Root.GranteeMap.Get .ID}}
+                                                            <span class="has-text-success">
+                                                                <i class="fa fa-check mr-1"></i>
+                                                                I share with them
+                                                            </span>
+                                                            {{else}}
+                                                            <span class="has-text-danger">
+                                                                <i class="fa fa-xmark mr-1"></i>
+                                                                I do not share with them
+                                                            </span>
+                                                            {{end}}
+                                                        </div>
+                                                    {{end}}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Card Footers -->
+                                        {{if $Root.IsGrantee}}
+                                        <footer class="card-footer">
+                                            {{if and $Root.CanSharePrivatePhotos (not ($Root.GranteeMap.Get .ID))}}
+                                            <a href="/photo/private/share?to={{.Username}}" class="card-footer-item button is-small is-success is-outlined"
+                                                style="border-inline-end: 1px solid rgb(72, 199, 142)">
+                                                <span class="icon"><i class="fa fa-plus"></i></span>
+                                                <span>Share Back</span>
+                                            </a>
+                                            {{end}}
+                                            <button type="submit" name="intent" value="decline" class="card-footer-item button is-small is-danger is-outlined gosocial-confirm-submit"
+                                                data-confirm="Do you want to decline access to this person's private photos? Doing so will remove them from your Shared With Me list and you will no longer see their private photos unless they share with you again in the future.">
+                                                <span class="icon"><i class="fa fa-thumbs-down"></i></span>
+                                                <span>Decline</span>
+                                            </button>
+                                        </footer>
+                                        {{else}}
+                                        <footer class="card-footer">
+                                            <button type="submit" name="intent" value="revoke" class="card-footer-item is-small button is-danger is-outlined gosocial-confirm-submit"
+                                                data-confirm="Are you sure you want to revoke private photo access to this user?">
+                                                <span class="icon"><i class="fa fa-xmark"></i></span>
+                                                <span>Revoke Access</span>
+                                            </button>
+                                        </footer>
+                                        {{end}}
+                                    </div>
+                                    </form>
+
+                                </div>
+                                {{end}}<!-- range .Friends -->
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{{end}}

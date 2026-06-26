@@ -1,0 +1,35 @@
+{{define "content"}}
+<html>
+    <body bakground="#ffffff" color="#000000" link="#0000FF" vlink="#990099" alink="#FF0000">
+        <basefont face="Arial,Helvetica,sans-serif" size="3" color="#000000"></basefont>
+
+        <h1>You already have a {{.Data.Title}} account</h1>
+
+        <p>
+            Somebody (hopefully you) has tried to sign up a new account by entering your e-mail address.
+            We already have an account for this e-mail address, but we didn't admit that to whoever
+            just signed up.
+        </p>
+
+        <p>
+            If it was not you, then you can disregard this e-mail.
+        </p>
+
+        <p>
+            If you have forgotten your password, you can request a password reset at the link below:
+        </p>
+
+        <p>
+        <a href="{{.Data.URL}}" target="_blank">{{.Data.URL}}</a>
+        </p>
+
+        <p>
+            You may sign in to the website using your e-mail address and account password.
+        </p>
+
+        <p>
+            This is an automated e-mail; do not reply to this message.
+        </p>
+    </body>
+</html>
+{{end}}

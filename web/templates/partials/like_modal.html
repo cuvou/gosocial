@@ -1,0 +1,294 @@
+<!-- "Likes" modal to see who liked a thing -->
+
+<!-- Reusable "Liked by Alice, Bob and 5 others" widget that invokes
+     the Like Modal. Requirements: pass in a context providing the
+     following variables:
+
+    - LikeExample: slice of users
+    - LikeRemainder: integer
+    - LikeTableName: like 'photos'
+    - LikeTableID: integer
+
+    Call this like: {{template "like-example" .}}
+-->
+{{define "like-example"}}
+    {{$Outer := .}}
+    {{if .LikeExample}}
+    <div class="has-text-centered">
+        Liked by
+
+        <!-- User list -->
+        {{range $i, $User := .LikeExample}}
+            <!-- Avatar -->
+            <figure class="image is-16x16 is-inline-block is-clipped">
+                <a href="/u/{{$User.Username}}" class="has-text-dark">
+                    {{if $User.ProfilePhoto.ID}}
+                        {{if and (eq $User.ProfilePhoto.Visibility "private") (not $User.UserRelationship.IsPrivateGranted)}}
+                            <img class="is-rounded" src="/static/img/shy-private.png">
+                        {{else if and (eq $User.ProfilePhoto.Visibility "friends") (not $User.UserRelationship.IsFriend)}}
+                            <img class="is-rounded" src="/static/img/shy-friends.png">
+                        {{else if and $User.ProfilePhoto.Explicit (not $User.UserRelationship.IsExplicitSeen)}}
+                            <img class="is-rounded" src="/static/img/shy-explicit.png">
+                        {{else}}
+                            <img class="is-rounded{{if BlurExplicit $User.ProfilePhoto}} blurred-explicit blurred-slightly{{end}}" src="{{PhotoURL $User.ProfilePhoto.CroppedFilename}}">
+                        {{end}}
+                    {{else}}
+                    <img class="is-rounded" src="/static/img/shy.png">
+                    {{end}}
+                </a>
+            </figure>
+
+            <!-- Username plus a comma if multiple -->
+            <a href="/u/{{$User.Username}}">
+                {{- $User.Username -}}
+            </a>{{if and (eq (len $Outer.LikeExample) 2) (not $Outer.LikeRemainder)}}
+                    {{if eq $i 0}}
+                    and
+                    {{end}}
+                {{- else if gt (len $Outer.LikeExample) 1}},{{end}}
+        {{end}}
+
+        <!-- Others -->
+        {{if .LikeRemainder}}
+            and
+            <a
+                href="#"
+                onclick="ShowLikeModal('{{.LikeTableName}}', {{.LikeTableID}}); return false"
+                >
+                {{FormatNumberCommas .LikeRemainder}} other{{Pluralize64 .LikeRemainder}}</a>.
+        {{end}}
+    </div>
+    {{end}}
+{{end}}
+
+{{define "like-modal"}}
+<div id="like-modal-app">
+    <div class="modal vue-managed" :class="{'is-active': visible}">
+        <div class="modal-background" @click="visible=false"></div>
+        <div class="modal-content">
+            <div class="card">
+                <div class="card-header has-background-info">
+                    <p class="card-header-title has-text-light">
+                        <i class="fa fa-heart mr-2"></i> [[title]]
+                    </p>
+                </div>
+                <div class="card-content">
+
+                    <div v-if="busy">
+                        <i class="fa fa-spinner fa-spin"></i> Loading likes...
+                    </div>
+                    <div v-else>
+                        <div class="columns block">
+                            <div class="column">
+                                Found [[ total ]] like[[ total === 1 ? '' : 's' ]]
+                                (page [[ page ]] of [[ pages ]]).
+                            </div>
+                            <div class="column is-narrow">
+                                <div class="dropdown is-right" :class="{'is-active': dropdownActive}">
+                                    <div class="dropdown-trigger">
+                                        <button type="button" class="button is-small"
+                                            aria-haspopup="true"
+                                            @click="dropdownActive = !dropdownActive">
+                                            <span>
+                                                <span v-if="friendsOnly === ''">
+                                                    <span class="icon">
+                                                        <i class="fa fa-heart has-text-danger"></i>
+                                                    </span>
+                                                    <span>
+                                                        All likes
+                                                    </span>
+                                                </span>
+                                                <span v-else-if="friendsOnly === 'true'">
+                                                    <span class="icon">
+                                                        <i class="fa fa-user-group has-text-warning"></i>
+                                                    </span>
+                                                    <span>
+                                                        Friends only
+                                                    </span>
+                                                </span>
+                                                <span v-else>
+                                                    <span class="icon">
+                                                        <i class="fa fa-user has-text-info"></i>
+                                                    </span>
+                                                    <span>
+                                                        Non-friends
+                                                    </span>
+                                                </span>
+                                            </span>
+                                            <i class="icon is-small">
+                                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                            </i>
+                                        </button>
+                                        <div class="dropdown-menu" role="menu">
+                                            <div class="dropdown-content">
+                                                <a href="#" class="dropdown-item" @click.prevent="friendsOnly = ''">
+                                                    <span class="icon">
+                                                        <i class="fa fa-heart has-text-danger"></i>
+                                                    </span>
+                                                    <span>
+                                                        All likes
+                                                    </span>
+                                                </a>
+                                                <a href="#" class="dropdown-item" @click.prevent="friendsOnly = 'true'">
+                                                    <span class="icon">
+                                                        <i class="fa fa-user-group has-text-warning"></i>
+                                                    </span>
+                                                    <span>
+                                                        Friends only
+                                                    </span>
+                                                </a>
+                                                <a href="#" class="dropdown-item" @click.prevent="friendsOnly = 'false'">
+                                                    <span class="icon">
+                                                        <i class="fa fa-user has-text-info"></i>
+                                                    </span>
+                                                    <span>
+                                                        Non-friends
+                                                    </span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="columns is-multiline">
+                            <div class="column is-one-third"
+                                v-for="row in result">
+
+                                <!-- Avatar -->
+                                <figure class="image is-16x16 is-inline-block mr-2 is-clipped">
+                                    <a :href="'/u/'+row.username" class="has-text-dark">
+                                        <img class="is-rounded{{if IsSafeMode}} blurred-explicit blurred-slightly{{end}}" :src="row.avatar">
+                                    </a>
+                                </figure>
+
+                                <!-- Username link -->
+                                <a :href="'/u/'+row.username" target="_blank">[[ row.username ]]</a>
+
+                                <!-- Friendship badge -->
+                                <sup v-if="row.relationship.IsFriend" class="fa fa-user-group has-text-warning ml-2" style="font-size: xx-small"></sup>
+                            </div>
+                        </div>
+
+                        <!-- Pager buttons -->
+                        <div class="columns is-mobile">
+                            <div class="column is-narrow">
+                                <button type="button" class="button"
+                                    @click="prevPage()"
+                                    :disabled="page <= 1">
+                                    Previous
+                                </button>
+                            </div>
+                            <div class="column is-narrow">
+                                <button type="button" class="button"
+                                    @click="nextPage()"
+                                    :disabled="page >= pages">
+                                    Next page
+                                </button>
+                            </div>
+                            <div class="column has-text-right">
+                                <button type="button" class="button is-primary"
+                                    @click="visible=false">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    // Implemented in Vue widget.
+    var ShowLikeModal = function(tableName, tableID) {};
+
+    const likeModalApp = Vue.createApp({
+        delimiters: ['[[', ']]'],
+        data() {
+            return {
+                visible: false,
+                title: "Likes",
+
+                // Friends filter dropdown.
+                dropdownActive: false,
+                friendsOnly: "",
+
+                busy: false,
+                tableName: "photos",
+                tableID: 0,
+                page: 1,
+                pages: 0,
+                total: 0,
+                result: [],
+            }
+        },
+        mounted() {
+            ShowLikeModal = this.ShowLikeModal;
+        },
+        watch: {
+            friendsOnly() {
+                this.dropdownActive = false;
+                this.page = 1;
+                this.get();
+            },
+        },
+        methods: {
+            ShowLikeModal(tableName, tableID) {
+                this.tableName = tableName;
+                this.tableID = tableID;
+                this.visible = true;
+                this.page = 1;
+                this.get();
+            },
+
+            prevPage() {
+                this.page--;
+                if (this.page <= 1) {
+                    this.page = 1;
+                }
+                this.get();
+            },
+            nextPage() {
+                this.page++;
+                this.get();
+            },
+
+            get() {
+                this.busy = true;
+                return fetch("/v1/likes/users?" + new URLSearchParams({
+                    table_name: this.tableName,
+                    table_id: this.tableID,
+                    friends_only: this.friendsOnly,
+                    page: this.page,
+                }), {
+                    method: "GET",
+                    mode: "same-origin",
+                    cache: "no-cache",
+                    credentials: "same-origin",
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.StatusCode !== 200) {
+                        modalAlert({message: data.data.error});
+                        return;
+                    }
+
+                    let likes = data.data.likes;
+                    this.pages = data.data.pages;
+                    this.total = data.data.pager.Total;
+                    this.result = likes;
+                }).catch(resp => {
+                    console.error(resp);
+                }).finally(() => {
+                    this.busy = false;
+                });
+            },
+        },
+    });
+    likeModalApp.mount("#like-modal-app");
+</script>
+{{end}}

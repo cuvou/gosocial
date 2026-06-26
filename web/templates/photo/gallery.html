@@ -1,0 +1,1573 @@
+<!--
+    Photo Gallery Template, shared by Site Photos + User Photos.
+
+    When Site Gallery: .IsSiteGallery is defined and true.
+    When User Gallery: .User is defined, .IsOwnPhotos may be.
+-->
+{{define "title"}}
+    {{if .IsSiteGallery}}
+        Member Gallery
+    {{else}}
+        Photos of {{.User.Username}}
+        {{if eq .User.Visibility "private"}}<sup class="fa fa-mask ml-2 is-size-6" title="Private Profile"></sup>{{end}}
+    {{end}}
+{{end}}
+
+<!-- Reusable card body -->
+{{define "card-body"}}
+<div>
+    <small class="has-text-grey">Uploaded {{.CreatedAt.Format "Jan _2 2006 15:04:05"}}</small>
+    {{if .Views}}
+        <small class="has-text-grey is-size-7 ml-2">
+            <i class="fa fa-eye"></i>
+            {{.Views}}
+        </small>
+    {{end}}
+</div>
+<div class="mt-2">
+    {{if .Pinned}}
+    <span class="tag is-success is-light">
+        <span class="icon"><i class="fa fa-thumbtack"></i></span>
+        <span>Pinned</span>
+    </span>
+    {{end}}
+
+    {{if .Explicit}}
+    <span class="tag is-danger is-light">
+        <span class="icon"><i class="fa fa-fire"></i></span>
+        <span>Explicit</span>
+    </span>
+    {{end}}
+
+    {{if eq .Visibility "public"}}
+    <span class="tag is-info is-light">
+        <span class="icon"><i class="fa fa-eye"></i></span>
+        <span>
+            Public
+        </span>
+    </span>
+    {{else if eq .Visibility "friends"}}
+    <span class="tag is-warning is-light">
+        <span class="icon"><i class="fa fa-user-group"></i></span>
+        <span>
+            Friends
+        </span>
+    </span>
+    {{else}}
+    <span class="tag is-private is-light">
+        <span class="icon"><i class="fa fa-lock"></i></span>
+        <span>
+            Private
+        </span>
+    </span>
+    {{end}}
+
+    {{if .Gallery}}
+    <span class="tag is-success is-light">
+        <span class="icon"><i class="fa fa-image"></i></span>
+        <span>Gallery</span>
+    </span>
+    {{end}}
+</div>
+{{end}}
+
+<!-- Reusable card footer -->
+{{define "card-footer"}}
+    <label class="card-footer-item checkbox">
+        <input type="checkbox" class="gosocial-edit-photo-id"
+            name="id"
+            value="{{.ID}}">
+    </label>
+    <a class="card-footer-item" href="/photo/edit?id={{.ID}}">
+        <span class="icon"><i class="fa fa-edit"></i></span>
+        <span>Edit</span>
+    </a>
+    <a class="card-footer-item has-text-danger" href="/photo/delete?id={{.ID}}">
+        <span class="icon"><i class="fa fa-trash"></i></span>
+        <span>Delete</span>
+    </a>
+{{end}}
+
+<!-- Reusable "mute site gallery" component -->
+<!-- Parameter: the photo owner User object -->
+{{define "mute-site-gallery"}}
+    <div class="has-text-centered">
+        <a href="/users/mutelist/add?username={{.User.Username}}&context=site_gallery&next={{.Request.URL.String}}" class="has-text-grey is-size-7">
+            <i class="fa fa-eye-slash"></i>
+            Don't show {{.User.Username}}'s photos
+        </a>
+    </div>
+{{end}}
+
+<!-- Main content template -->
+{{define "content"}}
+{{if not .IsSiteGallery}}
+    <style type="text/css">
+        {{template "profile-theme-hero-style" .ProfileTheme}}
+    </style>
+{{end}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <div class="level">
+                    <div class="level-left">
+                        <div>
+                            <h1 class="title">
+                                <span class="icon mr-4"><i class="fa fa-image"></i></span>
+                                <span>{{template "title" .}}</span>
+                            </h1>
+
+                            <!-- Site Gallery subtitles -->
+                            {{if .IsSiteGallery}}
+                                <h2 class="subtitle">
+                                    {{if eq .Sort "random"}}
+                                        Random photos
+                                    {{else}}
+                                        Photos
+                                    {{end}}
+
+                                    {{if eq .FilterWho "everybody"}}
+                                        of the members of {{.Title}}.
+                                    {{else if or (eq .FilterWho "friends") (eq .FilterWho "friends+private")}}
+                                        of me and my Friends.
+                                    {{else if eq .FilterWho "likes"}}
+                                        I have <i class="fa fa-heart"></i> Liked.
+                                    {{else if eq .FilterWho "uncertified"}}
+                                        non-certified members.
+                                    {{end}}
+                                </h2>
+                            {{end}}
+                        </div>
+                    </div>
+                    {{if or .IsOwnPhotos .IsSiteGallery}}
+                    <div class="level-right">
+                        <div>
+                            <a href="/photo/upload" class="button">
+                                <span class="icon"><i class="fa fa-upload"></i></span>
+                                <span>Upload Photo</span>
+                            </a>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ugly hack.. needed by the card-footers later below. -->
+    {{$Root := .}}
+
+    <div class="block p-4">
+
+        <!-- Tabs Row -->
+        {{if not .IsSiteGallery}}
+            <!-- Profile Tab for user view -->
+            {{template "profile-tabs" .}}
+        {{end}}
+
+        <!-- Photo Detail Modal -->
+        <div class="modal gosocial-important-modal" id="detail-modal">
+            <div class="modal-background"></div>
+            <div class="modal-content photo-modal">
+                <!-- Notes: to get the image to always scale and fit on screen, it is made as a background image in CSS
+                     on the detailImg div; but we don't have the image's minimum size here, so the hidden <img> inside
+                     provides the size pushing to make it visible on screen, otherwise the divs are 0x0 pixels and nothing
+                     would be visible. -->
+                <div id="detailImg">
+                    <img style="visibility: hidden">
+                    <video autoplay loop controlsList="nodownload" playsinline style="visibility: hidden"></video>
+
+                    <div class="bottom-left">
+
+                        <!-- Likes -->
+                        <button class="button is-small py-1 px-2" id="detail-likes">
+                            <i class="fa fa-heart mr-2"></i>
+                            Like
+                        </button>
+
+                        <!-- Comments -->
+                        <a href="#" class="button is-small py-1 px-2" id="detail-comments">
+                            <i class="fa fa-comment mr-2"></i>
+                            <span id="detail-comment-count">&nbsp;</span>
+                        </a>
+                    </div>
+
+                    <div class="bottom-right">
+                        <!-- Alt Text button for accessibility -->
+                        <button class="button is-small py-1 px-2" id="detail-alt-text">
+                            <strong>ALT</strong>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+
+            <!-- Custom navigation panels for photo detail modal -->
+            <div class="gosocial-modal-left-arrow">
+                <button type="button" class="fa fa-arrow-left is-size-4 px-4 py-4" id="detail-left-arrow"></button>
+            </div>
+            <div class="gosocial-modal-right-arrow">
+                <button type="button" class="fa fa-arrow-right is-size-4 px-4 py-4" id="detail-right-arrow"></button>
+            </div>
+        </div>
+
+        <!-- Notice if the current user can not see the user's default profile picture -->
+        {{if .ProfilePictureHiddenVisibility}}
+        <div class="block">
+            <i class="fa fa-info-circle mr-1"></i>
+            <strong>Notice:</strong>
+            @{{.User.Username}}'s default profile picture is set to
+            {{if eq .ProfilePictureHiddenVisibility "friends"}}
+                <img src="/static/img/shy-friends.png" width="16" height="16">
+                <strong class="has-text-warning">Friends only</strong>
+            {{else}}
+                <img src="/static/img/shy-private.png" width="16" height="16">
+                <strong class="has-text-private">Private</strong>
+            {{end}}
+            visibility and can not be seen by you.
+            <a href="/faq#private-avatar" target="_blank">Learn more <i class="fa fa-external-link"></i></a>
+        </div>
+        {{end}}
+
+        <div class="block">
+            {{if not .IsAlbumListView}}
+            <div class="level mb-2">
+                <div class="level-left">
+                    <div class="level-item">
+                        {{if .Pager.Total}}
+                        <span>
+                            Found <strong>{{FormatNumberCommas .Pager.Total}}</strong> {{if eq .Sort "random"}}random{{end}} photo{{Pluralize64 .Pager.Total}} (page {{FormatNumberCommas .Pager.Page}} of {{FormatNumberCommas .Pager.Pages}}).
+                            {{if and IsFeatureFlagExplicitEnabled .ExplicitCount}}
+                                {{.ExplicitCount}} explicit photo{{Pluralize64 .ExplicitCount}} hidden per your <a href="/settings/prefs">settings</a>.
+                            {{end}}
+                        </span>
+                        {{else if and IsFeatureFlagExplicitEnabled .ExplicitCount}}
+                        <!-- No pager, but still show explicit hint, e.g. in case user filters by Private but all privates are explicit -->
+                        <span>
+                            <i class="fa fa-fire has-text-danger mr-1"></i>
+                            {{.ExplicitCount}} explicit photo{{Pluralize64 .ExplicitCount}} hidden per your <a href="/settings/prefs">settings</a>.
+                        </span>
+                        {{end}}
+                    </div>
+                </div>
+
+                <div class="level-right">
+                    <div class="level-item">
+                        <div class="tabs is-toggle is-small is-hidden-mobile">
+                            <ul>
+                                <li{{if eq .ViewStyle "cards"}} class="is-active"{{end}}>
+                                    <a href="{{.Request.URL.Path}}?{{QueryPlus "view" "cards"}}">Cards</a>
+                                </li>
+                                <li{{if eq .ViewStyle "full"}} class="is-active"{{end}}>
+                                    <a href="{{.Request.URL.Path}}?{{QueryPlus "view" "full"}}">Full</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{end}}<!-- /not .IsAlbumListView -->
+
+            <!-- If viewing our own profile, and we don't have a profile picture set, offer advice. -->
+            {{if or (eq .Intent "profile_pic") (and (not .IsSiteGallery) (eq .CurrentUser.ProfilePhoto.ID 0) (eq .CurrentUser.ID .User.ID))}}
+            <div class="notification is-success is-light content">
+                <p>
+
+                    <!-- External link telling them how to set a profile pic? -->
+                    {{if eq .Intent "profile_pic"}}
+                        <i class="fa-regular fa-id-badge mr-1"></i>
+                        <strong>Updating your profile picture:</strong>
+
+                    <!-- They are here because their profile pic is unset.-->
+                    {{else}}
+                        <i class="fa-regular fa-id-badge mr-1"></i>
+                        <strong>Your default profile picture is not set</strong>
+
+                        <p>
+                            Your default profile picture is currently not set to anything, and appears to other members as
+                            the default blue <img src="/static/img/shy.png" width="16" height="16"> placeholder image.
+                        </p>
+                    {{end}}
+
+                    <ul>
+                        <li>
+                            To upload a <strong>new</strong> profile picture, <a href="/photo/upload?intent=profile_pic">click here</a>.
+                        </li>
+                        <li>
+                            To use one of your <strong>existing</strong> photos as your profile picture:
+                            <ol class="my-2">
+                                <li>
+                                    Click on the "Edit" button beneath one of your photos below.
+                                </li>
+                                <li>
+                                    On the edit page, below the picture, click on the button to "Set this as my profile photo (crop image)"
+                                    and select the square shape you want for your profile pic.
+                                </li>
+                                <li>
+                                    Click on "Save Changes" when done!
+                                </li>
+                            </ol>
+                        </li>
+                    </ul>
+                </p>
+            </div>
+            {{end}}
+
+            <!-- Indicator if friends-only is selected. -->
+            {{if eq .FilterWho "friends"}}
+            <div class="notification is-success is-light">
+                Showing you all recent photos from <strong>yourself &amp; your friends.</strong>
+                <a href="{{.Request.URL.Path}}?who=everybody">See all certified members' gallery photos?</a>
+            </div>
+            {{else if eq .FilterWho "friends+private"}}
+            <div class="notification is-success is-light">
+                Showing you all recent photos from <strong>yourself &amp; your friends</strong> as well
+                as any <strong>private photos shared with you</strong> by others on the site (if they are
+                marked to appear in the Site Gallery).
+            </div>
+            {{else if eq .FilterWho "likes"}}
+            <div class="notification is-success is-light">
+                Showing you photos that you have <i class="fa fa-heart"></i> <strong>Liked.</strong>
+            </div>
+            {{end}}
+
+            <!-- User Photo Albums widget -->
+            {{if .PhotoAlbum}}
+                <div class="block">
+                    <i class="fa fa-images mr-2"></i>
+                    <strong>
+                        In Album:
+                        <a href="/u/{{.User.Username}}/album/{{.PhotoAlbum.Fragment}}">
+                            {{.PhotoAlbum.Title}}
+                            {{if .PhotoAlbum.Pinned}}<sup class="fa fa-thumbtack has-text-success is-size-7"></sup>{{end}}
+                        </a>
+                    </strong>
+
+                    <!-- Edit button -->
+                    {{if .IsOwnPhotos}}
+                    <div class="mt-3">
+                        <a href="/photo/album/edit?id={{.PhotoAlbum.ID}}" class="button is-info is-small is-outlined">
+                            <i class="fa fa-gear mr-2"></i>
+                            Album Settings
+                        </a>
+                    </div>
+                    {{end}}
+                </div>
+
+                <!-- Album description? -->
+                {{if .PhotoAlbum.Description}}
+                    <div class="box">
+                        <div class="content">
+                            <p>
+                                <strong><em>Album Description:</em></strong>
+                            </p>
+                            {{ToMarkdown .PhotoAlbum.Description}}
+                        </div>
+                    </div>
+                {{end}}
+            {{else if .PhotoAlbums}}
+            <div class="block">
+                <label class="label">
+                    <i class="fa fa-images mr-2"></i>
+                    Photo Albums
+                </label>
+
+                <!-- Show album pager if we are looking at the Albums List view. -->
+                {{if .IsAlbumListView}}
+                    <div class="block mt-4">
+                        Found {{.PhotoAlbumPager.Total}} photo album{{Pluralize64 .PhotoAlbumPager.Total}}
+                        (page {{.PhotoAlbumPager.Page}} of {{.PhotoAlbumPager.Pages}})
+                    </div>
+                    {{SimplePager .PhotoAlbumPager}}
+                {{end}}
+
+                <!-- On the main User Gallery page: only show this list on Page 1 to be respectful -->
+                <!-- for mobile devices and not needing to scroll the page so far down when paging thru. -->
+                {{if or .IsAlbumListView (eq .Pager.Page 1)}}
+                <div class="columns is-multiline mt-2 mb-5">
+                    {{range .PhotoAlbums}}
+                    <div class="column is-one-third">
+                        <div class="card">
+                            <div class="card-content">
+
+                                <div class="media">
+                                    <div class="media-left">
+                                        <a href="/u/{{$Root.User.Username}}/album/{{.Fragment}}">
+                                            <figure class="image is-48x48 is-square is-inline-block is-clipped">
+                                                {{if .CoverPhoto.ID}}
+                                                    {{if ne .CoverPhoto.Status "approved"}}
+                                                        <img src="/static/img/shy-private.png">
+                                                    {{else if and (eq .CoverPhoto.Visibility "private") (not $Root.User.UserRelationship.IsPrivateGranted)}}
+                                                        <img src="/static/img/shy-private.png">
+                                                    {{else if and (eq .CoverPhoto.Visibility "friends") (not $Root.User.UserRelationship.IsFriend)}}
+                                                        <img src="/static/img/shy-friends.png">
+                                                    {{else if and .CoverPhoto.Explicit (not $Root.User.UserRelationship.IsExplicitSeen)}}
+                                                        <img src="/static/img/shy-explicit.png">
+                                                    {{else}}
+                                                        <img src="{{PhotoURL .CoverPhoto.Filename}}" {{if BlurExplicit .CoverPhoto}}class="blurred-explicit blurred-slightly"{{end}}>
+                                                    {{end}}
+                                                {{else}}
+                                                <img src="/static/img/shy.png">
+                                                {{end}}
+                                            </figure>
+                                        </a>
+                                    </div>
+                                    <div class="media-content">
+                                        <p class="title is-5">
+                                            <a href="/u/{{$Root.User.Username}}/album/{{.Fragment}}">
+                                                {{.Title}}
+                                                {{if .Pinned}}<sup class="fa fa-thumbtack has-text-success is-size-7"></sup>{{end}}
+                                            </a>
+                                        </p>
+                                        <p class="subtitle is-7 mt-1">
+                                            {{$Count := $Root.AlbumCountMap.Get .ID}}
+                                            {{$Count}} photo{{Pluralize64 $Count}}.
+                                        </p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+
+                {{if .IsAlbumListView}}
+                    {{SimplePager .PhotoAlbumPager}}
+                {{else}}
+                    <p>
+                        <a href="/u/{{.User.Username}}/albums">See all ({{.PhotoAlbumPager.Total}}) album{{Pluralize64 .PhotoAlbumPager.Total}}</a>
+                    </p>
+                {{end}}
+            </div>
+            {{end}}
+
+            <!-- Quick Filters -->
+            {{if or .PhotoInsights .IsSiteGallery .PhotoAlbum}}
+                <div class="block">
+                    <label class="label">Quick Filters</label>
+                    <div class="columns is-mobile is-multiline is-gapless">
+
+                        {{if .PhotoAlbum}}
+                        <div class="column is-narrow mx-1 mb-2">
+                            <a href="/u/{{.User.Username}}/photos?{{QueryPlus "" ""}}"
+                                class="tag is-success">
+                                <i class="fa fa-images mr-1"></i>
+                                {{.PhotoAlbum.Title}}
+                                <i class="fa fa-xmark ml-1"></i>
+                            </a>
+                        </div>
+                        {{end}}
+
+                        {{if eq .FilterVisibility "public"}}
+                        <div class="column is-narrow mx-1 mb-2">
+                            <a href="{{.Request.URL.Path}}?{{QueryPlus "visibility" ""}}"
+                                class="tag is-info">
+                                <i class="fa fa-eye mr-1"></i>
+                                Public
+                                {{if .PhotoInsights.PublicCount}}({{.PhotoInsights.PublicCount}}){{end}}
+                            </a>
+                        </div>
+                        {{else}}
+                        <div class="column is-narrow mx-1 mb-2">
+                            <a href="{{.Request.URL.Path}}?{{QueryPlus "visibility" "public"}}"
+                                class="tag">
+                                <i class="fa fa-eye mr-1 has-text-info"></i>
+                                Public
+                                {{if .PhotoInsights.PublicCount}}({{.PhotoInsights.PublicCount}}){{end}}
+                            </a>
+                        </div>
+                        {{end}}
+
+                        {{if or .IsSiteGallery .PhotoInsights.FriendsOnlyCount}}
+                            {{if eq .FilterVisibility "friends"}}
+                            <div class="column is-narrow mx-1 mb-2">
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "visibility" ""}}"
+                                    class="tag is-warning">
+                                    <i class="fa fa-user-group mr-1"></i>
+                                    Friends
+                                    {{if .PhotoInsights.FriendsOnlyCount}}({{.PhotoInsights.FriendsOnlyCount}}){{end}}
+                                </a>
+                            </div>
+                            {{else}}
+                            <div class="column is-narrow mx-1 mb-2">
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "visibility" "friends"}}"
+                                    class="tag">
+                                    <i class="fa fa-user-group mr-1 has-text-warning"></i>
+                                    Friends
+                                    {{if .PhotoInsights.FriendsOnlyCount}}({{.PhotoInsights.FriendsOnlyCount}}){{end}}
+                                </a>
+                            </div>
+                            {{end}}
+                        {{end}}
+
+                        {{if or .IsSiteGallery .PhotoInsights.PrivateCount}}
+                            {{if eq .FilterVisibility "private"}}
+                            <div class="column is-narrow mx-1 mb-2">
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "visibility" ""}}"
+                                    class="tag is-private">
+                                    <i class="fa fa-lock mr-1"></i>
+                                    Private
+                                    {{if .PhotoInsights.PrivateCount}}({{.PhotoInsights.PrivateCount}}){{end}}
+                                </a>
+                            </div>
+                            {{else}}
+                            <div class="column is-narrow mx-1 mb-2">
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "visibility" "private"}}"
+                                    class="tag">
+                                    <i class="fa fa-lock mr-1 has-text-private"></i>
+                                    Private
+                                    {{if .PhotoInsights.PrivateCount}}({{.PhotoInsights.PrivateCount}}){{end}}
+                                </a>
+                            </div>
+                            {{end}}
+                        {{end}}
+
+                        {{if and IsFeatureFlagExplicitEnabled (or .CurrentUser.Explicit .IsOwnPhotos) (or .IsSiteGallery .PhotoInsights.ExplicitCount)}}
+                        <div class="column is-narrow mx-1 mb-2">
+                            {{if eq .FilterExplicit "true"}}
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "explicit" "false"}}"
+                                    class="tag is-danger">
+                                    <i class="fa fa-fire mr-1"></i>
+                                    Explicit
+                                    {{if .PhotoInsights.ExplicitCount}}({{.PhotoInsights.ExplicitCount}}){{end}}
+                                </a>
+                            {{else if eq .FilterExplicit "false"}}
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "explicit" ""}}"
+                                    class="tag is-info">
+                                    <i class="fa fa-fire-flame-simple mr-1"></i>
+                                    Explicit
+                                    {{if .PhotoInsights.ExplicitCount}}({{.PhotoInsights.ExplicitCount}}){{end}}
+                                </a>
+                            {{else}}
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "explicit" "true"}}"
+                                    class="tag">
+                                    <i class="fa fa-fire mr-1 has-text-danger"></i>
+                                    Explicit
+                                    {{if .PhotoInsights.ExplicitCount}}({{.PhotoInsights.ExplicitCount}}){{end}}
+                                </a>
+                            {{end}}
+                        </div>
+                        {{end}}
+
+                        {{if or .IsSiteGallery .PhotoInsights.GifCount}}
+                        <div class="column is-narrow mx-1 mb-2">
+                            {{if eq .FilterGIF "true"}}
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "gif" ""}}"
+                                    class="tag is-success">
+                                    <i class="fa fa-video mr-1"></i>
+                                    GIFs
+                                    {{if .PhotoInsights.GifCount}}({{.PhotoInsights.GifCount}}){{end}}
+                                </a>
+                            {{else}}
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "gif" "true"}}"
+                                    class="tag">
+                                    <i class="fa fa-video mr-1 has-text-success"></i>
+                                    GIFs
+                                    {{if .PhotoInsights.GifCount}}({{.PhotoInsights.GifCount}}){{end}}
+                                </a>
+                            {{end}}
+                        </div>
+                        {{end}}
+
+                        {{if .IsSiteGallery}}
+                        <div class="column is-narrow mx-1 mb-2">
+                            {{if .FilterTagged}}
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "tagged" ""}}"
+                                    class="tag is-info">
+                                    <i class="fa fa-tag mr-1"></i>
+                                    I'm Tagged
+                                </a>
+                            {{else}}
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "tagged" "true"}}"
+                                    class="tag">
+                                    <i class="fa fa-tag mr-1 has-text-info"></i>
+                                    I'm Tagged
+                                </a>
+                            {{end}}
+                        </div>
+                        {{end}}
+
+                        {{if .CurrentUser.HasAdminScope "social.moderator.photo"}}
+                            <div class="column is-narrow mx-1 mb-2">
+                                {{if .AdminView}}
+                                    <a href="{{.Request.URL.Path}}?{{QueryPlus "admin_view" ""}}"
+                                        class="tag is-danger">
+                                        <i class="fa fa-peace mr-1"></i>
+                                        Admin
+                                    </a>
+                                {{else}}
+                                    <a href="{{.Request.URL.Path}}?{{QueryPlus "admin_view" "true"}}"
+                                        class="tag">
+                                        <i class="fa fa-peace mr-1 has-text-danger"></i>
+                                        Admin
+                                    </a>
+                                {{end}}
+                            </div>
+                        {{end}}
+
+                        {{if or .FilterVisibility .FilterExplicit .FilterGIF .FilterTagged .AdminView}}
+                        <div class="column is-narrow mx-1 mb-2">
+                            <a href="{{.Request.URL.Path}}"
+                                class="tag is-grey">
+                                <i class="fa fa-xmark mr-1"></i>
+                                Clear
+                            </a>
+                        </div>
+                        {{end}}
+
+                    </div>
+                </div>
+            {{end}}
+
+            <!-- Filters -->
+            {{if not .IsAlbumListView}}
+            <div class="block">
+                <form action="{{.Request.URL.Path}}" method="GET">
+
+                <div class="card gosocial-collapsible-mobile">
+                    <header class="card-header has-background-link-light">
+                        <p class="card-header-title has-text-dark">
+                            <i class="fa fa-list mr-2"></i>
+                            Search Filters
+                        </p>
+                        <button class="card-header-icon" type="button">
+                            <span class="icon">
+                                <i class="fa fa-angle-up"></i>
+                            </span>
+                        </button>
+                    </header>
+                    <div class="card-content">
+                        <div class="columns is-multiline mb-0">
+
+                            <!-- Site Gallery: friends-only filter -->
+                            {{if .IsSiteGallery}}
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label" for="who">Whose photos:</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="who" name="who">
+                                            <option value="friends"{{if eq .FilterWho "friends"}} selected{{end}}>Myself &amp; friends only</option>
+                                            <option value="friends+private"{{if eq .FilterWho "friends+private"}} selected{{end}}>Myself, friends, &amp; private photo grants</option>
+                                            <option value="likes"{{if eq .FilterWho "likes"}} selected{{end}}>Photos I have 'liked'</option>
+                                            <option value="everybody"{{if eq .FilterWho "everybody"}} selected{{end}}>All certified members</option>
+                                            {{if .CurrentUser.HasAdminScope "social.moderator.photo"}}
+                                            <option value="uncertified"{{if eq .FilterWho "uncertified"}} selected{{end}}>☮ Non-certified members</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}
+
+                            {{if and IsFeatureFlagExplicitEnabled (or .CurrentUser.Explicit .IsOwnPhotos)}}
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label" for="explicit">Explicit:</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="explicit" name="explicit">
+                                            <option value="">Show all</option>
+                                            <option value="true"{{if eq .FilterExplicit "true"}} selected{{end}}>Only explicit</option>
+                                            <option value="false"{{if eq .FilterExplicit "false"}} selected{{end}}>Hide explicit</option>
+                                            {{if .CurrentUser.HasAdminScope "social.moderator.photo"}}
+                                            <option value="flagged"{{if eq .FilterExplicit "flagged"}} selected{{end}}>☮ Flagged Explicit</option>
+                                            <option value="non-explicit"{{if eq .FilterExplicit "non-explicit"}} selected{{end}}>☮ Labeled Non-Explicit</option>
+                                            <option value="force-explicit"{{if eq .FilterExplicit "force-explicit"}} selected{{end}}>☮ Labeled Force-Explicit</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}
+
+                            {{if or .IsSiteGallery (and .PhotoInsights .PhotoInsights.GifCount)}}
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label" for="gif">GIFs:</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="gif" name="gif">
+                                            <option value="">Show all photos</option>
+                                            <option value="true"{{if eq .FilterGIF "true"}} selected{{end}}>Only show GIFs</option>
+                                            <option value="false"{{if eq .FilterGIF "false"}} selected{{end}}>Only still photos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}
+
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label" for="visibility">Visibility:</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="visibility" name="visibility">
+                                            <option value="">All photos</option>
+                                            <option value="public"{{if eq .FilterVisibility "public"}} selected{{end}}>Public only</option>
+
+                                            <!-- Friends & Private: always show on Site Gallery, show if available on User Gallery -->
+                                            {{if or .IsSiteGallery .AreFriends .IsOwnPhotos}}
+                                            <option value="friends"{{if eq .FilterVisibility "friends"}} selected{{end}}>Friends only</option>
+                                            {{end}}
+                                            {{if or .IsSiteGallery .AreWeGrantedPrivate .IsOwnPhotos}}
+                                            <option value="private"{{if eq .FilterVisibility "private"}} selected{{end}}>Private only</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label" for="sort">Sort by:</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="sort" name="sort">
+                                            <optgroup label="Photo Upload Date">
+                                                {{if not .IsSiteGallery}}
+                                                <option value="pinned desc nulls last, updated_at desc"{{if eq .Sort "pinned desc nulls last, updated_at desc"}} selected{{end}}>
+                                                    Pinned, recently updated
+                                                </option>
+                                                {{end}}
+                                                <option value="created_at desc"{{if eq .Sort "created_at desc"}} selected{{end}}>Most recent</option>
+                                                <option value="created_at asc"{{if eq .Sort "created_at asc"}} selected{{end}}>Oldest first</option>
+                                                <option value="random"{{if eq .Sort "random"}} selected{{end}}>Random</option>
+                                            </optgroup>
+                                            <optgroup label="Interactions">
+                                                <option value="like_count desc"{{if eq .Sort "like_count desc"}} selected{{end}}>Most likes</option>
+                                                <option value="comment_count desc"{{if eq .Sort "comment_count desc"}} selected{{end}}>Most comments</option>
+                                                <option value="views desc"{{if eq .Sort "views desc"}} selected{{end}}>Most views</option>
+                                                <option value="recently_commented"{{if eq .Sort "recently_commented"}} selected{{end}}>Recently commented</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{if and .IsSiteGallery (.CurrentUser.HasAdminScope "social.moderator.photo")}}
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label has-text-danger" for="admin_view">Admin view:</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="admin_view" name="admin_view">
+                                            <option value="">Default (disabled)</option>
+                                            <option value="true"{{if .AdminView}} selected{{end}}>Show all photos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            {{end}}
+
+                        </div>
+                        <div class="has-text-centered">
+                            <a href="{{.Request.URL.Path}}" class="button">Reset</a>
+                            <button type="submit" class="button is-primary">
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Retain cards vs. full parameter -->
+                <input type="hidden" name="view" value="{{.ViewStyle}}">
+
+                </form>
+            </div>
+            {{end}}<!-- /not .IsAlbumListView -->
+
+            {{if .IsOwnPhotos}}
+            <div class="block">
+                <a href="/photo/private" class="has-text-private">
+                    <span class="icon"><i class="fa fa-lock"></i></span>
+                    <span>Manage who can see <strong>my</strong> private photos</span>
+                </a>
+            </div>
+            {{else if not .IsSiteGallery}}
+                <!-- Private photo unlock/status prompt for this other user. -->
+                {{if .IsMyPrivateUnlockedFor}}
+                    <div class="block">
+                        <span class="icon"><i class="fa fa-unlock has-text-private"></i></span>
+                        <span>You had granted <strong>{{.User.Username}}</strong> access to see <strong>your</strong> private photos.</span>
+                        <a href="/photo/private">Manage that here.</a>
+                    </div>
+                {{else if .ShowPrivateUnlockPrompt}}
+                    <div class="block">
+                        <a href="/photo/private/share?to={{.User.Username}}" class="has-text-private">
+                            <span class="icon"><i class="fa fa-unlock"></i></span>
+                            <span>Grant <strong>{{.User.Username}}</strong> access to see <strong>my</strong> private photos and blogs</span>
+                        </a>
+                    </div>
+                {{end}}
+            {{end}}
+
+            {{if .AreWeGrantedPrivate}}
+            <div class="block mt-0">
+                <span class="icon"><i class="fa fa-eye has-text-private"></i></span>
+                <strong>{{.User.Username}}</strong> has <span class="has-text-private">granted</span> you
+                access to see their private photos.
+            </div>
+            {{end}}
+
+            <!-- Pager, with randomize support -->
+            {{if eq .Sort "random"}}
+                <div class="mb-4">
+                    <div class="columns is-mobile">
+                        <div class="column">
+                            <nav class="pagination is-small" role="navigation" aria-label="pagination">
+                                <ul class="pagination-list">
+                                    <li>
+                                        <a href="#" onclick="window.location = window.location; return false" class="pagination-link is-current">
+                                            <i class="fa fa-arrows-rotate mr-2"></i> Randomize
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                        <div class="column is-narrow">
+                            <a href="#" onclick="window.location = window.location; return false" class="button is-small">
+                                Next page
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {{else if .Pager}}
+                {{SimplePager .Pager}}
+            {{end}}
+
+            <!-- Temp notice (Feb 4 25) about change to webp images. -->
+            {{if IsSafeMode}}
+            <div class="block">
+                <strong class="has-text-success">
+                    <i class="fa fa-shield-heart mr-1"></i>
+                    Safe Mode is enabled:
+                </strong>
+                All photos on the site will be blurred until clicked.
+                <a href="/settings/safe-mode?next={{.RequestFullURIEscaped}}">Disable Safe Mode?</a>
+            </div>
+            {{else}}
+            <div class="block">
+                <strong class="has-text-danger">
+                    <i class="fa fa-info-circle mr-1"></i>
+                    Attention:
+                </strong>
+                If most of the photos on this page are broken, you may need to update your web browser.
+                <a href="/faq#webp" target="_blank">More info here. <sup class="fa fa-external-link is-size-7"></sup></a>
+            </div>
+            {{end}}
+
+            <!-- Form to wrap the gallery, e.g. for batch edits on user views. -->
+            <form action="/photo/batch-edit">
+
+            <!-- "Full" view style? (blog style) -->
+            {{if eq .ViewStyle "full"}}
+                {{range .Photos}}
+                <div class="card block">
+                    <header class="card-header {{if .Explicit}}has-background-danger{{else}}has-background-link{{end}}">
+                        <!-- Site Gallery header -->
+                        {{if $Root.IsSiteGallery}}
+                        <div class="card-header-title has-text-light">
+                            {{if $Root.UserMap.Has .UserID}}
+                                {{$Owner := $Root.UserMap.Get .UserID}}
+                                <div class="columns is-mobile is-gapless gosocial-fullwidth">
+                                    <div class="column is-narrow mr-2">
+                                        {{template "avatar-24x24" $Owner}}
+                                    </div>
+                                    <div class="column">
+                                        <a href="/u/{{$Owner.Username}}" class="has-text-light">
+                                            {{$Owner.Username}}
+                                            <sup class="fa fa-external-link is-size-7"></sup>
+                                        </a>
+                                    </div>
+                                    <div class="column is-narrow">
+                                        <span class="icon">
+                                            {{if eq .Visibility "friends"}}
+                                                <i class="fa fa-user-group has-text-warning" title="Friends"></i>
+                                            {{else if eq .Visibility "private"}}
+                                                <i class="fa fa-lock has-text-private-light" title="Private"></i>
+                                            {{else}}
+                                                <i class="fa fa-eye has-text-link-light" title="Public"></i>
+                                            {{end}}
+                                        </span>
+                                    </div>
+                                </div>
+                            {{else}}
+                                <span class="fa fa-user mr-2"></span>
+                                <span>[deleted]</span>
+                            {{end}}
+                        </div>
+                        {{else}}
+                        <!-- User Gallery Full Header -->
+                        <p class="card-header-title has-text-light">
+                            <span class="icon">
+                                <i class="fa fa-image"></i>
+                            </span>
+                            {{or .Caption "Photo"}}
+                        </p>
+                        {{end}}
+                    </header>
+
+                    <div class="card-image has-text-centered is-clipped">
+                        <!-- GIF video? -->
+                        {{if HasSuffix .Filename ".mp4"}}
+                        <video loop controls controlsList="nodownload" playsinline
+                            class="js-modal-trigger{{if BlurExplicit .}} blurred-explicit{{end}}"
+                            data-url="{{PhotoURL .Filename}}" data-photo-id="{{.ID}}"
+                            {{if .AltText}}title="{{.AltText}}"{{end}}
+                            {{if and (not (BlurExplicit .)) (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay{{end}}
+                            >
+                            <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                        </video>
+                        {{else}}
+                        <a href="/photo/view?id={{.ID}}" data-url="{{PhotoURL .Filename}}" data-photo-id="{{.ID}}" target="_blank"
+                            class="js-modal-trigger">
+                            <img src="{{PhotoURL .Filename}}" loading="lazy"
+                                {{if BlurExplicit .}}class="blurred-explicit"{{end}}
+                                {{if .AltText}}alt="{{.AltText}}" title="{{.AltText}}"{{end}}>
+                        </a>
+                        {{end}}
+
+                        <!-- Alt Text indicator -->
+                        {{if .AltText}}
+                            <span class="alt-text" onclick="modalAlert({title: 'Alt Text', message: '{{.AltText}}'}); return false">ALT</span>
+                        {{end}}
+                    </div>
+
+                    <div class="card-content">
+
+                        {{if .Caption}}
+                            {{.Caption}}
+                        {{else}}<em>No caption</em>{{end}}
+
+                        {{template "card-body" .}}
+
+                        <!-- Like & Comments buttons -->
+                        {{if not $Root.AdminView}}
+                        <div class="mt-4 mb-2 columns is-centered is-mobile is-gapless">
+                            <div class="column is-narrow mr-1">
+                                {{$Like := $Root.LikeMap.Get .ID}}
+                                <button type="button" class="button is-small gosocial-like-button"
+                                    data-table-name="photos" data-table-id="{{.ID}}"
+                                    title="Like">
+                                    <span class="icon{{if $Like.UserLikes}} has-text-danger{{end}}"><i class="fa fa-heart"></i></span>
+                                    <span class="gosocial-likes">
+                                        Like
+                                        {{if gt $Like.Count 0}}
+                                            ({{$Like.Count}})
+                                        {{end}}
+                                    </span>
+                                </button>
+                            </div>
+                            <div class="column is-narrow">
+                                {{$Comments := $Root.CommentMap.Get .ID}}
+                                <a href="/photo/view?id={{.ID}}#comments" class="button is-small">
+                                    <span class="icon"><i class="fa fa-comment"></i></span>
+                                    <span>{{$Comments}} Comment{{Pluralize64 $Comments}}</span>
+                                </a>
+                            </div>
+                        </div>
+                        {{end}}
+
+                        <!-- Mute this user from Site Gallery -->
+                        {{if and $Root.IsSiteGallery (ne $Root.CurrentUser.ID .UserID) ($Root.UserMap.Has .UserID)}}
+                            {{$Owner := $Root.UserMap.Get .UserID}}
+                            {{$SubVariables := NewHashMap "User" $Owner "Request" $Root.Request}}
+                            {{template "mute-site-gallery" $SubVariables}}
+                        {{end}}
+                    </div>
+
+                    <footer class="card-footer">
+                        {{if or $Root.IsOwnPhotos ($Root.CurrentUser.HasAdminScope "social.moderator.photo")}}
+                        {{template "card-footer" .}}
+                        {{end}}
+
+                        {{if not $Root.IsOwnPhotos}}
+                        <a class="card-footer-item has-text-danger" href="/contact?intent=report&subject=report.photo&id={{.ID}}">
+                            <span class="icon"><i class="fa fa-flag"></i></span>
+                            <span>Report</span>
+                        </a>
+                        {{end}}
+                    </footer>
+
+                </div>
+                {{end}}
+
+            <!-- "Cards" style (default) -->
+            {{else}}
+                <div class="columns is-multiline">
+                    {{range .Photos}}
+                    <div class="column is-one-quarter-desktop is-half-tablet">
+                        <div class="card">
+                            <!-- Header only on Site Gallery version -->
+                            {{if $Root.IsSiteGallery}}
+                            <header class="card-header {{if .Explicit}}has-background-danger{{else}}has-background-link{{end}}">
+                                <div class="card-header-title has-text-light">
+                                    {{if $Root.UserMap.Has .UserID}}
+                                        {{$Owner := $Root.UserMap.Get .UserID}}
+                                        <div class="columns is-mobile is-gapless gosocial-fullwidth">
+                                            <div class="column is-narrow mr-2">
+                                                {{template "avatar-24x24" $Owner}}
+                                            </div>
+                                            <div class="column">
+                                                <a href="/u/{{$Owner.Username}}" class="has-text-light">
+                                                    {{$Owner.Username}}
+                                                    <sup class="fa fa-external-link is-size-7"></sup>
+                                                </a>
+                                            </div>
+                                            <div class="column is-narrow">
+                                                <span class="icon">
+                                                    {{if eq .Visibility "friends"}}
+                                                        <i class="fa fa-user-group has-text-warning" title="Friends"></i>
+                                                    {{else if eq .Visibility "private"}}
+                                                        <i class="fa fa-lock has-text-private-light" title="Private"></i>
+                                                    {{else}}
+                                                        <i class="fa fa-eye has-text-link-light" title="Public"></i>
+                                                    {{end}}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    {{else}}
+                                        <span class="fa fa-user mr-2"></span>
+                                        <span>[deleted]</span>
+                                    {{end}}
+                                </div>
+                            </header>
+                            {{end}}
+
+                            <div class="card-image has-text-centered is-clipped">
+                                <!-- GIF video? -->
+                                {{if HasSuffix .Filename ".mp4"}}
+                                <video loop controls controlsList="nodownload" playsinline
+                                    class="js-modal-trigger{{if BlurExplicit .}} blurred-explicit{{end}}"
+                                    data-url="{{PhotoURL .Filename}}" data-photo-id="{{.ID}}"
+                                    {{if .AltText}}title="{{.AltText}}"{{end}}
+                                    {{if and (not (BlurExplicit .)) (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay{{end}}
+                                    >
+                                    <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                                </video>
+                                {{else}}
+                                <a href="/photo/view?id={{.ID}}" data-url="{{PhotoURL .Filename}}" data-photo-id="{{.ID}}" target="_blank"
+                                    class="js-modal-trigger">
+                                    <img src="{{PhotoURL .Filename}}" loading="lazy"
+                                        {{if BlurExplicit .}}class="blurred-explicit"{{end}}
+                                        {{if .AltText}}alt="{{.AltText}}" title="{{.AltText}}"{{end}}>
+                                </a>
+                                {{end}}
+
+                                <!-- Alt Text indicator -->
+                                {{if .AltText}}
+                                    <span class="alt-text" onclick="modalAlert({title: 'Alt Text', message: '{{.AltText}}'}); return false">ALT</span>
+                                {{end}}
+                            </div>
+                            <div class="card-content">
+                                {{if .Caption}}
+                                    {{.Caption}}
+                                {{else}}<em>No caption</em>{{end}}
+
+                                {{template "card-body" .}}
+
+                                <!-- Like & Comments buttons -->
+                                {{if not $Root.AdminView}}
+                                <div class="mt-4 mb-2 columns is-centered is-mobile is-gapless">
+                                    <div class="column is-narrow mr-1">
+                                        {{$Like := $Root.LikeMap.Get .ID}}
+                                        <button type="button" class="button is-small gosocial-like-button"
+                                            data-table-name="photos" data-table-id="{{.ID}}"
+                                            title="Like">
+                                            <span class="icon{{if $Like.UserLikes}} has-text-danger{{end}}"><i class="fa fa-heart"></i></span>
+                                            <span class="gosocial-likes">
+                                                Like
+                                                {{if gt $Like.Count 0}}
+                                                    ({{$Like.Count}})
+                                                {{end}}
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <div class="column is-narrow">
+                                        {{$Comments := $Root.CommentMap.Get .ID}}
+                                        <a href="/photo/view?id={{.ID}}#comments" class="button is-small">
+                                            <span class="icon"><i class="fa fa-comment"></i></span>
+                                            <span>{{$Comments}} Comment{{Pluralize64 $Comments}}</span>
+                                        </a>
+                                    </div>
+                                </div>
+                                {{end}}
+
+                                <!-- Mute this user from Site Gallery -->
+                                {{if and $Root.IsSiteGallery (ne $Root.CurrentUser.ID .UserID) ($Root.UserMap.Has .UserID)}}
+                                    {{$Owner := $Root.UserMap.Get .UserID}}
+                                    {{$SubVariables := NewHashMap "User" $Owner "Request" $Root.Request}}
+                                    {{template "mute-site-gallery" $SubVariables}}
+                                {{end}}
+                            </div>
+
+                            <footer class="card-footer">
+                                {{if or $Root.IsOwnPhotos ($Root.CurrentUser.HasAdminScope "social.moderator.photo")}}
+                                {{template "card-footer" .}}
+                                {{end}}
+
+                                {{if not $Root.IsOwnPhotos}}
+                                <a class="card-footer-item has-text-danger" href="/contact?intent=report&subject=report.photo&id={{.ID}}">
+                                    <span class="icon"><i class="fa fa-flag"></i></span>
+                                    <span class="is-hidden-desktop">Report</span>
+                                </a>
+                                {{end}}
+                            </footer>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            {{end}}<!-- ViewStyle -->
+
+            <!-- Pager, with randomize support -->
+            {{if eq .Sort "random"}}
+                <div class="mb-4">
+                    <div class="columns is-mobile">
+                        <div class="column">
+                            <nav class="pagination is-small" role="navigation" aria-label="pagination">
+                                <ul class="pagination-list">
+                                    <li>
+                                        <a href="#" onclick="window.location = window.location; return false" class="pagination-link is-current">
+                                            <i class="fa fa-arrows-rotate mr-2"></i> Randomize
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                        <div class="column is-narrow">
+                            <a href="#" onclick="window.location = window.location; return false" class="button is-small">
+                                Next page
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {{else if .Pager}}
+                {{SimplePager .Pager}}
+            {{end}}
+
+            <!-- Bulk user actions to their photos -->
+            {{if and (not .IsAlbumListView) (or .IsOwnPhotos (.CurrentUser.HasAdminScope "social.moderator.photo"))}}
+            <hr>
+            <div class="columns is-multiline is-mobile my-4">
+                <div class="column is-narrow">
+                    <div class="buttons has-addons">
+                        <button type="button" class="button" id="gosocial-select-all">
+                            <i class="fa fa-square-check"></i>
+                        </button>
+                        <button type="button" class="button" id="gosocial-select-none">
+                            <i class="fa fa-square"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="column" id="gosocial-edit-buttons">
+                    <button type="submit" class="button is-small is-danger is-outlined mb-2"
+                        name="intent"
+                        value="delete">
+                        <i class="fa fa-trash mr-2"></i>
+                        Delete
+                    </button>
+
+                    <button type="submit" class="button mx-1 is-small is-info is-outlined mb-2"
+                        name="intent"
+                        value="visibility">
+                        <i class="fa fa-eye mr-2"></i>
+                        Edit Visibility
+                    </button>
+
+                    {{if and (not .IsSiteGallery) .IsOwnPhotos}}
+                        {{if .PhotoAlbum}}
+                            <input type="hidden" name="photo_album_id" value="{{.PhotoAlbum.ID}}">
+                        {{end}}
+                        <button type="submit" class="button mx-1 is-small is-info is-outlined mb-2"
+                            name="intent"
+                            value="album">
+                            <i class="fa fa-images mr-2"></i>
+                            {{if .PhotoAlbum}}
+                                Update
+                            {{else}}
+                                Add to
+                            {{end}}
+                            Album
+                        </button>
+                    {{end}}
+
+                    {{if .CurrentUser.HasAdminScope "content.approval"}}
+                    <button type="submit" class="button mx-1 is-small is-danger is-outlined mb-2"
+                        name="intent"
+                        value="approval">
+                        <i class="fa fa-peace mr-2"></i>
+                        Approval
+                    </button>
+                    {{end}}
+
+                    <span id="gosocial-count-selected" class="is-size-7 ml-2"></span>
+                </div>
+
+            </div>
+            {{end}}
+
+            </form><!-- end gallery form for batch edits -->
+        </div>
+
+        <!-- Admin change log link -->
+        {{if .CurrentUser.HasAdminScope "admin.changelog"}}
+        <div class="block">
+            <a href="/admin/changelog?table_name=photos{{if .User}}&about_user_id={{.User.ID}}{{end}}" class="button is-small has-text-warning">
+                <span class="icon"><i class="fa fa-peace mr-1"></i></span>
+                <span>{{if .User}}User{{else}}Site{{end}} Gallery change log</span>
+            </a>
+        </div>
+        {{end}}
+
+    </div>
+</div>
+
+<!-- Batch Edit controls -->
+{{if and (not .IsAlbumListView) (or .IsOwnPhotos (.CurrentUser.HasAdminScope "social.moderator.photo"))}}
+<script type="text/javascript" src="/static/js/photo-batch-select.js?build={{.BuildHash}}"></script>
+{{end}}
+
+<script type="text/javascript">
+
+    // Gallery data for fancy lightbox modal.
+    const PhotoGallery = {{PhotosToJSONForLightbox .Photos .CurrentUser .UserMap}};
+    const LikeMap = {{.LikeMap}};
+    const CommentMap = {{.CommentMap}};
+    const PreviousPage = {{if .Pager.HasPrevious}}"{{.Request.URL.Path}}?{{QueryPlus "page" .Pager.Previous}}"{{else}}null;{{end}}
+    const NextPage = {{if .Pager.HasNext}}"{{.Request.URL.Path}}?{{QueryPlus "page" .Pager.Next}}"{{else}}null;{{end}}
+    const IsSortedRandom = {{eq .Sort "random"}};
+    const OriginalURI = window.location.href;
+
+    // Lightbox modal controls.
+    // Main HTML, search for `id="detail-modal"`
+    document.addEventListener("DOMContentLoaded", () => {
+        // Get our modal to trigger it on click of a detail img.
+        let $modal = document.querySelector("#detail-modal"),
+            $altText = $modal.querySelector("#detail-alt-text"),
+            cls = "is-active";
+
+        // Fancy navigation widgets.
+        let $leftArrow = $modal.querySelector("#detail-left-arrow"),
+            $rightArrow = $modal.querySelector("#detail-right-arrow"),
+            $commentsButton = $modal.querySelector("#detail-comments"),
+            $commentsCount = $modal.querySelector("#detail-comment-count"),
+            $likeButton = $modal.querySelector("#detail-likes");
+
+        const isLightboxVisible = () => {
+            return $modal.classList.contains(cls);
+        };
+
+        // Central function to show/hide the lightbox, with the currently displayed photo ID.
+        // Updates the window history to the photo permalink URL, for easy copy/paste, and
+        // restores the original URL when closed.
+        const setLightboxVisible = (photoID, visible) => {
+            if (visible) {
+                $modal.classList.add(cls);
+                const nextURL = `/photo/view?id=${photoID}`;
+                history.replaceState(null, null, nextURL);
+            } else {
+                $modal.classList.remove(cls);
+                history.replaceState(null, null, OriginalURI);
+            }
+        };
+
+        // Set 'default' close actions for the modal (like bulma.js would have set up, but we want)
+        // to capture it to update history correctly.
+        ($modal.querySelectorAll(".modal-background, .modal-close, .photo-modal") || []).forEach(node => {
+            node.addEventListener("click", () => {
+                setLightboxVisible(null, false);
+            });
+        });
+
+        function setModalImage(photoID, url, altText) {
+            let $modalImg = document.querySelector("#detailImg"),
+                $img = $modalImg.getElementsByTagName("img")[0],
+                $video = $modalImg.getElementsByTagName("video")[0];
+
+            // Show the image, or video (GIFs)?
+            if (url.indexOf(".mp4") < 0) {
+                $img.src = url;
+                $modalImg.style.backgroundImage = `url(${url})`;
+
+                // Note: we set the video's width to 0px so it doesn't push on the hidden
+                // img, since both elements are visibility:hidden. We can't do display:none
+                // or else the video will display wrongly at first and then "jump" to center
+                // on the page properly.
+                $video.style.visibility = "hidden";
+                $video.style.width = "0px";
+            } else {
+                $img.src = "";
+                $modalImg.style.backgroundImage = null;
+
+                window.requestAnimationFrame(() => {
+                    $video.src = url;
+                    $video.style.visibility = null;
+                    $video.style.width = null;
+                    $video.play();
+                });
+            }
+
+            // Alt text?
+            $modalImg.title = altText;
+            $altText.style.display = altText ? "" : "none";
+            $altText.onclick = (e) => {
+                modalAlert({message: altText, title: "Alt Text"});
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+
+            // Arrow controls (fancy in-modal pagination)
+            setupFancyPagination(photoID);
+
+            // Log a view of this photo.
+            markImageViewed(photoID);
+
+            // Show the modal.
+            setLightboxVisible(photoID, true);
+            return false;
+        }
+
+        // Set up fancy pagination when the modal appears: find our
+        // photo's entry in the list to identify neighbors.
+        let _fancyOnKeydown = null;
+        let _fancyOnLike = null;
+        function setupFancyPagination(photoID) {
+            let idx = 0;
+            for (let i = 0; i < PhotoGallery.length; i++) {
+                const photo = PhotoGallery[i];
+                if (photo.ID === photoID) {
+                    idx = i;
+                    break;
+                }
+            }
+
+            // Connect the Comments button.
+            $commentsCount.innerHTML = `${CommentMap[photoID]} Comment${CommentMap[photoID] === 1 ? '' : 's'}`;
+            $commentsButton.href = `/photo/view?id=${photoID}`;
+
+            // Connect the Likes button.
+            setLikeButton(photoID);
+            _fancyOnLike = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Update the cached settings.
+                const pm = LikeMap[photoID],
+                    isLiking = !pm.UserLikes;
+                if (isLiking) {
+                    pm.Count++;
+                    pm.UserLikes = true;
+                } else {
+                    pm.Count--;
+                    pm.UserLikes = false;
+                    if (pm.Count <= 0) {
+                        pm.Count = 0;
+                    }
+                }
+
+                // Refresh the button's appearance.
+                setLikeButton(photoID);
+
+                // Post to backend.
+                window.gosocialV1Likes({
+                    tableName: "photos",
+                    tableID: photoID,
+                    liking: isLiking,
+                }).then(data => {
+                    LikeMap[photoID] = {
+                        Count: data.data.likes,
+                        UserLikes: isLiking,
+                    };
+                    setLikeButton(photoID);
+                });
+            };
+
+            // Find the next/prev photos.
+            const photo = PhotoGallery[idx];
+            const prevPhoto = idx > 0 ? PhotoGallery[idx-1] : null;
+            const nextPhoto = idx < PhotoGallery.length ? PhotoGallery[idx+1] : null;
+
+            // Hook our navigation keybinds.
+            _fancyOnKeydown = (e) => {
+                let goNext = 0; // -1, +1
+                switch (e.key) {
+                    case "ArrowRight":
+                    case "ArrowDown":
+                    case "PageDown":
+                        goNext++;
+                        break;
+                    case "ArrowLeft":
+                    case "ArrowUp":
+                    case "PageUp":
+                        goNext--;
+                        break;
+                }
+
+                if (goNext === 0) return;
+
+                let gotoPhoto = null,
+                    gotoPage = null;
+                if (goNext < 0) {
+                    gotoPhoto = prevPhoto;
+                    gotoPage = gotoPhoto ? null : (IsSortedRandom ? '@' : PreviousPage);
+                } else if (goNext > 0 && nextPhoto !== null) {
+                    gotoPhoto = nextPhoto;
+                    gotoPage = gotoPhoto ? null : (IsSortedRandom ? '@' : NextPage);
+                }
+
+                if (gotoPhoto) {
+                    setModalImage(gotoPhoto.ID, gotoPhoto.Filename, gotoPhoto.AltText);
+                } else if (gotoPage) {
+                    setLightboxVisible(null, false); // close lightbox
+
+                    // Tell next page where we're going.
+                    sessionStorage.photoGalleryLightboxLaunch = goNext;
+
+                    // Random page?
+                    if (IsSortedRandom) {
+                        window.location = window.location;
+                        return;
+                    }
+
+                    window.location = gotoPage;
+                }
+            }
+        }
+
+        // Automatic lightbox popup (fancy lightbox scrolling). If we have come from
+        // another gallery page via the lightbox, auto-open the appropriate one here.
+        if (sessionStorage.photoGalleryLightboxLaunch !== undefined) {
+            // Which photo index to load?
+            const idx = parseInt(sessionStorage.photoGalleryLightboxLaunch) < 0 ? PhotoGallery.length-1 : 0;
+
+            // Lightbox it.
+            const photo = PhotoGallery[idx];
+            if (photo != undefined) {
+                setModalImage(photo.ID, photo.Filename, photo.AltText);
+            }
+
+            // Clear the state.
+            delete sessionStorage.photoGalleryLightboxLaunch;
+        }
+
+        // "Like" button handler in the fancy lightbox.
+        $likeButton.addEventListener('click', (e) => {
+            if (_fancyOnLike !== null) {
+                _fancyOnLike(e);
+            }
+        });
+
+        // Arrow button bindings (fancy navigation UI).
+        $leftArrow.addEventListener('click', (e) => {
+            if (_fancyOnKeydown !== null) {
+                _fancyOnKeydown({ key: 'ArrowLeft' });
+            }
+        });
+        $rightArrow.addEventListener('click', (e) => {
+            if (_fancyOnKeydown !== null) {
+                _fancyOnKeydown({ key: 'ArrowRight' });
+            }
+        });
+
+        // Touch screen swipe gestures to paginate the fancy UI.
+        let touchStartX = 0,
+            touchEndX = 0;
+        const touchThreshold = 50;
+        document.addEventListener('touchstart', (e) => {
+            if (!isLightboxVisible()) return;
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        document.addEventListener('touchend', (e) => {
+            if (!isLightboxVisible()) return;
+            touchEndX = e.changedTouches[0].screenX;
+
+            let delta = Math.abs(touchEndX - touchStartX);
+            if (delta < touchThreshold) return;
+
+
+            if (touchEndX > touchStartX) {
+                _fancyOnKeydown({ key: 'ArrowLeft' });
+            } else if (touchEndX < touchStartX) {
+                _fancyOnKeydown({ key: 'ArrowRight' });
+            }
+        });
+
+        // Fancy modal: func to refresh the Like button
+        function setLikeButton (photoID) {
+            const likeCount = LikeMap[photoID].Count,
+                userLikes = LikeMap[photoID].UserLikes;
+
+            $likeButton.innerHTML = `
+                <i class="fa fa-heart${userLikes ? ' has-text-danger' : ''} mr-2"></i>
+                Like ${likeCount > 0 ? ` (${likeCount})` : ''}
+            `;
+        };
+
+        function markImageViewed(photoID) {
+            fetch(`/v1/photo/${photoID}/view`, {
+                method: "POST",
+                mode: "same-origin",
+                cache: "no-cache",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }).then(response => response.json())
+            .then(data => {
+                if (data.StatusCode !== 200) {
+                    console.error("When marking photo %d as viewed: status code %d: %s", photoID, data.StatusCode, data.data.error);
+                    return;
+                }
+            }).catch(console.error);
+        }
+
+        document.querySelectorAll(".js-modal-trigger").forEach(node => {
+            let $img = node.getElementsByTagName("img"),
+                $video = node.tagName === 'VIDEO' ? node : null,
+                photoID = parseInt(node.dataset.photoId),
+                altText = $img[0] != undefined ? $img[0].alt : '';
+
+            // Video (animated GIF) handlers.
+            if ($video !== null) {
+
+                // Log this video viewed if the user interacts with it in any way.
+                // Note: because videos don't open in the lightbox modal.
+                ['pause', 'mouseover'].forEach(event => {
+                    $video.addEventListener(event, (e) => {
+                        // Log a view of this video.
+                        markImageViewed(photoID);
+                    });
+                });
+
+                return;
+            }
+
+            // Images: open in the lightbox modal.
+            node.addEventListener("click", (e) => {
+                e.preventDefault();
+                setModalImage(photoID, node.dataset.url, altText);
+            });
+
+            // Images: count a mouseover as a view to be on par with videos, otherwise
+            // videos climb to the top of the most viewed list too quickly.
+            node.addEventListener("mouseover", (e) => {
+                markImageViewed(photoID);
+            });
+        });
+
+        // Key bindings to control the modal.
+        window.addEventListener('keydown', (e) => {
+            if (isLightboxVisible()) {
+                if (e.key == 'Escape') {
+                    setLightboxVisible(null, false);
+                }
+
+                // Fancy navigation keybinds.
+                if (_fancyOnKeydown !== null) {
+                    _fancyOnKeydown(e);
+                }
+            }
+        });
+    });
+</script>
+{{end}}

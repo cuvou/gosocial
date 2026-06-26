@@ -1,0 +1,408 @@
+{{define "title"}}
+    {{if .EditCommentID}}
+        Edit Comment
+    {{else if .Thread}}
+        Reply to Thread
+    {{else}}
+        New Forum Post
+    {{end}}
+{{end}}
+{{define "content"}}
+<div class="container" id="app">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    {{if .EditCommentID}}
+                        Edit comment on: {{or .Thread.Title "Untitled Thread"}}
+                    {{else if .Thread}}
+                        Reply to: {{or .Thread.Title "Untitled Thread"}}
+                    {{else}}
+                        Post to: {{.Forum.Title}}
+                    {{end}}
+                </h1>
+                <h2 class="subtitle">
+                    /f/{{.Forum.Fragment}}
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-two-thirds">
+
+                <div class="card" style="width: 100%">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon"><i class="fa fa-message"></i></span>
+                            {{if .EditCommentID}}
+                            Edit Comment
+                            {{else if .Thread}}
+                            Reply to Thread
+                            {{else}}
+                            New Thread
+                            {{end}}
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        {{if and (eq .Request.Method "POST") (ne .Message "")}}
+                        <label class="label">Preview:</label>
+                        <div class="box content has-background-warning-light has-text-dark">
+                            {{ToMarkdown .Message}}
+                        </div>
+                        {{end}}
+
+                        <form action="/forum/post?to={{.Forum.Fragment}}{{if .Thread}}&thread={{.Thread.ID}}{{end}}{{if .EditCommentID}}&edit={{.EditCommentID}}{{end}}" method="POST" enctype="multipart/form-data">
+                            {{InputCSRF}}
+
+                            {{if or .EditThreadSettings (not .Thread)}}
+                            <div class="field block">
+                                <label for="title" class="label">Title</label>
+                                <input type="text" class="input"
+                                    name="title" id="title"
+                                    placeholder="A title for your post"
+                                    value="{{if .Thread}}{{.Thread.Title}}{{else}}{{.PostTitle}}{{end}}"
+                                    required>
+                                <p class="help">Required.</p>
+                            </div>
+                            {{end}}
+
+                            <div class="field block">
+                                <label for="message" class="label">Message</label>
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "message"
+                                    "ID" "message"
+                                    "Required" (not .Forum.PermitPhotos)
+                                    "Placeholder" "Message"
+                                    "Rows" 8
+                                    "Value" .Message
+                                    "GalleryLinks" "footer"
+                                )}}
+                                <p class="help">
+                                    <a href="/markdown" target="_blank">Markdown formatting</a> supported with
+                                    <a href="/faq#embed-photos" target="_blank">attachable gallery photos</a>.
+                                </p>
+                            </div>
+
+                            {{if and (not .EditCommentID) (not .Thread)}}
+                                {{template "poll-creator" .}}
+                            {{end}}
+
+                            <!-- Photo attachment widget -->
+                            {{if .Forum.PermitPhotos}}
+                                <!-- Intent: upload, remove, or replace -->
+                                <input type="hidden" name="photo_intent" id="photoIntent">
+                                <input type="hidden" name="photo_id" value="{{if .CommentPhoto}}{{.CommentPhoto.ID}}{{end}}">
+
+                                <!-- Drag/Drop Modal -->
+                                <div class="modal" id="drop-modal">
+                                    <div class="modal-background"></div>
+                                    <div class="modal-content">
+                                        <div class="box content has-text-centered">
+                                            <h1><i class="fa fa-upload mr-2"></i> Drop image to select it for upload</h1>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="field block">
+                                    <label class="label">Photo Attachment</label>
+
+                                    <!-- Non-explicit Photo Notice -->
+                                    {{if and IsFeatureFlagExplicitEnabled (not .ExplicitPhotoAllowed)}}
+                                    <p class="help mb-4">
+                                        <!-- If NEW thread on a non-explicit forum -->
+                                        {{if not .Thread}}
+                                            <strong class="has-text-danger">
+                                                <i class="fa fa-exclamation-triangle mr-1"></i>
+                                                Explicit Photo Notice:
+                                            </strong>
+
+                                            The forum you are posting to isn't marked as Explicit. If you are going to share
+                                            an <a href="/faq#define-explicit">Explicit</a> photo, <strong>please also mark this thread
+                                            as Explicit</strong> using the checkbox below!
+                                        {{else}}
+                                            <strong class="has-text-danger">
+                                                <i class="fa fa-ban mr-1"></i>
+                                                No Explicit Photos:
+                                            </strong>
+
+                                            This {{if not .Thread}}forum{{else}}thread{{end}} is not marked to accept Explicit
+                                            photos being shared. If you are going to upload a picture, <strong>please make sure</strong>
+                                            it is not an <a href="/faq#define-explicit">Explicit</a> photo. Thanks!
+                                        {{end}}
+                                    </p>
+                                    {{end}}
+
+                                    <!-- User is over their quota? -->
+                                    {{if .IsOverQuota}}
+                                    <div class="notification is-warning is-light content">
+                                        <p>
+                                            You have currently uploaded your maximum amount of allowed photos.
+                                        </p>
+                                        <p>
+                                            To free up some space to upload new photos, please visit
+                                            <a href="/photo/media" target="_blank"><strong>My Media</strong> <sup class="fa fa-external-link"></sup></a>
+                                            to manage your content.
+                                        </p>
+                                    </div>
+                                    {{else}}
+                                    <div class="file has-name is-fullwidth">
+                                        <label class="file-label">
+                                            <input class="file-input" type="file"
+                                                name="file"
+                                                id="file"
+                                                accept=".jpg,.jpeg,.jpe,.png,.gif,.webp">
+                                            <span class="file-cta">
+                                                <span class="file-icon">
+                                                    <i class="fas fa-upload"></i>
+                                                </span>
+                                                <span class="file-label">
+                                                    Choose a file…
+                                                </span>
+                                            </span>
+                                            <span class="file-name" id="fileName">
+                                                Select a file
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <p class="help">
+                                        Acceptable formats include: JPG, PNG, GIF, and WebP.
+                                        <a href="/faq#photo-types" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                                    </p>
+                                    <p class="help">
+                                        <strong class="has-text-success">
+                                            <i class="fa fa-info-circle mr-1"></i>
+                                            From your gallery:
+                                        </strong>
+                                        You may attach your Gallery photos instead of uploading them again!
+                                        <a href="/faq#embed-photos" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                                    </p>
+                                    <p class="help">
+                                        <strong class="has-text-success">
+                                            <i class="fa fa-info-circle mr-1"></i>
+                                            GIFs are supported:
+                                        </strong>
+                                        Try our <a href="/static/video2gif/" target="_blank">"Video to GIF" <sup class="fa fa-external-link"></sup></a> converter tool!
+                                        <a href="/faq#gifs" target="_blank">More info <sup class="fa fa-external-link"></sup></a>
+                                    </p>
+                                    {{end}}
+                                </div>
+
+                                <div class="box" id="imagePreview" {{if or (not .CommentPhoto) (not .CommentPhoto.Filename)}}style="display: none"{{end}}>
+                                    <h3 class="subtitle">
+                                        Selected image:
+                                        <button type="button" class="button is-danger is-small ml-4" id="removePhoto">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </h3>
+
+                                    <!-- Container of img tags for the selected photo preview. -->
+                                    {{if and .CommentPhoto (HasSuffix .CommentPhoto.Filename ".mp4")}}
+                                        <video id="previewVideo" autoplay loop controls controlsList="nodownload" playsinline>
+                                            <source src="{{PhotoURL .CommentPhoto.Filename}}" type="video/mp4">
+                                        </video>
+
+                                        <!-- Image placeholder in case the user uploads a replacement. -->
+                                        <img id="previewImage">
+                                    {{else}}
+                                        <img id="previewImage"{{if .CommentPhoto}} src="{{PhotoURL .CommentPhoto.Filename}}"{{end}}>
+                                    {{end}}
+                                </div>
+                            {{end}}
+
+                            <hr>
+
+                            {{if or (not .Thread) .EditThreadSettings}}
+                            <div class="field block">
+                                {{if or (.CurrentUser.HasAdminScope "admin.forum.manage") (and .Forum (eq .Forum.OwnerID .CurrentUser.ID))}}
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="pinned"
+                                            value="true"
+                                            {{if .IsPinned}}checked{{end}}>
+                                        Pinned to top
+                                    </label>
+                                </div>
+                                {{end}}
+
+                                {{if and IsFeatureFlagExplicitEnabled (or .CurrentUser.Explicit .IsExplicit)}}
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="explicit"
+                                            value="true"
+                                            {{if .IsExplicit}}checked{{end}}>
+                                        Mark as Explicit (NSFW)
+                                    </label>
+                                    {{if not .Forum.Explicit}}
+                                    <p class="help">
+                                        The forum you are posting this in is not marked as Explicit, however the occasional
+                                        Explicit thread is allowed as long as it is correctly tagged. <strong>Please</strong>
+                                        check this box if the text or attached photos on this thread will be sexual in nature!
+                                    </p>
+                                    {{end}}
+                                </div>
+                                {{end}}
+
+                                {{if .CurrentUser.HasAdminScope "admin.forum.manage"}}
+                                <div>
+                                    <label class="checkbox has-text-danger">
+                                        <input type="checkbox"
+                                            name="noreply"
+                                            value="true"
+                                            {{if .IsNoReply}}checked{{end}}>
+                                        No replies allowed <i class="fa fa-peace ml-1"></i>
+                                    </label>
+                                </div>
+                                {{end}}
+                            </div>
+                            {{end}}
+
+                            <div class="field has-text-centered">
+                                <button type="submit"
+                                    name="intent"
+                                    value="preview"
+                                    class="button is-link gosocial-hide-on-load">
+                                    Preview
+                                </button>
+                                <button type="submit"
+                                    name="intent"
+                                    value="submit"
+                                    class="button ml-4 is-success">
+                                    Post Message
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+{{define "scripts"}}
+
+<!-- Compress images before uploading -->
+<script src="/static/js/resize-image.js?build={{.BuildHash}}"></script>
+
+<!-- Script for photo upload on photo boards -->
+{{if .Forum.PermitPhotos}}
+<script type="text/javascript">
+    window.addEventListener("DOMContentLoaded", (event) => {
+        let $file = document.querySelector("#file"),
+            $fileName = document.querySelector("#fileName"),
+            $hiddenPreview = document.querySelector("#imagePreview"),
+            $previewImage = document.querySelector("#previewImage"),  // <img> tag
+            $previewVideo = document.querySelector("#previewVideo"),  // <video> tag
+            $dropArea = document.querySelector("#drop-modal"),
+            $removePhoto = document.querySelector("#removePhoto"),
+            $photoIntent = document.querySelector("#photoIntent"),
+            $body = document.querySelector("body");
+
+        // Note: the $previewImage is shown on the page when:
+        // - The user drags an image or GIF onto the page for a new upload.
+        // - The user is editing a comment which had a still image (not a GIF video) attached.
+        // If the <img> has no src, e.g., the comment had a video attached, hide the img now.
+        if (!$previewImage.src) {
+            $previewImage.style.display = "none";
+        }
+
+        // Common handler for file selection (file input or drag/drop)
+        let onFile = async (file) => {
+            if (!file) return;
+
+            // Still images: compress them now.
+            const compressionResult = await CompressImageFile(file);
+            const compressedFileList = compressionResult.fileList;
+            const compressedFile = compressionResult.file;
+
+            // Too large of an upload?
+            if (compressedFile.size >= {{.MaxBodyBytes}}) {
+                modalAlert({message: "That file is too large! Choose something less than {{.MaxBodyMegaBytes}} MiB."});
+                return;
+            }
+
+            $photoIntent.value = "{{if .CommentPhoto}}replace{{else}}upload{{end}}";
+            $fileName.innerHTML = file.name;
+            $file.files = compressedFileList;
+
+            // Read the image to show the preview on-page.
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+                const uploadedImg = reader.result;
+                $hiddenPreview.style.display = "block";
+
+                // Make sure to show the preview <img> and hide any <video> that was previously stored.
+                $previewImage.style.display = "";
+                if ($previewVideo) {
+                    $previewVideo.style.display = "none";
+                }
+
+                $previewImage.src = uploadedImg;
+                $previewImage.style.display = "block";
+                $previewImage.style.maxWidth = "100%";
+                $previewImage.style.height = "auto";
+            });
+            reader.readAsDataURL(compressedFile);
+        };
+
+        // Set up drag/drop file upload events.
+        $body.addEventListener("dragenter", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Chrome bug: do not manipulate the DOM on drag start or it'll fire dragleave right away.
+            window.requestAnimationFrame(() => {
+                $dropArea.classList.add("is-active");
+            });
+        });
+        $body.addEventListener("dragover", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $dropArea.classList.add("is-active");
+        });
+        $body.addEventListener("dragleave", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $dropArea.classList.remove("is-active");
+        });
+        $body.addEventListener("drop", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $dropArea.classList.remove("is-active");
+
+            // Grab the file.
+            let dt = e.dataTransfer;
+            let file = dt.files[0];
+
+            // Set the file on the input field too.
+            $file.files = dt.files;
+
+            onFile(file);
+        });
+
+        // File input handler.
+        $file.addEventListener("change", function() {
+            let file = this.files[0];
+            onFile(file);
+        });
+
+        // Removal button.
+        $removePhoto.addEventListener("click", function() {
+            $photoIntent.value = "remove";
+            $fileName.innerHTML = "Select a file";
+            $file.value = '';
+            $hiddenPreview.style.display = 'none';
+        });
+    });
+</script>
+{{end}}
+
+{{end}}

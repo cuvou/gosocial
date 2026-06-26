@@ -1,0 +1,367 @@
+{{define "title"}}
+    {{if .IsFollowing}}Following{{else}}Followers{{end}}
+{{end}}
+{{define "content"}}
+<div class="container">
+    {{$Root := .}}
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-star mr-2"></i>
+                    {{if .IsFollowing}}
+                        I'm Following
+                    {{else}}
+                        My Followers
+                    {{end}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="p-4">
+
+        <div class="notification is-info is-light block content">
+            <p>
+                <strong>
+                    <i class="fa fa-info-circle mr-1"></i>
+                    Followers vs. Friends
+                </strong>
+            </p>
+            <p class="is-size-7">
+                On this page, you can manage your Followers list.
+            </p>
+            <p class="is-size-7">
+                Followers may receive notifications when you post new content on the website (such as
+                photos, videos or blog posts) which they are allowed to see.
+            </p>
+            <p class="is-size-7">
+                By default, you will automatically Follow all of your Friends. But you may also Follow
+                people who are not your friends, as well as Unfollow certain friends if you don't care
+                to hear about the new content they have posted.
+            </p>
+            <p class="is-size-7">
+                <strong>Note:</strong> "Friends-only content" that you post will only notify your followers
+                who are also on your Friends list; and "Private" content will only notify followers who you
+                have shared your private content with.
+            </p>
+        </div>
+
+        <div class="tabs is-boxed">
+            <ul>
+                <li{{if not .IsFollowing}} class="is-active"{{end}}>
+                    <a href="/followers">
+                        My Followers
+                        <span class="tag ml-2" title="{{FormatNumberCommas .FollowerCount}}">{{FormatNumberShort .FollowerCount}}</span>
+                    </a>
+                </li>
+                <li{{if .IsFollowing}} class="is-active"{{end}}>
+                    <a href="/following">
+                        I'm Following
+                        <span class="tag ml-2" title="{{FormatNumberCommas .FollowingCount}}">{{FormatNumberShort .FollowingCount}}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="p-4">
+
+        <div class="block">
+            <strong class="has-text-success">
+                <i class="fa fa-info-circle mr-1"></i> Pro Tip:</strong>
+            You can <a href="/members?{{if .IsFollowing}}following{{else}}followers{{end}}=true">search and sort</a> your
+            {{if .IsFollowing}}following list{{else}}followers{{end}}
+            in the <i class="fa fa-people-group"></i> Member Directory!
+        </div>
+
+        <div class="block">
+            {{if .IsFollowing}}
+                You are following {{FormatNumberCommas .Pager.Total}} {{if eq .Pager.Total 1}}person{{else}}people{{end}}
+            {{else}}
+                You have {{FormatNumberCommas .Pager.Total}} follower{{Pluralize64 .Pager.Total}}
+            {{end}}
+            (page {{.Pager.Page}} of {{.Pager.Pages}}).
+        </div>
+
+        <div class="columns is-mobile mb-0">
+            <div class="column is-narrow pr-1">
+                Sort by:
+            </div>
+            <div class="column is-narrow pl-1">
+                <div class="dropdown">
+                    <div class="dropdown-trigger">
+                        <button type="button" class="button is-small" aria-haspopup="true" aria-controls="friend-sort-menu">
+                            <span>
+                                {{if eq .Sort "follows.updated_at desc"}}
+                                    Most recent
+                                {{else if eq .Sort "follows.updated_at asc"}}
+                                    Oldest
+                                {{else if eq .Sort "users.username asc"}}
+                                    Username (A-Z)
+                                {{else if eq .Sort "users.username desc"}}
+                                    Username (Z-A)
+                                {{else}}
+                                    Sort by...
+                                {{end}}
+                            </span>
+                            <i class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </i>
+                        </button>
+                        <div class="dropdown-menu" id="friend-sort-menu" role="menu">
+                            <div class="dropdown-content">
+                                <a href="?{{QueryPlus "sort" "follows.updated_at desc"}}" class="dropdown-item">Most recent</a>
+                                <a href="?{{QueryPlus "sort" "follows.updated_at asc"}}" class="dropdown-item">Oldest</a>
+                                <a href="?{{QueryPlus "sort" "users.username asc"}}" class="dropdown-item">Username (A-Z)</a>
+                                <a href="?{{QueryPlus "sort" "users.username desc"}}" class="dropdown-item">Username (Z-A)</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exclude Friends filter. -->
+        <div class="field">
+            {{if .ExcludeFriends}}
+                <a href="?{{QueryPlus "friends" ""}}">
+                    <i class="fa-regular fa-square-check mr-1"></i> Exclude my friends from this list
+                </a>
+            {{else}}
+                <a href="?{{QueryPlus "friends" "false"}}">
+                    <i class="fa-regular fa-square mr-1"></i> Exclude my friends from this list
+                </a>
+            {{end}}
+        </div>
+
+        <div class="block">
+            {{SimplePager .Pager}}
+        </div>
+
+        <div class="columns is-multiline">
+
+            {{range .Users}}
+            <div class="column is-half-tablet is-one-third-desktop">
+
+                <form action="{{if $Root.IsFollowing}}/following/add{{else}}/followers/edit{{end}}" method="POST">
+                    {{InputCSRF}}
+                    <input type="hidden" name="username" value="{{.Username}}">
+                    {{if $Root.IsFollowing}}
+                        <input type="hidden" name="unfollow" value="true">
+                    {{end}}
+
+                    <div class="card">
+                        <div class="card-content">
+                            <div class="media mb-0">
+                                <div class="media-left">
+                                    {{template "avatar-64x64" .}}
+                                </div>
+                                <div class="media-content">
+                                    <p class="title is-4">
+                                        <a href="/u/{{.Username}}" class="has-text-dark">
+                                            {{if ne .Status "active"}}
+                                                <del>{{.NameOrUsername}}</del>
+                                            {{else}}
+                                                {{.NameOrUsername}}
+                                            {{end}}
+                                        </a>
+                                    </p>
+                                    <p class="subtitle is-6 mb-0">
+                                        <span class="icon"><i class="fa fa-user"></i></span>
+                                        <a href="/u/{{.Username}}">{{.Username}}</a>
+
+                                        <!-- "(banned)" label -->
+                                        {{if ne .Status "active"}}<small>({{.Status}})</small>{{end}}
+
+                                        {{if .IsAdmin}}
+                                        <span class="has-text-danger">
+                                            <span class="icon"><i class="fa fa-peace"></i></span>
+                                            <span>Admin</span>
+                                        </span>
+                                        {{end}}
+                                    </p>
+
+                                    <!-- Friend badge -->
+                                    {{if $Root.FriendMap.Get .ID}}
+                                    <div>
+                                        <span class="is-size-7 has-text-warning">
+                                            <i class="fa fa-user-group" title="Friends"></i>
+                                            Friends
+                                        </span>
+                                    </div>
+                                    {{end}}
+
+                                    <!-- Follower badge -->
+                                    {{if $Root.FollowMap.IsMutual .ID}}
+                                    <div>
+                                        <span class="is-size-7 has-text-success">
+                                            <i class="fa fa-star" title="Mutual Followers"></i>
+                                            Mutual Followers
+                                        </span>
+                                    </div>
+                                    {{else if $Root.FollowMap.IsFollowing .ID}}
+                                    <div>
+                                        <span class="is-size-7 has-text-success">
+                                            <i class="fa-regular fa-star-half-stroke" title="I'm Following"></i>
+                                            I'm Following
+                                        </span>
+                                    </div>
+                                    {{else if $Root.FollowMap.IsFollower .ID}}
+                                    <div>
+                                        <span class="is-size-7 has-text-success">
+                                            <i class="fa-regular fa-star" title="Follows Me"></i>
+                                            Follows Me
+                                        </span>
+                                    </div>
+                                    {{end}}
+                                </div>
+                            </div>
+                        </div>
+                        <footer class="card-footer">
+                            <label class="card-footer-item checkbox" style="max-width: 4rem">
+                                <input type="checkbox" class="gosocial-bulk-follower-id"
+                                    value="{{.Username}}">
+                            </label>
+                            {{if $Root.IsFollowing}}
+                                <button type="submit" name="verdict" value="remove" class="card-footer-item has-text-danger gosocial-confirm-submit"
+                                    data-confirm="Are you sure you want to unfollow {{.Username}}?\n\nYou will no longer receive notifications when they post new content on the site.">
+                                    <span class="icon"><i class="fa fa-xmark"></i></span>
+                                    <span>Unfollow</span>
+                                </button>
+                            {{else}}
+                                {{if not ($Root.FollowMap.IsMutual .ID)}}
+                                    <button type="submit" name="verdict" value="follow-back" class="card-footer-item has-text-success">
+                                        <span class="icon"><i class="fa fa-people-arrows"></i></span>
+                                        <span>Follow back</span>
+                                    </button>
+                                {{end}}
+                                <button type="submit" name="verdict" value="remove" class="card-footer-item has-text-danger gosocial-confirm-submit"
+                                    data-confirm="Are you sure you want to remove yourself from {{.Username}}'s follow list?\n\nThey will no longer receive notifications when you post new content.">
+                                    <span class="icon"><i class="fa fa-xmark"></i></span>
+                                    <span>Remove follower</span>
+                                </button>
+                            {{end}}
+                        </footer>
+                    </div>
+                </form>
+
+            </div>
+            {{end}}<!-- range .Friends -->
+        </div>
+
+        <div class="block">
+            {{SimplePager .Pager}}
+        </div>
+
+        <!-- Bulk unfollow footer (check/uncheck all). -->
+        <hr>
+
+        <form action="/followers/batch-remove" method="POST">
+            {{InputCSRF}}
+            <input type="hidden" name="is_following" value="{{if .IsFollowing}}true{{else}}false{{end}}">
+            <input type="hidden" name="usernames" id="gosocial-bulk-follower-selected" value="">
+            <div class="columns is-multiline is-mobile my-4">
+                <div class="column is-narrow">
+                    <div class="buttons has-addons">
+                        <button type="button" class="button" id="gosocial-select-all">
+                            <i class="fa fa-square-check"></i>
+                        </button>
+                        <button type="button" class="button" id="gosocial-select-none">
+                            <i class="fa fa-square"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="column" id="gosocial-edit-buttons">
+                    <button type="submit" class="button is-small is-danger is-outlined mb-2 gosocial-confirm-submit"
+                        name="intent"
+                        value="delete"
+                        data-confirm="Are you sure you want to {{if .IsFollowing}}unfollow the selected people?{{else}}remove the selected followers?{{end}}">
+                        <i class="fa fa-trash mr-2"></i>
+                        {{if .IsFollowing}}
+                            Unfollow Selected
+                        {{else}}
+                            Remove Selected Followers
+                        {{end}}
+                    </button>
+
+                    <span id="gosocial-count-selected" class="is-size-7 ml-2"></span>
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+{{end}}
+{{define "scripts"}}
+<script type="text/javascript">
+
+    // Checkboxes for bulk follow removal.
+    // Based on photo-batch-select.js.
+    document.addEventListener("DOMContentLoaded", () => {
+        const checkboxes = document.getElementsByClassName("gosocial-bulk-follower-id"),
+            $checkAll = document.querySelector("#gosocial-select-all"),
+            $checkNone = document.querySelector("#gosocial-select-none"),
+            $countSelected = document.querySelector("#gosocial-count-selected"),
+            $submitButtons = document.querySelector("#gosocial-edit-buttons"),
+            $selectedUsernames = document.querySelector("#gosocial-bulk-follower-selected");
+
+        $submitButtons.style.display = "none";
+
+        const setAllChecked = (v) => {
+            for (let box of checkboxes) {
+                box.checked = v;
+            }
+        };
+
+        const areAnyChecked = () => {
+            let any = false,
+                count = 0;
+            for (let box of checkboxes) {
+                if (box.checked) {
+                    any = true;
+                    count++;
+                }
+            }
+
+            // update the selected count
+            $countSelected.innerHTML = count > 0 ? `${count} selected.` : "";
+            $countSelected.style.display = count > 0 ? "" : "none";
+            return any;
+        };
+
+        const showHideButtons = () => {
+            $submitButtons.style.display = areAnyChecked() ? "" : "none";
+
+            // Collect all of the selected usernames to put into the bulk form.
+            let usernames = [];
+            for (let box of checkboxes) {
+                if (box.checked) {
+                    usernames.push(box.value);
+                }
+            }
+            $selectedUsernames.value = usernames.join(",");
+        };
+        showHideButtons();
+
+        // Check/Uncheck All buttons.
+        $checkAll.addEventListener("click", (e) => {
+            setAllChecked(true);
+            showHideButtons();
+        });
+        $checkNone.addEventListener("click", (e) => {
+            setAllChecked(false);
+            showHideButtons();
+        });
+
+        // When checkboxes are toggled.
+        for (let box of checkboxes) {
+            box.addEventListener("change", (e) => {
+                showHideButtons();
+            });
+        }
+    });
+</script>
+{{end}}

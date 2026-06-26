@@ -1,0 +1,95 @@
+{{define "title"}}Not Available{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero block is-warning is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">Not Available</h1>
+                <h2 class="subtitle">The website is currently unavailable</h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block content p-4 mb-0">
+        <!-- Show Custom Messaging -->
+        {{if or .SiteEmergencyMode.Activated .SiteMaintenanceMode.Headline .SiteMaintenanceMode.Message}}
+        <div class="notification {{if .SiteEmergencyMode.Activated}}is-danger{{else}}is-warning{{end}} is-light content">
+
+            <!-- In Emergency Mode, prefer that messaging -->
+            {{if .SiteEmergencyMode.Activated}}
+                <p class="is-size-4">
+                    <strong>{{or .SiteEmergencyMode.Headline .SiteMaintenanceMode.Headline "Emergency Mode Activated"}}</strong>
+                </p>
+                {{ToMarkdown (or .SiteEmergencyMode.Message .SiteMaintenanceMode.Message "All website interactions are currently on pause while we address a website emergency.")}}
+
+                <!-- Show when the site owner was last seen. -->
+                {{if .SiteOwner}}
+                    <p>The website's owner was last seen: {{SincePrettyCoarse .SiteOwner.LastLoginAt}} ago.</p>
+                {{end}}
+            {{else}}
+                <p class="is-size-4">
+                    <strong>{{.SiteMaintenanceMode.Headline}}</strong>
+                </p>
+                {{ToMarkdown .SiteMaintenanceMode.Message}}
+            {{end}}
+        </div>
+        {{end}}
+
+        <h1>{{PrettyTitle}} is currently not available</h1>
+        <p>
+            We regret to inform you that {{PrettyTitle}} is currently not available.
+        </p>
+
+        <p>
+            The website is currently in "maintenance mode" and the feature you requested
+            is currently on pause. Please check back again later.
+        </p>
+
+        <!-- More information? -->
+        {{if .Reason}}
+            <h2>More Information</h2>
+        {{end}}
+
+        {{if eq .Reason "interaction"}}
+        <p>
+            All user interaction on the website is currently on pause. You are currently
+            logged in to an account (username: {{.CurrentUser.Username}}) and you may
+            remain logged-in if you want, but all actions that require a logged-in account
+            are currently disabled.
+        </p>
+
+        <p>
+            You may take the following actions:
+        </p>
+
+        <ul>
+            <li>Wait and check back later to see if the maintenance mode period has ended.</li>
+            <li><a href="/logout">Log out</a> of your account.</li>
+        </ul>
+
+        <p>
+            You may also <a href="/account/deactivate">deactivate</a> or <a href="/account/delete">delete</a> your account.
+            <strong>Note:</strong> you may be unable to log back in to re-activate your account if maintenance mode is
+            still active.
+        </p>
+        {{else if eq .Reason "signup"}}
+        <p>
+            All new account signups are currently on pause. We are not accepting any new
+            members at this time. Please check back again later.
+        </p>
+        {{else if eq .Reason "login"}}
+        <p>
+            All new account logins are currently on pause. Please try again later.
+        </p>
+        {{else if eq .Reason "chat"}}
+        <p>
+            The chat room is currently offline for maintenance. Please try again some other time.
+        </p>
+        {{else}}
+        <p>
+            No further information is available at this time.
+        </p>
+        {{end}}
+    </div>
+</div>
+{{end}}

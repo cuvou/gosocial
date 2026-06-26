@@ -1,0 +1,204 @@
+{{define "title"}}Tag People{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-tag mr-2"></i>
+                    Tag People
+                </h1>
+                <h2 class="subtitle">
+                    In your
+                    {{if eq .TableName "photos"}}
+                        photo
+                    {{else if eq .TableName "videos"}}
+                        video
+                    {{else}}
+                        {{.TableName}}
+                    {{end}}
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon mr-2"><i class="fa fa-tag"></i></span>
+                            <span>Tag People</span>
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <p class="block">
+                            <a href="/go/tagged?table={{.TableName}}&id={{.TableID}}">
+                                <i class="fa fa-arrow-left mr-1"></i> Back to Content
+                            </a>
+                        </p>
+
+                        <!-- Show a media preview of the item being tagged. -->
+                        {{if .Photo}}
+                            <div class="columns is-centered">
+                                <div class="column is-half">
+                                    <div class="image block">
+                                        <!-- GIF video? -->
+                                        {{if HasSuffix .Photo.Filename ".mp4"}}
+                                        <video autoplay loop controls controlsList="nodownload" playsinline>
+                                            <source src="{{PhotoURL .Photo.Filename}}" type="video/mp4">
+                                        </video>
+                                        {{else}}
+                                        <img src="{{PhotoURL .Photo.Filename}}">
+                                        {{end}}
+                                    </div>
+                                </div>
+                            </div>
+                        {{end}}
+
+                        <!-- Show the already tagged users. -->
+                        {{if .Users}}
+                        <div class="field">
+                            <label class="label">
+                                <i class="fa fa-tag mr-1"></i>
+                                Currently Tagged:
+                            </label>
+
+                            <table class="table is-striped">
+                                <tbody>
+                                    {{range .Users}}
+                                    <tr>
+                                        <td>
+                                            {{template "avatar-16x16" .}}
+                                            <a href="/u/{{.Username}}">{{.Username}}</a>
+                                        </td>
+                                        <td>
+                                            <form action="/users/tag" method="POST">
+                                                {{InputCSRF}}
+                                                <input type="hidden" name="table" value="{{$Root.TableName}}">
+                                                <input type="hidden" name="id" value="{{$Root.TableID}}">
+                                                <input type="hidden" name="intent" value="remove">
+                                                <input type="hidden" name="username" value="{{.Username}}">
+
+                                                <button type="submit" class="button is-small is-outlined is-danger">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {{end}}
+                                </tbody>
+                            </table>
+                        </div>
+                        {{end}}
+
+                        <!-- Show the relevant form -->
+                        <form action="/users/tag" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="intent" value="add">
+                            <input type="hidden" name="table" value="{{.TableName}}">
+                            <input type="hidden" name="id" value="{{.TableID}}">
+
+                            <div class="field block">
+                                <label for="users" class="label">Tag Usernames:</label>
+                                <input type="text" class="input"
+                                    name="users" id="users"
+                                    placeholder="Search by name or username"
+                                    autocomplete="off">
+                                <p class="help">
+                                    Search and select multiple names (comma separated).
+                                </p>
+                            </div>
+
+                            <!-- Show a paginated friend list for convenience -->
+                            <div class="field block">
+                                <label class="label">Tag a Friend:</label>
+                                <p class="help mb-4">
+                                    You may also browse and select somebody from your friends list instead of entering
+                                    their username in the box above.
+                                </p>
+
+                                <div hx-get="/htmx/friend-picker?context=tagged_user" hx-trigger="revealed">
+                                    <i class="fa fa-spinner fa-spin mr-1"></i> Loading...
+                                </div>
+                            </div>
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success"
+                                    name="intent"
+                                    value="{{if .User}}submit{{else}}preview{{end}}">
+                                    {{if .User}}
+                                        <span class="icon"><i class="fa fa-unlock"></i></span>
+                                        <span>Confirm Share</span>
+                                    {{else}}
+                                        Continue
+                                    {{end}}
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}
+{{define "scripts"}}
+<link rel="stylesheet" href="/static/css/typeahead.css?build={{.BuildHash}}">
+<link rel="stylesheet" href="/static/css/awesomplete-1.1.7.css">
+<script type="text/javascript" src="/static/js/awesomplete-1.1.7.min.js"></script>
+<script type="text/javascript">
+// Type-ahead search for the Username field.
+document.addEventListener('DOMContentLoaded', () => {
+    const $input = document.getElementById("users");
+
+    const autocomplete = new Awesomplete($input, {
+        minChars: 1,
+        maxItems: 10,
+        autoFirst: true,
+        tabSelect: true,
+        list: [],
+        filter(text, input) {
+            // Multiples-search, only compare latest input.
+            input = input.split(',').pop().trim();
+
+            let words = input.split(/\s+/);
+            let match = 0;
+
+            for (let word of words) {
+                if (text.toLowerCase().indexOf(word.toLowerCase()) > -1) {
+                    match++;
+                }
+            }
+            return match === words.length;
+        },
+
+        // Multiple selection support.
+        item(text, input) {
+            const value = text.value;
+            return Awesomplete.ITEM(text, input.match(/[^,]*$/)[0]);
+        },
+        replace(text) {
+            const value = text.value;
+            let before = this.input.value.match(/^.+,\s*|/)[0];
+            this.input.value = before + value + ", ";
+        },
+    });
+
+    $input.addEventListener('input', async function () {
+        const query = encodeURIComponent(this.value);
+        const res = await fetch(`/v1/users/username?query=${query}&multiple=true`);
+        const data = await res.json();
+        autocomplete.list = data;
+    });
+});
+</script>
+{{end}}

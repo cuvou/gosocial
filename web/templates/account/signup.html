@@ -1,0 +1,269 @@
+{{define "title"}}Sign Up{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">Sign up</h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block content p-4">
+
+    {{if or .SkipEmailVerification (not .SignupToken)}}
+        <p>
+            I'm glad you're thinking about joining us here! Before you continue, please be
+            sure that you have seen the site's rules.
+        </p>
+
+        <h1>Site Rules</h1>
+
+        <ol>
+            <li>
+                Have fun.
+            </li>
+            <li>
+                Be kind.
+            </li>
+        </ol>
+
+        <p>
+            For more details, please see the <a href="/tos">Terms of Service</a> as well as
+            the <a href="/privacy">Privacy Policy</a>.
+        </p>
+
+        <h1>Onboarding</h1>
+
+        <p>
+            Here is what you can expect from the sign-up process:
+        </p>
+
+        <ol>
+            <li>Email address: you will be emailed a link to verify control of that email inbox.</li>
+            <li>Account creation: you will create a username, password, and upload a face pic for your profile page.</li>
+        </ol>
+    {{end}}
+
+        <h1>Sign Up</h1>
+
+        {{if or .SkipEmailVerification (not .SignupToken)}}
+        <p>
+            To start the process, enter your e-mail address below. You will be sent an e-mail to verify you
+            control that address and then you can create a username and password.
+        </p>
+        {{else}}
+        <p>
+            Your e-mail address has been verified! You may now pick a username and finish creating your {{PrettyTitle}} account.
+        </p>
+        {{end}}
+
+        <form action="/signup" method="POST">
+            {{ InputCSRF }}
+            {{if .SignupToken}}
+            <input type="hidden" name="token" value="{{.SignupToken}}">
+            {{end}}
+
+            <div class="field">
+                <label class="label" for="email">Your email address:</label>
+                <input type="email" class="input"
+                    placeholder="name@domain.com"
+                    name="email"
+                    id="email"
+                    value="{{.Email}}"
+                    required {{if .SignupToken }}readonly{{end}}>
+            </div>
+
+            {{if or .SignupToken .SkipEmailVerification}}
+            <div class="field">
+                <label class="label" for="username">Enter a username:</label>
+                <input type="text" class="input"
+                    placeholder="username"
+                    name="username"
+                    id="username"
+                    value="{{.Username}}"
+                    required>
+                <small class="has-text-grey">Usernames are 3 to 32 characters a-z 0-9 . -</small>
+
+                <!-- Username checking -->
+                <div class="notification is-info is-light py-2 px-4 mt-1"
+                    id="username-checking" style="display: none">
+                    <i class="fa fa-spinner fa-spin mr-1"></i> Checking username...
+                </div>
+                <div class="notification is-success is-light py-2 px-4 mt-1"
+                    id="username-ok" style="display: none">
+                    <i class="fa fa-check mr-1"></i> Looks good!
+                </div>
+                <div class="notification is-danger is-light py-2 px-4 mt-1"
+                    id="username-error" style="display: none">
+                    <i class="fa fa-xmark mr-1"></i> <span id="username-check-error">That username is already taken!</span>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="password">Enter a passphrase:</label>
+                <input type="password" class="input"
+                    placeholder="password"
+                    name="password"
+                    id="password"
+                    required>
+            </div>
+            <div class="field">
+                <label class="label" for="password2">Confirm passphrase:</label>
+                <input type="password" class="input"
+                    placeholder="password"
+                    name="password2"
+                    id="password2"
+                    required>
+            </div>
+            <div class="field">
+                <label class="label" for="dob">Date of birth:</label>
+                <input type="date" class="input"
+                    placeholder="password"
+                    name="dob"
+                    id="dob"
+                    required>
+                <p class="help">
+                    Your birthdate won't be shown to other members and is used to show
+                    your current age on your profile. Please enter your correct birthdate.
+                    <br>
+                    On mobile and scrolling for your year is tedious?
+                    <a href="#" id="manualEntry">Click to type your birthdate instead.</a>
+                </p>
+            </div>
+            {{end}}
+
+            <!-- Honeytrap fields -->
+            <div class="field gosocial-htsignup">
+                <label class="label" for="phone">Phone number:</label>
+                <input type="text" class="input"
+                    placeholder="555-1234"
+                    name="phone"
+                    id="phone">
+                <p class="help">
+                    Please enter a valid phone number for your account.
+                </p>
+            </div>
+            <div class="field gosocial-htsignup">
+                <label class="label" for="referral">How did you hear about us?</label>
+                <input type="text" class="input"
+                    placeholder="Google"
+                    name="referral"
+                    id="referral"
+                    value="Word of mouth">
+            </div>
+
+            <div class="field">
+                <label class="checkbox">
+                    <input type="checkbox" name="confirm" value="true" required>
+                    I understand the site rules and assert that I am 18 years or older.
+                </label>
+            </div>
+
+            <!-- Cloudflare Turnstile CAPTCHA widget -->
+            {{if and .TurnstileCAPTCHA.Enabled (not .SignupToken)}}
+            <div class="field">
+                <div class="cf-turnstile"
+                    data-sitekey="{{.TurnstileCAPTCHA.SiteKey}}"
+                    data-action="signup"
+                ></div>
+            </div>
+            {{end}}
+
+            <div class="field">
+                <button type="submit" class="button is-primary">Continue{{if not .SignupToken}} and verify email{{end}}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{{end}}
+{{define "scripts"}}
+
+<!-- Cloudflare Turnstile CAPTCHA -->
+{{if .TurnstileCAPTCHA.Enabled}}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
+{{end}}
+
+<script>
+window.addEventListener("DOMContentLoaded", (event) => {
+    // Set up username checking script.
+    const $username = document.querySelector("#username"),
+        $unCheck = document.querySelector("#username-checking"),
+        $unOK = document.querySelector("#username-ok"),
+        $unError = document.querySelector("#username-error"),
+        $unErrorStr = document.querySelector("#username-check-error");
+
+    let onChange = (e) => {
+        $unCheck.style.display = "block";
+        $unOK.style.display = "none";
+        $unError.style.display = "none";
+
+        if ($username.value.length < 3) {
+            $unCheck.style.display = "none";
+            return;
+        };
+
+        return fetch("/v1/users/check-username", {
+            method: "POST",
+            mode: "same-origin",
+            cache: "no-cache",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "username": $username.value,
+            }),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.StatusCode !== 200) {
+                modalAlert({message: data.data.error});
+                return;
+            }
+
+            let result = data.data;
+            if (result.OK) {
+                $unOK.style.display = "block";
+                $unError.style.display = "none";
+            } else {
+                $unOK.style.display = "none";
+                $unError.style.display = "block";
+                $unErrorStr.innerHTML = result.error;
+            }
+        }).catch(resp => {
+            console.error(resp);
+        }).finally(() => {
+            $unCheck.style.display = "none";
+        })
+    };
+
+    if ($username != undefined) {
+        $username.addEventListener("change", onChange);
+        $username.addEventListener("blur", onChange);
+    }
+
+    // DOB manual entry script, on signup completion page.
+    let $manualEntry = document.querySelector("#manualEntry"),
+        $dob = document.querySelector("#dob");
+
+    if ($manualEntry != undefined) {
+        $manualEntry.addEventListener("click", function(e) {
+            $manualEntry.blur();
+            e.preventDefault();
+
+            let answer = window.prompt("Enter your birthdate in 'YYYY-MM-DD' format").trim().replace(/\//g, '-');
+            if (answer.match(/^(\d{2})-(\d{2})-(\d{4})/)) {
+                let group = answer.match(/^(\d{2})-(\d{2})-(\d{4})/);
+                answer = `${group[3]}-${group[1]}-${group[2]}`;
+                modalAlert({message: `NOTE: Your input was interpreted to be in MM/DD/YYYY order and has been read as: ${answer}`});
+            } else if (!answer.match(/^\d{4}-\d{2}-\d{2}/)) {
+                modalAlert({message: `Please enter the date in YYYY-MM-DD format.`});
+                return;
+            }
+
+            $dob.value = answer;
+        });
+    }
+});
+</script>
+{{end}}

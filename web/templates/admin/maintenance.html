@@ -1,0 +1,342 @@
+{{define "title"}}Admin - Maintenance Mode{{end}}
+{{define "content"}}
+{{$Root := .}}
+<div class="container">
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Maintenance Mode
+                </h1>
+                <h2 class="subtitle">
+                    &amp; Emergency Broadcast Settings
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="columns mt-4">
+        <div class="column">
+            <div class="card">
+                <header class="card-header has-background-warning">
+                    <p class="card-header-title">
+                        <i class="fa fa-hammer mr-2"></i>
+                        Maintenance Mode
+                    </p>
+                </header>
+                <div class="card-content">
+                    <form method="POST" action="{{.Request.URL.Path}}">
+                        {{InputCSRF}}
+                        <input type="hidden" name="form" value="maintenance">
+                
+                        <p class="block">
+                            This page allows you to set various Maintenance Mode flags that can pause or
+                            disable website features if needed.
+                            In an emergency, click on the Lock Down Everything button that will enable ALL maintenance
+                            mode flags and basically disable the whole website for everybody except admin user accounts.
+                        </p>
+            
+                        <p class="block">
+                            <button type="submit" class="button is-danger mr-2 gosocial-confirm-submit"
+                                name="intent" value="everything"
+                                data-confirm="Do you want to lock down EVERYTHING?\n\nThis will:\n\n- Disable all new signups and logins\n- Disable all new chat room entries\n- Make the entire website admin-only, with existing users given only the option to log out or come back later.">
+                                <i class="fa fa-exclamation-triangle mr-2"></i> Lock Down Everything
+                            </button>
+            
+                            <button type="submit" class="button is-success gosocial-confirm-submit"
+                                name="intent" value="nothing"
+                                data-confirm="Do you want to RESTORE ALL site functionality?">
+                                <i class="fa fa-exclamation-triangle mr-2"></i> Restore Everything
+                            </button>
+                        </p>
+            
+                        <hr>
+
+                        <h2 class="subtitle">Custom Messaging</h2>
+
+                        <p class="block">
+                            You can include a custom headline and message to be shown while Maintenance Mode
+                            is activated (or included at the top of <em>every</em> page of the site even when
+                            Maintenance Mode is not active, by selecting the appropriate option below).
+                        </p>
+
+                        <div class="field">
+                            <label class="label" for="maint_headline">Headline</label>
+                            <input type="text" class="input"
+                                id="maint_headline"
+                                name="headline"
+                                placeholder="The website is undergoing maintenance"
+                                value="{{.Maint.Headline}}">
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="maint_message">Message</label>
+                            {{template "markdown-editor" (
+                                NewHashMap "Name" "message"
+                                "ID" "maint_message"
+                                "Value" .Maint.Message
+                                "Placeholder" "Parts of the website are currently offline while we undergo maintenance. Please check back later."
+                                "Rows" 4
+                            )}}
+                        </div>
+
+                        <div class="field">
+                            <label class="label">When to Show Custom Messaging</label>
+                        </div>
+
+                        <div class="field">
+                            <label class="checkbox">
+                                <input type="radio"
+                                    name="all_pages"
+                                    value="false"
+                                    {{if not .Maint.MessageOnAllPages}} checked{{end}}>
+                                On Maintenance Mode error pages only
+                            </label>
+                            <p class="help">
+                                For example, if the Signup or Login page are disabled and the Maintenance Mode
+                                page is dispayed, the custom messaging will appear on only those pages.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label class="checkbox">
+                                <input type="radio"
+                                    name="all_pages"
+                                    value="true"
+                                    {{if .Maint.MessageOnAllPages}} checked{{end}}>
+                                On all website pages globally
+                            </label>
+                            <p class="help">
+                                The custom messaging will appear on top of every page of the site. This is useful
+                                to announce <em>upcoming</em> maintenance work ahead of time, e.g. before Maintenance
+                                Mode is actually activated.
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <h2 class="subtitle">Maintenance Mode Settings</h2>
+            
+                        <div class="field">
+                            <label class="checkbox">
+                                <input type="checkbox"
+                                    name="signup"
+                                    value="true"
+                                    {{if .Maint.PauseSignup}}checked{{end}}>
+                                Pause new account signups
+                            </label>
+                            <p class="help">
+                                New account signups are paused and a maintenance page is shown in its place.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label class="checkbox">
+                                <input type="checkbox"
+                                    name="login"
+                                    value="true"
+                                    {{if .Maint.PauseLogin}}checked{{end}}>
+                                Pause new logins
+                            </label>
+                            <p class="help">
+                                The login page is disabled (except for admin user login). Already logged-in
+                                users can remain logged in.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label class="checkbox">
+                                <input type="checkbox"
+                                    name="chat"
+                                    value="true"
+                                    {{if .Maint.PauseChat}}checked{{end}}>
+                                Pause chat room entry
+                            </label>
+                            <p class="help">
+                                No new entries into the chat room are allowed.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label class="checkbox">
+                                <input type="checkbox"
+                                    name="interaction"
+                                    value="true"
+                                    {{if .Maint.PauseInteraction}}checked{{end}}>
+                                Pause <strong>all</strong> interactions
+                            </label>
+                            <p class="help">
+                                Every site feature becomes basically 'admin required' and users are given an error
+                                page where their only option is to log out, delete their account, or come back later.
+                            </p>
+                        </div>
+
+                        <div class="block">
+                            <button type="submit" class="button is-primary"
+                                name="intent" value="save">
+                                Save Settings
+                            </button>
+                        </div>
+                
+                    </form>
+                </div>
+            </div>
+        </div><!-- /Maintenance Mode column -->
+
+        <div class="column">
+            <div class="card">
+                <header class="card-header has-background-danger">
+                    <p class="card-header-title">
+                        <i class="fa fa-skull-crossbones mr-2"></i>
+                        Emergency Kill Switch
+                    </p>
+                </header>
+                <div class="card-content">
+                    <form method="POST" action="{{.Request.URL.Path}}">
+                        {{InputCSRF}}
+                        <input type="hidden" name="form" value="emergency">
+                
+                        <p class="block">
+                            This section is reserved for <strong>major emergencies</strong>, such as the
+                            sudden disappearance of the website's owner. This special use case of Maintenance
+                            Mode is driven by a "dead man's switch" which will automatically activate if the
+                            site's owner has not logged in for an extended period of time.
+                        </p>
+
+                        <div class="block content">
+                            When the Emergency Kill Switch is activated, Maintenance Mode will be enabled
+                            automatically with the following settings:
+
+                            <ul>
+                                <li>New signups will be disabled</li>
+                                <li>New logins for existing users will continue to work</li>
+                                <li>
+                                    All 'login required' pages will display the Maintenance Mode messaging,
+                                    and give existing users the ability to fully delete their account, log out,
+                                    or try coming back later.
+                                </li>
+                                <li>All other site features (chat, forums, etc.) will be locked down to admin-only.</li>
+                            </ul>
+                        </div>
+
+                        <h2 class="subtitle">Dead Man's Switch</h2>
+
+                        <div class="field">
+                            <label class="label">Status</label>
+                            {{if .KillSwitch.Activated}}
+                                <span class="tag is-danger">Activated</span>
+                            {{else if and .KillSwitch.Enabled .SiteOwner .KillSwitch.DaysMissingTTL}}
+                                <span class="tag is-success">Enabled (Armed)</span>
+                            {{else}}
+                                <span class="tag is-warning">Not Enabled (Disarmed)</span>
+                            {{end}}
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Site Owner</label>
+                            {{if .SiteOwner}}
+                                <figure class="image is-16x16 is-inline-block">
+                                    <a href="/u/{{.SiteOwner.Username}}" class="has-text-dark">
+                                        {{if .SiteOwner.ProfilePhoto.ID}}
+                                            <img class="is-rounded" src="{{PhotoURL .SiteOwner.ProfilePhoto.CroppedFilename}}">
+                                        {{else}}
+                                        <img class="is-rounded" src="/static/img/shy.png">
+                                        {{end}}
+                                    </a>
+                                </figure>
+                                <a href="/u/{{.SiteOwner.Username}}">{{.SiteOwner.Username}}</a>
+                                <small>
+                                    <em>Last seen: {{SincePrettyCoarse .SiteOwner.LastLoginAt}} ago</em>
+                                </small>
+                            {{else}}
+                                <em>not configured!</em>
+                            {{end}}
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="days_missing">Days Missing Threshold</label>
+                            <input type="number" class="input"
+                                id="days_missing"
+                                name="days_missing"
+                                value="{{.KillSwitch.DaysMissingTTL}}">
+                            <p class="help">
+                                The number of days since the site owner's last login before Emergency Mode activates.
+                                Enter 0 (zero) to disable the dead man's switch.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Enable the Dead Man's Switch</label>
+                            <label class="checkbox">
+                                <input type="checkbox"
+                                    name="enabled"
+                                    value="true"
+                                    {{if .KillSwitch.Enabled}}checked{{end}}>
+                                Enabled
+                            </label>
+                            <p class="help">
+                                If this box is checked, and the Site Owner and Days Missing values are filled in (non-zero),
+                                then the Emergency Mode will activate when the site owner has gone missing.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label class="checkbox">
+                                <input type="checkbox"
+                                    name="activated"
+                                    value="true"
+                                    {{if .KillSwitch.Activated}}checked{{end}}>
+                                <span class="has-text-danger">Activated <i class="fa fa-exclamation-triangle"></i></span>
+                            </label>
+                            <p class="help">
+                                This checkbox will force Emergency Mode to 'Activated.' It can be used for testing the
+                                feature, or, in case the feature were automatically activated due to the owner's absence,
+                                the feature can be disarmed by unchecking this box.
+                            </p>
+                        </div>
+
+                        <hr>
+
+                        <h2 class="subtitle">Custom Messaging</h2>
+
+                        <p class="block">
+                            When Maintenance Mode is activated <strong>because of</strong> the Emergency Kill Switch,
+                            the following custom messaging (if filled in) will <strong>override</strong> the regular
+                            Maintenance Mode messaging and be displayed in its place.
+                        </p>
+
+                        <div class="field">
+                            <label class="label" for="emergency_headline">Headline</label>
+                            <input type="text" class="input"
+                                id="emergency_headline"
+                                name="headline"
+                                placeholder="The website is responding to an unexpected emergency"
+                                value="{{.KillSwitch.Headline}}">
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="emergency_message">Message</label>
+                            {{template "markdown-editor" (
+                                NewHashMap "Name" "message"
+                                "ID" "emergency_message"
+                                "Value" .KillSwitch.Message
+                                "Placeholder" "All website interactions are currently on pause while we address an unexpected emergency."
+                                "Rows" 4
+                            )}}
+                        </div>
+
+                        <div class="block">
+                            <button type="submit" class="button is-primary"
+                                name="intent" value="save">
+                                Save Settings
+                            </button>
+                        </div>
+                
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

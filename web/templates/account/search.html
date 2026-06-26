@@ -1,0 +1,743 @@
+{{define "title"}}People{{end}}
+{{define "content"}}
+<div class="container">
+    {{$Root := .}}
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    {{if eq .Sort "distance"}}
+                        <i class="fa fa-location-dot mr-2"></i>
+                        Who's Nearby
+                    {{else}}
+                        <i class="fa fa-people-group mr-2"></i>
+                        People
+                    {{end}}
+                </h1>
+                <h2 class="subtitle">Member Directory</h2>
+            </div>
+        </div>
+    </section>
+
+    <form action="/members" method="GET">
+    <div class="p-4">
+
+        <div class="columns">
+            <div class="column">
+                Found {{FormatNumberCommas .Pager.Total}} profile{{Pluralize64 .Pager.Total}}
+                (page {{.Pager.Page}} of {{.Pager.Pages}}).
+            </div>
+        </div>
+
+        {{if .FriendSearch}}
+        <div class="notification is-success is-light">
+            Currently searching within your <i class="fa fa-user-group"></i> Friends list.
+        </div>
+        {{else if eq .Sort "distance"}}
+        <div class="notification is-success is-light content">
+            <p>
+                Showing you <i class="fa fa-location-dot mr-1"></i> <strong>Who's Nearby.</strong>
+            </p>
+
+            <!-- Was it a manual city search? -->
+            {{if .City}}
+                <!-- If the current user has no location set, lead the way. -->
+                {{if not .MyLocation.Source}}
+                <p>
+                    You will need to <a href="/settings/location">set your own location</a> first before you can search for other members by
+                    their location. It's only fair!
+                </p>
+                {{else}}
+                <p>
+                    You are searching for profiles near {{.City}}.
+                </p>
+                {{end}}
+            {{else}}
+                <!-- Show options to refresh their location -->
+                <p>
+                    {{if eq .MyLocation.Source "geoip"}}
+                        You had set your location to update automatically by your IP address <small>(currently {{.GeoIPInsights.Short}}).</small>
+                        <a href="/settings/location">Change your location settings?</a>
+                    {{else if eq .MyLocation.Source "gps"}}
+                        You once set your location via your device's GPS coordinates.
+                        <a href="/settings/location" id="gpsRefresh">Refresh to your current location now?</a>
+                    {{else if eq .MyLocation.Source "pin"}}
+                        You had set your location by dropping a pin on a map.
+                        <a href="/settings/location">Update your location?</a>
+                    {{else if eq .MyLocation.Source ""}}
+                        You will need to <a href="/settings/location">set your location</a> first before we can sort people by distance from you.
+                    {{end}}
+                </p>
+            {{end}}
+        </div>
+        {{else if eq .Certified "shy"}}
+        <div class="notification is-success is-light content">
+            <p>
+                Showing you <i class="fa fa-ghost"></i> <strong>Shy Accounts</strong>. These profiles may be marked as private or
+                have no photo available to you, as all of theirs are set to 'friends-only' or 'private.'
+            </p>
+
+            <p>
+                Shy Accounts are limited in the way they can interact with our non-shy members.
+                <a href="/faq#shy-faqs" target="_blank">Learn more <i class="fa fa-external-link"></i></a>
+            </p>
+        </div>
+        {{end}}
+
+        <!-- Restricted search terms -->
+        {{if .RestrictedSearchError}}
+        <div class="notification is-danger is-light content">
+            <p>
+                <i class="fa fa-hand mr-1"></i>
+                <strong>Your search was blocked</strong>
+            </p>
+
+            <p>
+                Your search included terms that are blocked on this website.
+            </p>
+        </div>
+        {{else}}
+            <!-- Upcoming Travel Plans? -->
+            {{if .TravelPlanCount}}
+                <div class="block">
+                    <strong class="has-text-success">
+                        <i class="fa fa-briefcase mr-1"></i>
+                        Upcoming Travel Plans:
+                    </strong>
+                    There {{Pluralize64 .TravelPlanCount "is" "are"}}
+                    <a href="/travel?{{if .City}}wcs={{.City}}&{{end}}distance=80.4672">{{.TravelPlanCount}} upcoming travel plan{{Pluralize64 .TravelPlanCount}}</a>
+                    nearby {{if .City}}{{.City}}.{{else}}your location!{{end}}
+                </div>
+            {{end}}
+
+            <!-- Upcoming Events? -->
+            {{if .NearbyEventCount}}
+                <div class="block">
+                    <strong class="has-text-success">
+                        <i class="fa-regular fa-calendar mr-1"></i>
+                        Upcoming Event{{Pluralize64 .NearbyEventCount}} Nearby:
+                    </strong>
+                    There {{Pluralize64 .NearbyEventCount "is" "are"}}
+                    <a href="/events?{{if .City}}wcs={{.City}}&{{end}}distance=80.4672">{{.NearbyEventCount}} upcoming event{{Pluralize64 .NearbyEventCount}}</a>
+                    nearby {{if .City}}{{.City}}.{{else}}your location!{{end}}
+                </div>
+            {{end}}
+        {{end}}
+
+        <!-- Quick Filters -->
+        <div class="block">
+            <label class="label">Quick Filters</label>
+            <div class="columns is-mobile is-multiline is-gapless">
+
+                {{if eq .Sort "distance"}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" ""}}"
+                        class="tag is-info">
+                        <i class="fa fa-location-dot mr-1"></i>
+                        Who's Nearby?
+                    </a>
+                </div>
+                {{else}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" "distance"}}"
+                        class="tag">
+                        <i class="fa fa-location-dot mr-1 has-text-info"></i>
+                        Who's Nearby?
+                    </a>
+                </div>
+                {{end}}
+
+                {{if .FriendSearch}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}?{{QueryPlus "friends" ""}}"
+                        class="tag is-warning">
+                        <i class="fa fa-user-group mr-1"></i>
+                        Friends
+                    </a>
+                </div>
+                {{else}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}?{{QueryPlus "friends" "true"}}"
+                        class="tag">
+                        <i class="fa fa-user-group mr-1 has-text-warning"></i>
+                        Friends
+                    </a>
+                </div>
+                {{end}}
+
+                {{if .LikedSearch}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}?{{QueryPlus "liked" ""}}"
+                        class="tag is-danger">
+                        <i class="fa fa-heart mr-1"></i>
+                        Liked
+                    </a>
+                </div>
+                {{else}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}?{{QueryPlus "liked" "true"}}"
+                        class="tag">
+                        <i class="fa fa-heart mr-1 has-text-danger"></i>
+                        Liked
+                    </a>
+                </div>
+                {{end}}
+
+                {{if .OnChatSearch}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}?{{QueryPlus "on_chat" ""}}"
+                        class="tag is-success">
+                        <i class="fa fa-user mr-1"></i>
+                        On Chat
+                    </a>
+                </div>
+                {{else}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}?{{QueryPlus "on_chat" "true"}}"
+                        class="tag">
+                        <i class="fa fa-user mr-1 has-text-success"></i>
+                        On Chat
+                    </a>
+                </div>
+                {{end}}
+
+                {{if or (eq .Sort "distance") .FriendSearch .LikedSearch .OnChatSearch}}
+                <div class="column is-narrow mx-1 mb-2">
+                    <a href="{{.Request.URL.Path}}"
+                        class="tag is-grey">
+                        <i class="fa fa-xmark mr-1"></i>
+                        Clear
+                    </a>
+                </div>
+                {{end}}
+
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column is-one-quarter">
+
+                <div class="card gosocial-collapsible-mobile">
+                    <header class="card-header has-background-link-light">
+                        <p class="card-header-title has-text-dark">
+                            <i class="fa fa-list mr-2"></i>
+                            Search Filters
+                        </p>
+                        <button class="card-header-icon" type="button">
+                            <span class="icon">
+                                <i class="fa fa-angle-up"></i>
+                            </span>
+                        </button>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="field">
+                            <label class="label" for="certified">Status:</label>
+                            <div class="select is-fullwidth">
+                                <select id="certified" name="certified" id="certified">
+                                    <optgroup label="Profile Status">
+                                        <option value="true"{{if eq $Root.Certified "true"}} selected{{end}}>All active accounts</option>
+                                        <option value="admin"{{if eq $Root.Certified "admin"}} selected{{end}}>Website administrators</option>
+                                    </optgroup>
+                                    {{if .CurrentUser.HasAdminScope "admin.user.ban"}}
+                                    <optgroup label="Admin Options">
+                                        <option value="banned"{{if eq $Root.Certified "banned"}} selected{{end}}>☮ Banned</option>
+                                        <option value="disabled"{{if eq $Root.Certified "disabled"}} selected{{end}}>☮ Disabled</option>
+                                    </optgroup>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="name">Name or username:</label>
+                            <input type="text" class="input"
+                                name="name" id="name"
+                                autocomplete="off"
+                                value="{{$Root.EmailOrUsername}}">
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="search">Profile text:</label>
+                            <input type="text" class="input"
+                                name="search" id="search"
+                                autocomplete="off"
+                                value="{{$Root.Search}}">
+                            <p class="help">
+                                Tip: you can <span class="has-text-success">"quote exact phrases"</span> and
+                                <span class="has-text-success">-exclude</span> words (or
+                                <span class="has-text-success">-"exclude phrases"</span>) from your search.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="wcs">Location:</label>
+                            <input type="text" class="input"
+                                name="wcs" id="wcs"
+                                autocomplete="off"
+                                value="{{$Root.City}}">
+                            <p class="help">
+                                Search and select a city name.
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Age:</label>
+                            <div class="columns is-mobile is-gapless">
+                                <div class="column">
+                                    <div class="select is-fullwidth">
+                                        <select name="age_min">
+                                            <option value="">Min</option>
+                                            {{range IterRange 18 120}}
+                                            <option value="{{.}}"{{if eq $Root.AgeMin .}} selected{{end}}>{{.}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <div class="select is-fullwidth">
+                                        <select name="age_max">
+                                            <option value="">Max</option>
+                                            {{range IterRange 18 120}}
+                                            <option value="{{.}}"{{if eq $Root.AgeMax .}} selected{{end}}>{{.}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="gender">Gender:</label>
+                            <div class="select is-fullwidth">
+                                <select id="gender" name="gender">
+                                    <option value=""></option>
+                                    <optgroup label="Singles">
+                                        {{range .Enum.Gender}}
+                                        <option value="{{.}}"{{if eq $Root.Gender .}} selected{{end}}>{{.}}</option>
+                                        {{end}}
+                                    </optgroup>
+                                    <optgroup label="Couples">
+                                        {{range .Enum.CouplesGender}}
+                                        <option value="{{.}}"{{if eq $Root.Gender .}} selected{{end}}>{{.}}</option>
+                                        {{end}}
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="orientation">Orientation:</label>
+                            <div class="select is-fullwidth">
+                                <select id="orientation" name="orientation">
+                                    <option value=""></option>
+                                    {{range .Enum.Orientation}}
+                                    <option value="{{.}}"{{if eq $Root.Orientation .}} selected{{end}}>{{.}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="marital_status">Relationship:</label>
+                            <div class="select is-fullwidth">
+                                <select id="marital_status" name="marital_status">
+                                    <option value=""></option>
+                                    {{range .Enum.MaritalStatus}}
+                                    <option value="{{.}}"{{if eq $Root.MaritalStatus .}} selected{{end}}>{{.}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="here_for">Here for:</label>
+                            <div class="select is-fullwidth">
+                                <select id="here_for" name="here_for">
+                                    <option value=""></option>
+                                    {{range .HereForEnum}}
+                                    <optgroup label="{{.Header}}">
+                                        {{range .Options}}
+                                            <option value="{{.Value}}"{{if eq $Root.HereFor .Value}} selected{{end}}>{{.Value}}</option>
+                                        {{end}}
+                                    </optgroup>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="language">Spoken language:</label>
+                            <div class="select is-fullwidth">
+                                <select id="language" name="language">
+                                    <option value=""></option>
+                                    {{range .Enum.SpokenLanguages}}
+                                    <option value="{{.}}"{{if eq $Root.SpokenLanguage .}} selected{{end}}>{{.}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="last_online">Last online:</label>
+                            <div class="select is-fullwidth">
+                                <select id="last_online" name="last_online">
+                                    <option value=""></option>
+                                    <option value="24"{{if eq .LastOnline 24}} selected{{end}}>Last 24 hours</option>
+                                    <option value="48"{{if eq .LastOnline 48}} selected{{end}}>Last 2 days</option>
+                                    <option value="72"{{if eq .LastOnline 72}} selected{{end}}>Last 3 days</option>
+                                    <option value="168"{{if eq .LastOnline 168}} selected{{end}}>Last 7 days</option>
+                                    <option value="336"{{if eq .LastOnline 336}} selected{{end}}>Last 2 weeks</option>
+                                    <option value="720"{{if eq .LastOnline 720}} selected{{end}}>Last month</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="friends">Miscellanous:</label>
+                            <div>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="friends"
+                                        id="friends"
+                                        value="true"
+                                        {{if .FriendSearch}}checked{{end}}>
+                                    Show only my friends
+                                </label>
+                            </div>
+                            <div>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="liked"
+                                        id="liked"
+                                        value="true"
+                                        {{if .LikedSearch}}checked{{end}}>
+                                    Show only my "Likes"
+                                </label>
+                            </div>
+                            <div>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="followers"
+                                        id="followers"
+                                        value="true"
+                                        onchange="if (this.checked) document.querySelector('#following').checked = false"
+                                        {{if .FollowerSearch}}checked{{end}}>
+                                    Show only my Followers
+                                </label>
+                            </div>
+                            <div>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="following"
+                                        id="following"
+                                        value="true"
+                                        onchange="if (this.checked) document.querySelector('#followers').checked = false"
+                                        {{if and .FollowingSearch (not .FollowerSearch)}}checked{{end}}>
+                                    Show only my Following
+                                </label>
+                            </div>
+                            <div>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="on_chat"
+                                        id="on_chat"
+                                        value="true"
+                                        {{if .OnChatSearch}}checked{{end}}>
+                                    Currently on chat
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="sort">Sort by:</label>
+                            <div class="select is-fullwidth">
+                                <select id="sort" name="sort">
+                                    <option value="last_login_at desc"{{if eq .Sort "last_login_at desc"}} selected{{end}}>Last login</option>
+                                    <option value="created_at desc"{{if eq .Sort "created_at desc"}} selected{{end}}>Signup date</option>
+                                    <option value="certified_at desc"{{if eq .Sort "certification_photos.updated_at desc"}} selected{{end}}>Certified date</option>
+                                    <option value="username"{{if eq .Sort "username"}} selected{{end}}>Username (a-z)</option>
+                                    <option value="username desc"{{if eq .Sort "username desc"}} selected{{end}}>Username (z-a)</option>
+                                    <option value="lower(name)"{{if eq .Sort "lower(name)"}} selected{{end}}>Name (a-z)</option>
+                                    <option value="lower(name) desc"{{if eq .Sort "lower(name) desc"}} selected{{end}}>Name (z-a)</option>
+                                    <option value="distance"{{if eq .Sort "distance"}} selected{{end}}>Distance to me</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="distance">Max distance:</label>
+                            <div class="select is-fullwidth">
+                                <select id="distance" name="distance">
+                                    <option value=""></option>
+                                    {{range .DistanceLimiters}}
+                                    <option value="{{.Value}}"{{if eq $Root.FilterDistance .Value}} selected{{end}}>{{.Label}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                            <p class="help">
+                                Applies when sorting by distance.
+                            </p>
+                        </div>
+
+                        <div class="field mt-5">
+                            <a href="/members" class="button">Reset</a>
+                            <button type="submit" class="button is-primary">
+                                <span>Search</span>
+                                <span class="icon"><i class="fa fa-search"></i></span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <p class="help">
+                    Tip: on mobile, tap the "Search Filters" to see options.
+                </p>
+
+            </div>
+
+            <div class="column">
+
+                {{SimplePager .Pager}}
+
+                <div class="columns is-multiline">
+
+                    {{if not .Users}}
+                    <div class="column">
+                        <div class="notification is-info is-light">
+                            No results found. Please check your Search Filters and try again,
+                            or <a href="{{.Request.URL.Path}}">reset all filters</a>.
+                        </em>
+                    </div>
+                    {{end}}
+
+                    {{range .Users}}
+                    <div class="column is-half">
+
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="media block mb-0">
+                                    <div class="media-left">
+                                        {{template "avatar-64x64" .}}
+
+                                        <!-- Friendship badge -->
+                                        {{if $Root.FriendMap.Get .ID}}
+                                        <div>
+                                            <span class="is-size-7 has-text-warning">
+                                                <i class="fa fa-user-group" title="Friends"></i>
+                                                Friends
+                                            </span>
+                                        </div>
+                                        {{end}}
+
+                                        <!-- Follower badge -->
+                                        {{if $Root.FollowMap.IsMutual .ID}}
+                                        <div>
+                                            <span class="is-size-7 has-text-success">
+                                                <i class="fa fa-star" title="Mutual Followers"></i>
+                                                Mutuals
+                                            </span>
+                                        </div>
+                                        {{else if $Root.FollowMap.IsFollowing .ID}}
+                                        <div>
+                                            <span class="is-size-7 has-text-success">
+                                                <i class="fa-regular fa-star-half-stroke" title="I'm Following"></i>
+                                                Following
+                                            </span>
+                                        </div>
+                                        {{else if $Root.FollowMap.IsFollower .ID}}
+                                        <div>
+                                            <span class="is-size-7 has-text-success">
+                                                <i class="fa-regular fa-star" title="Follows Me"></i>
+                                                Follows Me
+                                            </span>
+                                        </div>
+                                        {{end}}
+
+                                        <!-- Liked badge -->
+                                        {{$LikedStats := $Root.LikedMap.Get .ID}}
+                                        {{if $LikedStats.UserLikes}}
+                                        <div>
+                                            <span class="is-size-7">
+                                                <i class="fa fa-heart has-text-danger" title="Friends"></i>
+                                                Liked
+                                            </span>
+                                        </div>
+                                        {{end}}
+                                    </div>
+                                    <div class="media-content">
+                                        <p class="title is-4">
+                                            <a href="/u/{{.Username}}" class="has-text-dark">
+                                                {{if ne .Status "active"}}
+                                                    <del>{{.NameOrUsername}}</del>
+                                                {{else}}
+                                                    {{.NameOrUsername}}
+                                                {{end}}
+                                            </a>
+                                            {{if eq .Visibility "private"}}
+                                                <sup class="fa fa-mask is-size-7" title="Private Profile"></sup>
+                                            {{end}}
+                                        </p>
+                                        <p class="subtitle is-6 mb-2">
+                                            <span class="icon"><i class="fa fa-user"></i></span>
+                                            <a href="/u/{{.Username}}">{{.Username}}</a>
+
+                                            <!-- "(banned)" label -->
+                                            {{if ne .Status "active"}}<small>({{.Status}})</small>{{end}}
+
+                                            {{if .IsAdmin}}
+                                            <span class="tag is-danger is-light p-1" style="font-size: x-small">
+                                                <i class="fa fa-peace mr-1"></i>
+                                                <span>Admin</span>
+                                            </span>
+                                            {{end}}
+
+                                            <!-- Photo count pulled to the right -->
+                                            <a href="/u/{{.Username}}/photos" class="tag is-info is-light is-pulled-right">
+                                                <i class="fa fa-camera mr-2"></i>
+                                                {{$Root.PhotoCountMap.Get .ID}}
+                                            </a>
+                                        </p>
+                                        {{if .GetProfileField "city"}}
+                                        <p class="subtitle is-6 mb-2">
+                                            {{.GetProfileField "city"}}
+                                        </p>
+                                        {{end}}
+                                        <p class="subtitle is-7 mb-2">
+                                            {{if or (ne .GetDisplayAge "n/a")}}
+                                            <span class="mr-2">{{.GetDisplayAge}}</span>
+                                            {{end}}
+
+                                            {{if .GetProfileField "gender"}}
+                                            <span class="mr-2">{{.GetProfileField "gender"}}</span>
+                                            {{end}}
+
+                                            {{if .GetProfileField "pronouns"}}
+                                            <span class="mr-2">{{.GetProfileField "pronouns"}}</span>
+                                            {{end}}
+
+                                            {{if .GetProfileField "orientation"}}
+                                            <span class="mr-2">{{.GetProfileField "orientation"}}</span>
+                                            {{end}}
+                                        </p>
+
+                                        <!-- Chat room status -->
+                                        {{if $Root.UserOnChatMap.Get .Username}}
+                                        <div>
+                                            <span class="tag is-success is-light">
+                                                <i class="fa fa-user mr-2"></i>
+                                                Currently on chat!
+                                            </span>
+                                        </div>
+                                        {{end}}
+
+                                        <!-- Show a subfooter based on ordered by -->
+                                        {{if eq $Root.Sort "distance"}}
+                                        <div>
+                                            {{$Root.DistanceMap.Get .ID}} away
+                                        </div>
+                                        {{end}}
+
+                                        {{if or (eq $Root.Sort "last_login_at desc") (eq $Root.Sort "distance")}}
+                                        <div>
+                                            <small>
+                                                Last logged in:
+                                                <span title="On {{.LastLoginAt.Format "Jan _2 2006 15:04:05 MST"}}">
+                                                    {{SincePrettyCoarse .LastLoginAt}} ago
+                                                </span>
+                                            </small>
+                                        </div>
+                                        {{end}}
+
+                                        {{if or (eq $Root.Sort "created_at desc") (eq $Root.Sort "certification_photos.updated_at desc")}}
+                                        <div>
+                                            <small>
+                                                Member since:
+                                                <span title="On {{.CreatedAt.Format "Jan _2 2006 15:04:05 MST"}}">
+                                                    {{SincePrettyCoarse .CreatedAt}} ago
+                                                </span>
+                                            </small>
+                                        </div>
+                                        {{end}}
+
+                                        {{if eq $Root.Sort "certification_photos.updated_at desc"}}
+                                        <div>
+                                            <small>
+                                                {{$Since := $Root.CertifiedSinceMap.Get .ID}}
+                                                Certified since:
+                                                <span title="On {{$Since.Format "Jan _2 2006 15:04:05 MST"}}">
+                                                    {{SincePrettyCoarse $Since}} ago
+                                                </span>
+                                            </small>
+                                        </div>
+                                        {{end}}
+
+                                    </div>
+                                </div><!-- media-block -->
+
+                                {{if .GetProfileField "headline"}}
+                                <div class="notification is-info is-light is-size-7 py-1 px-2 mt-4" style="display: table; table-layout: fixed; width: 100%" title="{{.GetProfileField "headline"}}">
+                                    <div style="display: table-cell; white-space: nowrap; text-overflow: ellipsis; overflow: hidden">
+                                        <span>{{.GetProfileField "headline"}}</span>
+                                    </div>
+                                </div>
+                                {{end}}
+                            </div>
+                        </div>
+
+                    </div>
+                    {{end}}<!-- range .Friends -->
+                </div>
+
+                {{SimplePager .Pager}}
+
+            </div>
+        </div>
+
+    </div>
+    </form>
+</div>
+{{end}}
+{{define "scripts"}}
+
+<!-- Typeahead search for City -->
+<link rel="stylesheet" href="/static/css/typeahead.css?build={{.BuildHash}}">
+<link rel="stylesheet" href="/static/css/awesomplete-1.1.7.css">
+<script type="text/javascript" src="/static/js/awesomplete-1.1.7.min.js"></script>
+<script type="text/javascript" src="/static/js/typeahead-worldcities.js?build={{.BuildHash}}"></script>
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Type-ahead search for Usernames.
+    (function() {
+        const $input = document.getElementById("name");
+
+        const autocomplete = new Awesomplete($input, {
+            minChars: 1,
+            maxItems: 7,
+            autoFirst: true,
+            tabSelect: true,
+            list: [],
+            filter(text, input) {
+                let words = input.split(/\s+/);
+                let match = 0;
+                for (let word of words) {
+                    if (text.toLowerCase().indexOf(word.toLowerCase()) > -1) {
+                        match++;
+                    }
+                }
+                return match === words.length;
+            }
+        });
+
+        $input.addEventListener('input', async function () {
+            const query = encodeURIComponent(this.value);
+            const res = await fetch(`/v1/users/username?query=${query}`);
+            const data = await res.json();
+            autocomplete.list = data;
+        });
+    })();
+});
+</script>
+{{end}}

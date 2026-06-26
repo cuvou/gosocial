@@ -1,0 +1,106 @@
+{{define "title"}}Deactivate Account{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-exclamation-triangle mr-2"></i>
+                    Deactivate Account
+                </h1>
+                <h2 class="subtitle">
+                    Temporarily deactivate, or permanently delete your account
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "deactivate")}}
+            </div>
+    
+            <div class="column">
+    
+                <!-- Deactivate or Delete Account -->
+                <div id="deactivate">
+                    <div class="card mb-5">
+                        <header class="card-header has-background-warning">
+                            <p class="card-header-title has-text-dark-dark">
+                                <i class="fa fa-exclamation-triangle pr-2"></i>
+                                Deactivate My Account
+                            </p>
+                        </header>
+    
+                        <div class="card-content">
+                            <p class="block">
+                                If you'd like to take a break from {{PrettyTitle}} but think you may want to
+                                come back later, you may <strong>temporarily deactivate your account</strong>.
+                            </p>
+    
+                            <p class="block">
+                                While deactivated, your {{PrettyTitle}} account will be hidden from everybody and
+                                will appear the same as if you had fully deleted it. However, you will be able to
+                                log back in later and restore your account, and pick up where you left off, and
+                                it will be like you never left!
+                            </p>
+    
+                            <p class="block">
+                                If you later decide that you want to permanently delete your account after all,
+                                you can also log in later and do so without needing to re-activate it first.
+                            </p>
+    
+                            <p class="block">
+                                This option is recommended because it is less destructive than a full account deletion:
+                                because if you then changed your mind, you would need to start all over again with a new account,
+                                wait for your new certification photo to be approved, and then try and reconnect with
+                                your old friends again.
+                            </p>
+    
+                            <p class="block">
+                                <a href="/account/deactivate" class="button is-warning">
+                                    <i class="fa fa-exclamation-triangle mr-2"></i>
+                                    Temporarily Deactivate My Account
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+    
+                    <!-- Delete Account -->
+                    <div class="card mb-5">
+                        <header class="card-header has-background-danger">
+                            <p class="card-header-title has-text-light">
+                                <i class="fa fa-exclamation-triangle pr-2"></i>
+                                Permanently Delete My Account
+                            </p>
+                        </header>
+    
+                        <div class="card-content">
+                            <p class="block">
+                                If you would like to <strong>fully delete</strong> your account, please click
+                                on the button below.
+                            </p>
+    
+                            <p class="block">
+                                Account deletions can <strong>not</strong> be undone!
+                            </p>
+    
+                            <p class="block">
+                                <a href="/account/delete" class="button is-danger">
+                                    <i class="fa fa-trash mr-2"></i>
+                                    Permanently Delete My Account
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+    
+            </div>
+    
+        </div>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,106 @@
+{{define "title"}}Batch Message Tool{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-envelope mr-2"></i>
+                    Batch Message Tool
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon"><i class="fa fa-message"></i></span>
+                            Compose a Message
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        {{if not .Users}}
+                        <form action="{{.Request.URL.Path}}" method="GET">
+                            <div class="field">
+                                <label class="label" for="to">Usernames</label>
+                                <input type="text" class="input"
+                                    name="to" id="to"
+                                    placeholder="list, of, usernames">
+                                <p class="help">
+                                    Enter a comma-separated list of usernames to deliver this message to.
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <button type="submit" class="button is-primary">Continue</button>
+                            </div>
+                        </form>
+                        {{else}}
+                        <form action="{{.Request.URL.Path}}" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="to" value="{{.To}}">
+
+                            <div class="field">
+                                <label class="label">To {{len .Users}} Users</label>
+                                <div style="max-height: 150px; overflow-y: auto; overflow-x: hidden">
+                                    <div class="columns is-multiline is-mobile">
+                                        {{range .Users}}
+                                        <div class="column is-narrow pb-0">
+                                            {{template "avatar-16x16" .}}
+                                            <a href="/u/{{.Username}}" target="_blank">{{.Username}}</a>
+                                        </div>
+                                        {{end}}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field block">
+                                <label for="message" class="label">Message</label>
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "message"
+                                    "ID" "message"
+                                    "Placeholder" "Message"
+                                    "Required" true
+                                    "Rows" 8
+                                )}}
+                                <p class="help">
+                                    <a href="/markdown" target="_blank">Markdown formatting</a> supported.
+                                </p>
+                            </div>
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success gosocial-confirm-submit"
+                                    data-confirm="Are you sure you want to send this bulk message to {{len .Users}} people?\n\nBe sure you have clicked on the 'Preview' tab and that your message looks correct before sending!">
+                                    Send Message
+                                </button>
+                            </div>
+                        </form>
+                        {{end}}
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    window.addEventListener("DOMContentLoaded", (event) => {
+        let $file = document.querySelector("#file"),
+            $fileName = document.querySelector("#fileName");
+
+        $file.addEventListener("change", function() {
+            let file = this.files[0];
+            $fileName.innerHTML = file.name;
+        });
+    });
+</script>
+{{end}}

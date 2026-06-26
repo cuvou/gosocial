@@ -1,0 +1,8 @@
+/gosocial
+/scratch
+/web/static/photos
+/web/static/videos
+/coldstorage
+database.sqlite
+settings.json
+pgdump.sql

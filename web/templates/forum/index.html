@@ -1,0 +1,336 @@
+{{define "title"}}Forums{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <div class="level">
+                    <div class="level-left">
+                        <div>
+                            <h1 class="title">
+                                <span class="icon mr-4"><i class="fa fa-comments"></i></span>
+                                <span>Forums</span>
+                            </h1>
+                            <h2 class="subtitle">
+                                {{if .IsExploreTab}}
+                                    Explore Community &amp; Official Forums
+                                {{else}}
+                                    Categories &amp; My List
+                                {{end}}
+                            </h2>
+                        </div>
+                    </div>
+                    {{if .CurrentUser.HasAdminScope "social.moderator.forum"}}
+                    <div class="level-right">
+                        <div>
+                            <a href="/forum/admin" class="button">
+                                <span class="icon"><i class="fa fa-peace"></i></span>
+                                <span>Forum Admin</span>
+                            </a>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <!-- Tab bar -->
+    {{template "ForumTabs" .}}
+
+    <!-- Filters for the Explore tab -->
+    {{if .IsExploreTab}}
+    <div class="block mb-0 p-4">
+
+        <div class="block">
+            The "Explore" tab is where you can search and find all of the available forums, including Community Forums
+            created by your fellow {{PrettyTitle}} members.
+        </div>
+
+        {{if .ForumQuota}}
+        <div class="block">
+            <strong class="has-text-success">
+                <i class="fa fa-info-circle mr-1"></i> Create your own forum:
+            </strong>
+            You may <a href="/forum/admin">create a Forum of your own</a> and build a community around your favorite
+            hobby or local area.
+        </div>
+        {{end}}
+
+        <form action="{{.Request.URL.Path}}" method="GET">
+
+            <div class="card gosocial-collapsible-mobile">
+                <header class="card-header has-background-link-light">
+                    <p class="card-header-title has-text-dark">
+                        <i class="fa fa-list mr-2"></i>
+                        Search Filters
+                    </p>
+                    <button class="card-header-icon" type="button">
+                        <span class="icon">
+                            <i class="fa fa-angle-up"></i>
+                        </span>
+                    </button>
+                </header>
+                <div class="card-content">
+                    <div class="columns">
+
+                        <div class="column is-half pr-1">
+                            <div class="field">
+                                <label class="label" for="q">Search terms:</label>
+                                <input type="text" class="input"
+                                    name="q" id="q"
+                                    autocomplete="off"
+                                    value="{{.SearchTerm}}">
+                                <p class="help">
+                                    Tip: you can <span class="has-text-success">"quote exact phrases"</span> and
+                                    <span class="has-text-success">-exclude</span> words (or
+                                    <span class="has-text-success">-"exclude phrases"</span>) from your search.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label" for="show">Show:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="show" name="show">
+                                        <option value=""{{if eq .Show ""}} selected{{end}}>All forums</option>
+                                        <option value="official"{{if eq .Show "official"}} selected{{end}}>Official gosocial forums</option>
+                                        <option value="community"{{if eq .Show "community"}} selected{{end}}>Community forums only</option>
+                                        <option value="followed"{{if eq .Show "followed"}} selected{{end}}>My List</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label" for="sort">Sort by:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="sort" name="sort">
+                                        <optgroup label="Forum">
+                                            <option value="title asc"{{if eq .Sort "title asc"}} selected{{end}}>Title (A-Z)</option>
+                                            <option value="title desc"{{if eq .Sort "title desc"}} selected{{end}}>Title (Z-A)</option>
+                                            <option value="created_at desc"{{if eq .Sort "created_at desc"}} selected{{end}}>Recently created</option>
+                                            <option value="by_followers"{{if eq .Sort "by_followers"}} selected{{end}}>Popularity (follower count)</option>
+                                        </optgroup>
+                                        <optgroup label="Contents">
+                                            <option value="by_latest"{{if eq .Sort "by_latest"}} selected{{end}}>Latest post</option>
+                                            <option value="by_threads"{{if eq .Sort "by_threads"}} selected{{end}}>Topics (count of threads)</option>
+                                            <option value="by_posts"{{if eq .Sort "by_posts"}} selected{{end}}>Posts (count of threads and replies)</option>
+                                            <option value="by_users"{{if eq .Sort "by_users"}} selected{{end}}>Users (distinct members who have posted)</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column is-narrow pl-1 has-text-right">
+                            <label class="label">&nbsp;</label>
+                            <a href="{{.Request.URL.Path}}" class="button">Reset</a>
+                            <button type="submit" class="button is-success">
+                                <span>Search</span>
+                                <span class="icon"><i class="fa fa-search"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <p class="block p-4">
+        Found <strong>{{.Pager.Total}}</strong> forum{{Pluralize64 .Pager.Total}}.
+        (page {{.Pager.Page}} of {{.Pager.Pages}}).
+    </p>
+
+    <div class="block p-4">
+        {{SimplePager .Pager}}
+    </div>
+    {{end}}
+
+    {{range .Categories}}
+        {{$IsMyList := eq .Category "My List"}}
+        <div class="block p-4">
+            {{if .Category}}
+            <h1 class="title">
+                {{.Category}}
+                {{if $IsMyList}}
+                    <i class="fa fa-book-bookmark ml-2"></i>
+                {{end}}
+            </h1>
+            {{end}}
+
+            <!-- My List: show pagers if needed -->
+            {{if and $IsMyList (gt $Root.Pager.Pages 1)}}
+                {{SimplePager $Root.Pager}}
+            {{end}}
+
+            {{if eq (len .Forums) 0}}
+                <em>
+                    There are no forums under this category.
+                    {{if not $Root.CurrentUser.Explicit}}Your content filters (non-explicit) may be hiding some forums.{{end}}
+                </em>
+            {{else}}
+                {{range .Forums}}
+                {{$Stats := $Root.ForumMap.Get .ID}}
+                <div class="card block gosocial-forum-box-1 has-text-dark">
+                    <div class="card-content">
+                        <div class="columns">
+                            <div class="column is-3 pt-0 pb-1">
+
+                                <h2 class="is-size-4">
+                                    {{if $Root.FollowMap.Get .ID}}
+                                    <sup class="fa fa-bookmark has-text-success is-size-6 mr-1" title="Followed"></sup>
+                                    {{end}}
+                                    <strong><a href="/f/{{.Fragment}}">{{.Title}}</a></strong>
+                                </h2>
+
+                                <div class="content mb-1">
+                                    {{if .Description}}
+                                        {{ToMarkdown .Description}}
+                                    {{else}}
+                                        <em>No description</em>
+                                    {{end}}
+                                </div>
+
+                                <div class="mb-3">
+                                    {{if .Explicit}}
+                                    <span class="tag is-danger is-light">
+                                        <span class="icon"><i class="fa fa-fire"></i></span>
+                                        <span>Explicit</span>
+                                    </span>
+                                    {{end}}
+
+                                    {{if .Privileged}}
+                                    <span class="tag is-warning is-light">
+                                        <span class="icon"><i class="fa fa-peace"></i></span>
+                                        <span>Privileged</span>
+                                    </span>
+                                    {{end}}
+
+                                    {{if .PermitPhotos}}
+                                    <span class="tag is-grey">
+                                        <span class="icon"><i class="fa fa-camera"></i></span>
+                                        <span>Photos</span>
+                                    </span>
+                                    {{end}}
+
+                                    {{if .Private}}
+                                    <span class="tag is-private is-light">
+                                        <span class="icon"><i class="fa fa-lock"></i></span>
+                                        <span>Private</span>
+                                    </span>
+                                    {{end}}
+                                </div>
+
+                                <!-- Owner line -->
+                                <div class="mt-2 has-text-grey" style="font-size: smaller">
+                                    {{if .Category}}
+                                        by <a href="/f/{{.Fragment}}">{{PrettyTitle}}</a>
+                                    {{else}}
+                                        by
+                                        {{template "avatar-16x16" .Owner}}
+                                        {{if .Owner.Username}}
+                                            <a href="/u/{{.Owner.Username}}" class="has-text-grey">
+                                                <strong>{{or .Owner.Username "[unavailable]"}}</strong>
+                                            </a>
+                                        {{else}}
+                                            [unavailable]
+                                        {{end}}
+                                    {{end}}
+
+                                    {{$FollowerCount := $Root.FollowersMap.Get .ID}}
+                                    {{if $FollowerCount}}
+                                        <span class="has-text-success ml-2" title="This forum is followed by {{$FollowerCount}} member{{Pluralize64 $FollowerCount}}.">
+                                            <i class="fa fa-book-bookmark mr-1"></i> {{$FollowerCount}}
+                                        </span>
+                                    {{end}}
+                                </div>
+
+                            </div>
+                            <div class="column py-1">
+                                <div class="box gosocial-forum-box-2 has-text-dark">
+                                    <h2 class="subtitle mb-1 has-text-dark">Latest Post</h2>
+                                    {{if $Stats.RecentThread}}
+                                    <a href="/go/comment?id={{$Stats.RecentPost.ID}}">
+                                        <strong>{{$Stats.RecentThread.Title}}</strong>
+                                    </a>
+                                    <em>by {{$Stats.RecentThread.Comment.User.Username}}</em>
+                                    <div>
+                                        <em>
+                                        {{if and $Stats.RecentPost (not (eq $Stats.RecentPost.ID $Stats.RecentThread.CommentID))}}
+                                            <small>Last comment by {{$Stats.RecentPost.User.Username}}</small>
+                                        {{end}}
+                                        <small title="{{$Stats.RecentThread.UpdatedAt.Format "2006-01-02 15:04:05"}}">{{SincePrettyCoarse $Stats.RecentThread.UpdatedAt}} ago</small>
+                                        <small class="is-size-7">
+                                            <i class="fa fa-eye ml-2 mr-1"></i> {{FormatNumberCommas $Stats.RecentThread.Views}}
+                                        </small>
+                                        </em>
+                                    </div>
+                                    {{else}}
+                                        <em>No posts found.</em>
+                                    {{end}}
+                                </div>
+                            </div>
+                            <div class="column is-3 py-1">
+                                <div class="columns is-mobile is-gapless">
+                                    <div class="column has-text-centered mr-1">
+                                        <div class="box gosocial-forum-box-3 has-text-dark p-2">
+                                            <p class="is-size-7 has-text-dark">Topics</p>
+                                            {{if $Stats}}
+                                                {{FormatNumberCommas $Stats.Threads}}
+                                            {{else}}
+                                                err
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                    <div class="column has-text-centered mx-1">
+                                        <div class="box gosocial-forum-box-3 has-text-dark p-2">
+                                            <p class="is-size-7 has-text-dark">Posts</p>
+                                            {{if $Stats}}
+                                                {{FormatNumberCommas $Stats.Posts}}
+                                            {{else}}
+                                                err
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                    <div class="column has-text-centered ml-1">
+                                        <div class="box gosocial-forum-box-3 has-text-dark p-2">
+                                            <p class="is-size-7 has-text-dark">Users</p>
+                                            {{if $Stats}}
+                                                {{FormatNumberCommas $Stats.Users}}
+                                            {{else}}
+                                                err
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            {{end}}
+
+            <!-- My List: show pagers -->
+            {{if and $IsMyList (gt $Root.Pager.Pages 1)}}
+                {{SimplePager $Root.Pager}}
+                <hr class="mb-0">
+            {{end}}
+        </div>
+    {{end}}<!-- range .Categories -->
+
+    <!-- Pager footer for Explore tab -->
+    {{if .IsExploreTab}}
+    <div class="block p-4">
+        {{SimplePager .Pager}}
+    </div>
+    {{end}}
+</div>
+
+{{end}}

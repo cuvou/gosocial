@@ -1,0 +1,95 @@
+{{define "title"}}Compose a Message{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Write to: {{.User.Username}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon"><i class="fa fa-message"></i></span>
+                            Compose a Message
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="media block">
+                            <div class="media-left">
+                                {{template "avatar-64x64" .User}}
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-4">{{.User.NameOrUsername}}</p>
+                                <p class="subtitle is-6">
+                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                    <a href="/u/{{.User.Username}}" target="_blank">{{.User.Username}}</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <form action="/messages/compose" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="to" value="{{.User.Username}}">
+
+                            <div class="field block">
+                                <label for="message" class="label">Message</label>
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "message"
+                                    "ID" "message"
+                                    "Placeholder" "Message"
+                                    "Required" true
+                                    "Rows" 8
+                                    "GalleryLinks" "footer"
+                                )}}
+                                <p class="help">
+                                    <a href="/markdown" target="_blank">Markdown formatting</a> supported with
+                                    <a href="/faq#embed-photos" target="_blank">attachable gallery photos</a>.
+                                </p>
+                            </div>
+
+                            <div class="notification is-warning is-light p-3 is-size-7">
+                                <i class="fa fa-info-circle mr-1"></i>
+                                <strong>Reminder:</strong> don't share sensitive information over Direct Messages.
+                                Please review the <a href="/privacy#direct-messages" target="_blank">Privacy Policy</a> and
+                                <a href="/tos#direct-messages" target="_blank">Terms of Service</a> as it pertains to DMs on
+                                the main website and the chat room.
+                            </div>
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success">
+                                    Send Message
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    window.addEventListener("DOMContentLoaded", (event) => {
+        let $file = document.querySelector("#file"),
+            $fileName = document.querySelector("#fileName");
+
+        $file.addEventListener("change", function() {
+            let file = this.files[0];
+            $fileName.innerHTML = file.name;
+        });
+    });
+</script>
+{{end}}

@@ -1,0 +1,390 @@
+{{define "title"}}Notification Settings{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-bell mr-2"></i>
+                    Notification Settings
+                </h1>
+                <h2 class="subtitle">
+                    Website &amp; Web Push Notifications
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "notifications")}}
+            </div>
+    
+            <div class="column">
+    
+                <!-- Notification Settings -->
+                <div id="notifications">
+                    <div class="card mb-5">
+                        <header class="card-header has-background-link">
+                            <p class="card-header-title has-text-light">
+                                <i class="fa fa-bell pr-2"></i>
+                                Web Push Notifications
+                            </p>
+                        </header>
+    
+                        <div class="card-content">
+                            <p class="block">
+                                You may opt-in to receive Web Push Notifications for some of your important updates
+                                from {{PrettyTitle}}, such as when you receive a new Direct Message on the main website,
+                                even when you have closed your browser.
+                            </p>
+    
+                            <p class="block">
+                                <strong>Push Notification Permission:</strong>
+                                <strong class="has-text-success" id="push-status-enabled" style="display: none">
+                                    <i class="fa fa-check mr-1"></i> Granted
+                                </strong>
+                                <strong class="has-text-danger" id="push-status-disabled" style="display: none">
+                                    <i class="fa fa-xmark mr-1"></i> Denied
+                                </strong>
+                                <strong class="has-text-warning" id="push-status-default" style="display: none">
+                                    <i class="fa fa-xmark mr-1"></i> Not Granted
+                                </strong>
+                            </p>
+    
+                            <p class="block">
+                                <!-- Button to Grant Permission or Test Notifications -->
+                                <a href="#" id="grant-push-permission"
+                                    class="button is-small is-success">
+                                    Test Notifications
+                                </a>
+    
+                                <!-- Help error if the permission is denied -->
+                                <span id="push-denied-help" style="display: none">
+                                    <i class="fa fa-info-circle has-text-warning mr-1"></i>
+                                    You had denied notification permission to this site. Please check in your web browser's
+                                    settings (or click in your address bar to the left of the website URL) to reset your
+                                    permission setting. Please <a href="/faq#troubleshoot-web-push">see this page</a> for
+                                    help in case you want to resolve this.
+                                </span>
+                            </p>
+    
+                            <!-- Have existing subscriptions? -->
+                            {{if .PushNotificationsCount}}
+                            <p class="block">
+                                <strong>Sessions:</strong> you have enabled push notifications on {{.PushNotificationsCount}} web browser{{Pluralize64 .PushNotificationsCount}}. You may
+                                <a href="/v1/web-push/unregister">click here</a> to reset your subscriptions. Devices that you actively use
+                                (and had granted permission on before) may re-subscribe on your next visit.
+                            </p>
+                            {{end}}
+    
+                            <!-- Specific Push Notification Opt-out Form -->
+                            <form method="POST" action="{{.Request.URL.Path}}">
+                                {{InputCSRF}}
+                                <input type="hidden" name="intent" value="push_notifications">
+    
+                                <div class="field">
+                                    <label class="label">Send a Web Push Notification when...</label>
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_push_messages"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_push_messages") "true"}}checked{{end}}>
+                                        I receive a Direct Message on the main website
+                                    </label>
+                                </div>
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_push_friends"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_push_friends") "true"}}checked{{end}}>
+                                        I receive a new Friend Request
+                                    </label>
+                                </div>
+    
+                                <div class="field">
+                                    <button type="submit" class="button is-primary">
+                                        <i class="fa fa-save mr-2"></i> Save Push Notification Settings
+                                    </button>
+                                </div>
+    
+                            </form>
+                        </div>
+                    </div>
+    
+                    <div class="card mb-5">
+                        <header class="card-header has-background-link">
+                            <p class="card-header-title has-text-light">
+                                <i class="fa fa-bell pr-2"></i>
+                                Notification Settings
+                            </p>
+                        </header>
+    
+                        <div class="card-content">
+                            <p class="block">
+                                On this page you may opt-out of certain kinds of (on-site) notification messages.
+                                {{PrettyTitle}} does not send you any e-mails or push notification -- these on-site
+                                notifications only appear while you are visiting the website (on your
+                                <a href="/me">home/user dashboard page</a>).
+                            </p>
+    
+                            <form method="POST" action="{{.Request.URL.Path}}">
+                                {{InputCSRF}}
+                                <input type="hidden" name="intent" value="notifications">
+    
+                                <h2 class="subtitle">New Photo Uploads</h2>
+    
+                                <p class="block">
+                                    By default you will be notified when your friends upload a new picture to the site.
+                                    Below, you may opt-out of new photo upload notifications.
+                                </p>
+    
+                                <div class="field">
+                                    <label class="label">Notify me when...</label>
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_friends_photos"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_friends_photos") "true"}}checked{{end}}>
+                                        My friends upload a new photo or video
+                                    </label>
+                                    <p class="help">
+                                        If unchecked, the following two notifications will not be sent either.
+                                    </p>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_private_photos"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_private_photos") "true"}}checked{{end}}>
+                                        A friend who shared their private photos with me uploads a new private photo or video
+                                    </label>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_explicit_photos"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_explicit_photos") "true"}}checked{{end}}>
+                                        Allow notifications for 'explicit' photo or video uploads by my friends
+                                    </label>
+                                    <p class="help">
+                                        This will also depend on your <a href="/settings/prefs" target="_blank">opt-in to see explicit content</a> -- otherwise
+                                        notifications about explicit photo uploads will not be sent to you.
+                                    </p>
+                                </div>
+    
+                                <h2 class="subtitle mt-5">Likes &amp; Comments</h2>
+    
+                                <p class="block">
+                                    By default you will be notified when somebody 'likes' or comments on your profile page
+                                    or photos. You may turn off those notifications with the options below.
+                                </p>
+    
+                                <div class="field">
+                                    <label class="label">Notify me when...</label>
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_likes"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_likes") "true"}}checked{{end}}>
+                                        Somebody 'likes' my profile page, photos, videos, or comments
+                                    </label>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_comments"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_comments") "true"}}checked{{end}}>
+                                        Somebody leaves a comment on one of my photos or videos
+                                    </label>
+                                </div>
+    
+                                <h2 class="subtitle mt-5">Comment Thread Subscriptions</h2>
+    
+                                <p class="block">
+                                    Comment threads and forum posts may be 'subscribed' to so that you can be notified about
+                                    comments left by other people after you. By default, you will subscribe to comment threads
+                                    after you leave your first comment.
+                                </p>
+    
+                                <p class="block">
+                                    <strong>Note:</strong> you may unsubscribe from comment threads by using the link at the
+                                    top of its page (for example: at the top of a forum thread page or the top of the list of
+                                    comments on a photo page). You may also opt <em>in</em> to get notifications on a thread
+                                    that you didn't comment on by using the same link at the top of their pages.
+                                </p>
+    
+                                <p class="block">
+                                    The options below can control the automatic opt-in for subscriptions when you leave a
+                                    comment on a new comment thread.
+                                </p>
+    
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_subscriptions"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_subscriptions") "true"}}checked{{end}}>
+                                        Subscribe to notifications for future comments when I leave a comment on something
+                                    </label>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="label">Unsubscribe from Comment Threads</label>
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="unsubscribe_all_threads"
+                                            value="true">
+                                        Unsubscribe NOW from <strong>all ({{.SubscriptionCount}}) comment threads</strong> that I am currently following.
+                                    </label>
+                                    <p class="help">
+                                        You are currently subscribed to <strong>{{.SubscriptionCount}}</strong> comment thread{{Pluralize64 .SubscriptionCount}}.
+                                        You may immediately unsubscribe from all of these threads by checking this box and clicking "Save" below.
+                                    </p>
+                                </div>
+    
+                                <h2 class="subtitle mt-5">Miscellaneous</h2>
+    
+                                <div class="field">
+                                    <label class="label">Notify me when...</label>
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_friend_request_accepted"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_friend_request_accepted") "true"}}checked{{end}}>
+                                        Somebody approves my friendship request
+                                    </label>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_private_grant"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_private_grant") "true"}}checked{{end}}>
+                                        Somebody unlocks their private photos for me to see
+                                    </label>
+                                </div>
+
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="notif_optout_blogs"
+                                            value="true"
+                                            {{if ne (.CurrentUser.GetProfileField "notif_optout_blogs") "true"}}checked{{end}}>
+                                        My friend publishes a new blog post
+                                    </label>
+                                </div>
+    
+                                <!-- Read-only box for certification photo response -->
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            value="true"
+                                            checked
+                                            disabled>
+                                        My certification photo is approved or rejected
+                                    </label>
+                                    <p class="help">
+                                        This notification is important for your account status, is rarely sent out, and can
+                                        not be opted-out from.
+                                    </p>
+                                </div>
+    
+                                <div class="field">
+                                    <button type="submit" class="button is-primary">
+                                        <i class="fa fa-save mr-2"></i> Save Settings
+                                    </button>
+                                </div>
+    
+                            </form>
+                        </div>
+                    </div>
+                </div>
+    
+            </div>
+    
+        </div>
+    </div>
+</div>
+{{end}}
+{{define "scripts"}}
+<script>
+// Notifications tab scripts.
+window.addEventListener("DOMContentLoaded", (event) => {
+    // Get useful controls from the tab.
+    const $pushStatusGranted = document.querySelector("#push-status-enabled"),
+        $pushStatusDenied = document.querySelector("#push-status-disabled"),
+        $pushStatusDefault = document.querySelector("#push-status-default"),
+        $pushEnableButton = document.querySelector("#grant-push-permission"),
+        $pushDeniedHelp = document.querySelector("#push-denied-help");
+    
+    // Is the Notification API unavailable?
+    if (typeof(window.Notification) === "undefined" || typeof(PushNotificationSubscribe) === "undefined") {
+        $pushStatusDefault.innerHTML = `<i class="fa fa-xmark mr-1"></i> Notification API unavailable`;
+        $pushStatusDefault.style.display = "";
+        return;
+    }
+
+    // And testing widely for errors...
+    try {
+
+        // Get the current permission status: default, granted, denied.
+        const showPermission = (permission) => {
+            $pushStatusGranted.style.display = "none";
+            $pushStatusDenied.style.display = "none";
+            $pushStatusDefault.style.display = "none";
+            switch (permission) {
+                case "granted":
+                    $pushStatusGranted.style.display = "";
+                    $pushEnableButton.innerHTML = "Test Push Notification";
+                    break;
+                case "denied":
+                    $pushEnableButton.style.display = "none";
+                    $pushDeniedHelp.style.display = "";
+                    $pushStatusDenied.style.display = "";
+                    break;
+                default:
+                    $pushStatusDefault.style.display = "";
+                    $pushEnableButton.innerHTML = "Grant Push Notification Permission";
+                    break;
+            }
+        };
+        showPermission(Notification.permission);
+
+        $pushEnableButton.addEventListener("click", (e) => {
+            e.preventDefault();
+            Notification.requestPermission().then(permission => {
+                // Update the displayed permission status.
+                showPermission(Notification.permission);
+
+                // If granted, subscribe to push notifications now.
+                if (permission === "granted") {
+                    // In static/js/web-push.js
+                    PushNotificationSubscribe();
+
+                    // Test the notification now.
+                    const notification = new Notification(`Hello from ${document.location.hostname}!`, {
+                        body: "This is an example notification from this site.",
+                        icon: "/static/img/favicon-192.png",
+                    });
+                }
+            });
+        });
+    } catch(err) {
+        $pushStatusDefault.innerHTML = `<i class="fa fa-xmark mr-1"></i> Error: ${err}`;
+        $pushStatusDefault.style.display = "block";
+    }
+});
+</script>
+{{end}}

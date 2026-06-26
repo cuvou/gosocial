@@ -1,0 +1,23 @@
+/* gosocial typeahead CSS tweaks for Awesomplete */
+
+.awesomplete {
+  color: #000 !important;
+
+  /* hack: make fullwidth */
+  width: 100%;
+}
+.awesomplete > ul {
+  z-index: 5 !important;
+}
+.awesomplete mark {
+  background: hsl(194, 100%, 50%) !important;
+}
+.awesomplete li:hover mark {
+  background: hsl(189, 100%, 41%) !important;
+}
+.awesomplete li[aria-selected="true"] mark {
+  background: hsl(194, 94%, 35%) !important;
+}
+.awesomplete > ul > li[aria-selected="true"] {
+  background: hsl(276, 40%, 40%) !important;
+}

@@ -1,0 +1,326 @@
+{{define "title"}}Two-Factor Authentication{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-lock mr-2"></i>
+                    Two-Factor Authentication
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <!-- Currently Enabled screen -->
+        {{if .TwoFactor.Enabled}}
+        <div class="card">
+            <div class="card-header has-background-link">
+                <p class="card-header-title has-text-light">
+                    <i class="fa fa-lock mr-2"></i>
+                    Two-Factor Authentication
+                </p>
+            </div>
+
+            <div class="card-content">
+                <div class="content">
+                    <p>
+                        Two-Factor status:
+                        <i class="fa fa-check mr-1 has-text-success"></i>
+                        <strong class="has-text-success">Enabled!</strong>
+                    </p>
+
+                    <p>
+                        When you next log in to your account, you will need your Authenticator App handy to produce
+                        the time-limited six-digit code to log in.
+                    </p>
+
+                    <p>
+                        Learn more <a href="/faq#2fa-faqs">about Two-Factor Auth on the FAQ page</a>!
+                    </p>
+
+                    <!-- Are they reconfiguring their 2FA app (viewing the barcode)? -->
+                    {{if .IsPairingSecondDevice}}
+                        {{template "2fa-setup" .}}
+                        <hr>
+                    {{end}}
+
+                    <h4 class="mt-4">Backup Codes</h4>
+
+                    <p>
+                        In case you lose access to your Authenticator App, please print off or write down these
+                        <strong>backup codes</strong> which will allow you to re-gain access to your {{PrettyTitle}}
+                        account. Each of these codes may be used <strong>one time</strong> in response to your
+                        2FA Authenticator prompt at login.
+                    </p>
+
+                    <div class="columns is-multiline is-mobile">
+                        {{range .TwoFactor.GetBackupCodes}}
+                        <div class="column is-one-third-mobile is-one-quarter-tablet">
+                            <code>{{.}}</code>
+                        </div>
+                        {{end}}
+                    </div>
+
+                    <p>
+                        <strong>Please print or save these backup codes!</strong> They will be required to log into your account
+                        if you ever lose your Authenticator App in the future!
+                        <a href="/faq#2fa-backup-codes">Learn more.</a>
+                    </p>
+
+                    <p>
+                        If you would like to <strong>re-generate</strong> these backup codes, click on the button below. This may
+                        be useful if you have needed to log in using these codes (which are one-time use only) and wish to generate
+                        a fresh set of backup codes. Note that re-generating new codes will cause the old ones to no longer work!
+                    </p>
+
+                    <!-- Form to regenerate backup codes. -->
+                    <form action="{{.Request.URL.Path}}" method="POST">
+                        {{InputCSRF}}
+                        <input type="hidden" name="intent" value="regenerate-backup-codes">
+                        <button type="submit" class="button is-warning gosocial-confirm-submit"
+                            data-confirm="Are you sure you want to re-generate all of your Backup Codes? This will remove the current set of Backup Codes and replace them with a new set.">
+                            <i class="fa fa-rotate mr-2"></i>
+                            Generate all-new backup codes
+                        </button>
+                    </form>
+
+                    <hr>
+
+                    <h4 class="has-text-danger mt-4">
+                        <i class="fa fa-exclamation-triangle mr-1"></i>
+                        Disable Two-Factor Auth
+                    </h4>
+
+                    <p>
+                        If you wish to <strong>disable</strong> two-factor authentication for your account, please enter
+                        your account password for verification and click on the button below.
+                    </p>
+
+                    <form action="{{.Request.URL.Path}}" method="POST">
+                        {{InputCSRF}}
+                        <input type="hidden" name="intent" value="disable">
+
+                        <div class="field">
+                            <label class="label" for="password">Your account password:</label>
+                            <input type="password" class="input"
+                                name="password"
+                                placeholder="Password"
+                                required>
+                        </div>
+
+                        <button type="submit" class="button is-danger">
+                            Disable Two-Factor Authentication
+                        </button>
+                    </form>
+
+                    <hr>
+
+                    <h4 class="has-text-warning mt-4">
+                        <i class="fa fa-qrcode mr-1"></i>
+                        Set Up Another Device
+                    </h4>
+
+                    <p>
+                        If you wish to <strong>set up another authenticator device</strong> and view your original
+                        QR code, you may do so by entering your current account password below. This may be useful
+                        if you have bought a new phone or want to migrate your authenticator to a different device,
+                        so that you may access the original QR code and configure the new authenticator.
+                    </p>
+
+                    <p>
+                        <strong>Note:</strong> this will not change your 2FA security key or backup codes. If you
+                        have lost your old authenticator, it will be more secure to <strong>disable and then set up
+                        2FA from scratch</strong>, which will generate a new secret key and backup codes.
+                    </p>
+
+                    <form action="{{.Request.URL.Path}}" method="POST">
+                        {{InputCSRF}}
+                        <input type="hidden" name="intent" value="resetup">
+
+                        <div class="field">
+                            <label class="label" for="password">Your account password:</label>
+                            <input type="password" class="input"
+                                name="password"
+                                placeholder="Password"
+                                required>
+                        </div>
+
+                        <button type="submit" class="button is-warning">
+                            View my original 2FA QR code
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {{end}}<!-- Currently Enabled -->
+
+        <!-- Set Up screen -->
+        {{if not .TwoFactor.Enabled}}
+        <div class="card">
+            <div class="card-header has-background-link">
+                <p class="card-header-title has-text-light">
+                    <i class="fa fa-lock mr-2"></i>
+                    Set Up Two-Factor Authentication
+                </p>
+            </div>
+
+            <div class="card-content">
+                <div class="content">
+                    <p>
+                        Two-Factor status:
+                        <i class="fa fa-xmark mr-1 has-text-danger"></i>
+                        <strong class="has-text-danger">Not Enabled!</strong>
+                    </p>
+
+                    <h2>What is Two-Factor Authentication?</h2>
+
+                    <p>
+                        Two-Factor Authentication (or 2FA) is a security feature that can help to protect
+                        your account in case somebody finds out your password. When logging in, you can
+                        use an Authenticator App that will generate temporary one-time use codes to
+                        log in to your account.
+                    </p>
+
+                    <p>
+                        For example: if somebody figured out your username and password for {{PrettyTitle}},
+                        they would be able to log in as you with that information. With 2FA you can add
+                        a second factor to your login: the two factors are "something you know" (your password)
+                        and "something you have" (your Authenticator App that produces six-digit codes).
+                        This way, if somebody learns what your password is, they still can't log in to
+                        your account unless they also have your Authenticator App.
+                    </p>
+
+                    <p>
+                        After you set up 2FA, from the next time you log in to {{PrettyTitle}} with your
+                        password, you will also be prompted to enter the six-digit code from your Authenticator
+                        App. In case you lost access to your Authenticator, you will be able to use a
+                        "Backup Code" to log in -- you will be able to see your Backup Codes after
+                        setting up your Authenticator App.
+                    </p>
+
+                    <p>
+                        Learn more <a href="/faq#2fa-faqs">about Two-Factor Auth on the FAQ page</a>!
+                    </p>
+
+                    {{template "2fa-setup" .}}
+                </div>
+            </div>
+        </div>
+    </div>
+    {{end}}<!-- Setup -->
+
+</div>
+{{end}}
+{{define "2fa-setup"}}
+<h2>Set up your Authenticator App</h2>
+
+<p>
+    To set up Two-Factor Auth, you'll need to download and install a compatible
+    Authenticator App on your device. Some suggestions for apps that are compatible
+    with {{PrettyTitle}} are as follows:
+</p>
+
+<ul>
+    <li>
+        <strong>Google Authenticator:</strong>
+        for <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank">
+            <i class="fab fa-android"></i> Android
+        </a> or <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" target="_blank">
+            <i class="fab fa-apple"></i> iOS
+        </a>
+    </li>
+
+    <li>
+        <strong>
+            <a href="https://authy.com/download/" target="_blank">Authy:</a>
+        </strong>
+        available for <i class="fab fa-android"></i> Android and <i class="fab fa-apple"></i> iOS.
+    </li>
+</ul>
+
+<p>
+    <a href="/faq#2fa-apps" target="_blank">The FAQ page <sup class="fa fa-external-link"></sup></a> has some
+    other options for 2FA apps that may run on desktop PCs as well.
+</p>
+
+<h3>Add {{PrettyTitle}} to your Authenticator App</h3>
+
+<p>
+    When you have your Authenticator App ready, click on its "Add a new site" button and scan
+    the following QR code to enroll your device for {{PrettyTitle}}:
+</p>
+
+{{ToHTML .QRCode}}
+
+<p>
+    Alternatively (if you can't scan the QR code), you may copy and paste this secret text
+    in to your Authenticator app:
+</p>
+
+<div class="columns is-mobile">
+    <div class="column is-half-tablet pr-1">
+        <input type="text" class="input"
+            id="totp-secret"
+            value="{{.Key.Secret}}"
+            readonly
+            onclick="copySecret()">
+    </div>
+    <div class="column is-narrow pl-0">
+        <button type="button"
+            class="button is-success"
+            id="copy-button"
+            onclick="copySecret()">
+            <i class="fa fa-copy mr-1"></i> Copy
+        </button>
+    </div>
+</div>
+
+<h3>Test your Authenticator App</h3>
+
+<p>
+    After scanning the QR code (or copying the secret key) into your Authenticator app, you
+    should be able to generate temporary six-digit authentication codes.
+</p>
+
+<p>
+    Test that you have enrolled your authenticator correctly by entering the current six-digit
+    code below:
+</p>
+
+<form action="{{.Request.URL.Path}}" method="POST">
+    {{InputCSRF}}
+    <input type="hidden" name="intent" value="setup-verify">
+    <div class="field">
+        <label class="label" for="code">
+            Authentication Code:
+        </label>
+        <input type="text" class="input is-one-quarter"
+            name="code" id="code"
+            pattern="^[0-9]{6}$"
+            maxlength="6"
+            placeholder="000000"
+            style="max-width: 12em"
+            autocomplete="off">
+    </div>
+
+    <button type="submit" class="button is-primary">Confirm &amp; Continue</button>
+</form>
+{{end}}
+{{define "scripts"}}
+<script>
+function copySecret() {
+    const secret = document.querySelector("#totp-secret")
+        copyButton = document.querySelector("#copy-button");
+    secret.select();
+    navigator.clipboard.writeText(secret.value);
+    copyButton.innerHTML = `<i class="fa fa-check mr-1"></i> Copied!`;
+    setTimeout(() => {
+        copyButton.innerHTML = `<i class="fa fa-copy mr-1"></i> Copy`;
+    }, 1000);
+}
+</script>
+{{end}}

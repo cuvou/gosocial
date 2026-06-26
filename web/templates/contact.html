@@ -1,0 +1,410 @@
+{{define "title"}}{{.PageTitle}}{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    {{.PageTitle}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon"><i class="fa fa-message"></i></span>
+                            <span>{{.PageTitle}}</span>
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                    {{if .SiteMaintenanceMode.PauseInteraction}}
+                        <p class="block">
+                            The website is currently down for maintenance and all site interaction is on pause.
+                        </p>
+                        <p class="block">
+                            In the mean time, you may e-mail us directly at <a href="mailto:support@gosocial.com">support@gosocial.com</a>.
+                        </p>
+                    {{else}}
+
+                        <form action="/contact" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="intent" value="{{.Intent}}">
+                            <input type="hidden" name="id" value="{{.TableID}}">
+
+                            <!-- Tailored intro text for certain contact types? -->
+                            {{if eq .Subject "forum.adopt"}}
+                            <p class="block">
+                                You may use this form to <strong>petition to adopt</strong> a forum.
+                                Your request will be reviewed by an admin, and if approved you will be
+                                granted ownership of that forum with the ability to manage it.
+                            </p>
+
+                            <p class="block">
+                                Including a message here is highly encouraged.
+                            </p>
+                            {{else}}
+                            <p class="block">
+                                You may use this form to contact the site administrators to provide
+                                feedback, criticism, or to report a problem you have found on the
+                                site such as inappropriate content posted by one of our members.
+                            </p>
+                            {{end}}
+
+                            <div class="field block">
+                                <label for="subject" class="label">Subject</label>
+                                <div class="select is-fullwidth">
+                                    {{$Subject := .Subject}}
+                                    <select name="subject" id="subject"{{if ne $Subject ""}} disabled{{end}}>
+                                        {{range .Subjects}}
+                                        <optgroup label="{{.Header}}">
+                                            {{range .Options}}
+                                            <option value="{{.Value}}"{{if eq $Subject .Value}} selected{{end}}>{{.Label}}</option>
+                                            {{end}}
+                                        </optgroup>
+                                        {{end}}
+                                    </select>
+                                </div>
+
+                                <!-- In case the selectbox is disabled -->
+                                {{if ne .Subject ""}}<input type="hidden" name="subject" value="{{.Subject}}">{{end}}
+                            </div>
+
+                            <!-- If they are reporting on a TableID and we have a label, show it -->
+                            {{if ne .TableLabel ""}}
+                            <div class="field block">
+                                <label class="label">About</label>
+                                <p>{{.TableLabel}}</p>
+                            </div>
+                            {{end}}
+
+                            <!-- Optional fields that may show/hide depending on Subject for more detailed reports. -->
+                            <div class="field block" id="report:event_reason" style="display: none;">
+                                <label class="label">Reason for Report</label>
+                                <p class="help mb-2">
+                                    Please select all that apply.
+                                </p>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="reason"
+                                            value="Underage Attendees: I suspect a minor was present or IDs were not checked.">
+                                        Underage Attendees: I suspect a minor was present or IDs were not checked.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="reason"
+                                            value="Non-Consensual Behavior: Harassment, unwanted touching, or 'creepy' behavior.">
+                                        Non-Consensual Behavior: Harassment, unwanted touching, or 'creepy' behavior.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="reason"
+                                            value="Unauthorized Photography: Someone was taking photos/videos without permission.">
+                                        Unauthorized Photography: Someone was taking photos/videos without permission.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="reason"
+                                            value="Illegal Activity: Drug use, solicitation, or violation of local public decency laws.">
+                                        Illegal Activity: Drug use, solicitation, or violation of local public decency laws.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="reason"
+                                            value="Misrepresentation: The event was not as described (e.g., advertised as a 'hike,' turned out to be a private party).">
+                                        Misrepresentation: The event was not as described (e.g., advertised as a 'hike,' turned out to be a private party).
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="reason"
+                                            value="Safety/Hygiene: The venue was unsafe or violated basic health standards.">
+                                        Safety/Hygiene: The venue was unsafe or violated basic health standards.
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="field block" id="report:event_name" style="display: none;">
+                                <label class="label">Event Name</label>
+                                <input type="text" class="input"
+                                    id="event_name"
+                                    name="event_name"
+                                    placeholder="Event Name"
+                                    {{if .AboutEvent}}value="{{.AboutEvent.Title}}"{{end}}>
+                            </div>
+                            <div class="field block" id="report:event_organizer" style="display: none;">
+                                <label class="label">Event Organizer</label>
+                                <input type="text" class="input"
+                                    id="event_organizer"
+                                    name="event_organizer"
+                                    placeholder="Event Organizer (username)"
+                                    {{if and .AboutEvent .AboutUser}}value="{{.AboutUser.Username}}"{{end}}>
+                                <p class="help">
+                                    Enter the username of the event's organizer.
+                                </p>
+                            </div>
+
+                            <div class="field block">
+                                <label for="message" class="label">Message{{if not .MessageRequired}} (optional){{else}} (required){{end}}</label>
+                                <textarea class="textarea" cols="80" rows="4"
+                                    name="message"
+                                    id="message"
+                                    placeholder="Message"
+                                    {{if .MessageRequired}}required{{end}}>{{.Message}}</textarea>
+                                {{if not .MessageRequired}}
+                                <p class="help">
+                                    Write a description of the problem (optional).
+                                </p>
+                                {{end}}
+                            </div>
+
+                            <!-- Optional fields for Preferred Outcome based on Subject. -->
+                             <div class="field block" id="general:preferred_outcome" style="display: none;">
+                                <label class="label">Preferred Outcome</label>
+                                <p class="help mb-2">
+                                    What would you like to see happen?
+                                </p>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="preferred_outcome"
+                                            value="I just want the moderation team to be aware.">
+                                        I just want the moderation team to be aware.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="preferred_outcome"
+                                            value="I want the {{.Title}} member warned.">
+                                        I want the {{PrettyTitle}} member warned.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="preferred_outcome"
+                                            value="I want this member banned or suspended.">
+                                        I want this member banned or suspended.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="preferred_outcome"
+                                            value="I want to be contacted by a moderator to discuss this further.">
+                                        I want to be contacted by a moderator to discuss this further.
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="field block" id="report:event_outcome" style="display: none;">
+                                <label class="label">Preferred Outcome</label>
+                                <p class="help mb-2">
+                                    What would you like to see happen?
+                                </p>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="preferred_outcome"
+                                            value="I just want the moderation team to be aware.">
+                                        I just want the moderation team to be aware.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="preferred_outcome"
+                                            value="I want the event organizer warned.">
+                                        I want the event organizer warned.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="preferred_outcome"
+                                            value="I want this event organizer banned from creating future events.">
+                                        I want this event organizer banned from creating future events.
+                                    </label>
+                                </div>
+                                <div class="mb-1">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="preferred_outcome"
+                                            value="I want to be contacted by a moderator to discuss this further.">
+                                        I want to be contacted by a moderator to discuss this further.
+                                    </label>
+                                </div>
+                            </div>
+
+                            {{if not .LoggedIn}}
+                            <div class="field block">
+                                <label for="email" class="label mb-0">Your Email</label>
+                                <p class="help mb-2">
+                                    You are not logged in to an account so you <em>MAY</em> leave us a "reply to"
+                                    email address if you would like a response to your feedback. If you do not want a response,
+                                    check the box below this field.
+                                </p>
+                                <input type="email" class="input"
+                                    name="email" id="email"
+                                    placeholder="name@domain.com"
+                                    required
+                                    value="{{.Email}}">
+
+                                <label class="checkbox my-2">
+                                    <input type="checkbox"
+                                        name="noreply"
+                                        id="noreply"
+                                        value="true">
+                                    <small>I do not require a response to my message</small>
+                                </label>
+                            </div>
+                            <div class="field block">
+                                <label for="username" class="label">Your Account Username</label>
+                                <input type="text" class="input"
+                                    name="username" id="username"
+                                    placeholder="Your username (if you have one; optional)"
+                                    value="{{.Username}}">
+                                <p class="help">
+                                    If you have a {{PrettyTitle}} account, please enter your username so we may
+                                    be able to look you up in case you have mistyped your e-mail address.
+                                </p>
+                            </div>
+                            {{end}}
+
+                            <!-- "Trap" fields for dumb automated spammer bots -->
+                            <div class="field block gosocial-hidden">
+                                <label class="label" for="url">Website URL</label>
+                                <input type="text" class="input"
+                                    name="url" id="url"
+                                    value="https://">
+                                <p class="help">
+                                    Do not touch this field.
+                                </p>
+                            </div>
+                            <div class="field block gosocial-hidden">
+                                <label class="label" for="url">Comment</label>
+                                <input type="text" class="input"
+                                    name="comment" id="comment"
+                                    value="">
+                                <p class="help">
+                                    Do not touch this field.
+                                </p>
+                            </div>
+
+                            <!-- Logged out users: show a CAPTCHA to fight against unsolicited spam. -->
+                            {{if and (not .LoggedIn) .TurnstileCAPTCHA.Enabled}}
+                            <div class="field">
+                                <div class="cf-turnstile"
+                                    data-sitekey="{{.TurnstileCAPTCHA.SiteKey}}"
+                                    data-action="signup"
+                                ></div>
+                            </div>
+                            <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
+                            {{end}}
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success">
+                                    {{if eq .Intent "report"}}
+                                        Send Report
+                                    {{else}}
+                                        Send Message
+                                    {{end}}
+                                </button>
+                            </div>
+
+                            <!-- Footer for logged-out users with email addresses. -->
+                            {{if not .LoggedIn}}
+                            <hr>
+
+                            <p class="block">
+                                <small>
+                                    If you have difficulty with the form above, you may also send us an e-mail
+                                    directly to <a href="mailto:support@gosocial.com">support@gosocial.com</a>.
+                                </small>
+                            </p>
+                            {{end}}
+                        </form>
+
+                    {{end}}<!-- /Maintenance mode check -->
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    window.addEventListener("DOMContentLoaded", (event) => {
+
+        // Logged-out view: e-mail field required status.
+        const $email = document.querySelector("#email"),
+            $noReply = document.querySelector("#noreply");
+        if ($email && $noReply) {
+            const placeholder = $email.placeholder;
+            const setPlaceholder = () => {
+                $email.placeholder = `${placeholder} (${$noReply.checked ? 'optional' : 'required'})`;
+            };
+            $noReply.addEventListener("change", (e) => {
+                $email.required = $noReply.checked ? "" : "required";
+                setPlaceholder();
+            });
+            setPlaceholder();
+        }
+
+        // Show/hide optional Advanced Report fields based on subject.
+        const $subject = document.querySelector("#subject");
+        const optionalFields = {
+            // Field name : Subject values
+            "report:event_reason": ["report.event"],
+            "report:event_name": ["report.event"],
+            "report:event_organizer": ["report.event"],
+            "report:event_outcome": ["report.event"],
+            "general:preferred_outcome": [
+                "report.user",
+                "report.photo",
+                "report.video",
+                "report.message",
+                "report.comment",
+                "report.forum",
+                "report.blog"
+            ]
+        };
+        const toggleOptionalFields = (value) => {
+            // Toggle the custom fields on/off.
+            for (let key of Object.keys(optionalFields)) {
+                let show = false;
+                for (let subject of optionalFields[key]) {
+                    if (value === subject) {
+                        show = true;
+                        break;
+                    }
+                }
+                document.getElementById(key).style.display = show ? '' : 'none';
+            }
+        }
+
+        $subject.addEventListener('change', () => {
+            toggleOptionalFields($subject.value);
+        });
+        toggleOptionalFields($subject.value);
+    });
+</script>
+{{end}}

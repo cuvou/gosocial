@@ -1,0 +1,282 @@
+{{define "title"}}Change Log{{end}}
+{{define "content"}}
+<div class="container">
+    {{$Root := .}}
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Change Logs
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <form action="{{.Request.URL.Path}}" method="GET">
+    <div class="p-4">
+
+        <div class="columns">
+            <div class="column">
+                Found {{FormatNumberCommas .Pager.Total}} change log{{Pluralize64 .Pager.Total}}
+                (page {{.Pager.Page}} of {{.Pager.Pages}}).
+            </div>
+        </div>
+
+        <div class="block">
+
+            <div class="card gosocial-collapsible-mobile">
+                <header class="card-header has-background-link-light">
+                    <p class="card-header-title">
+                        <i class="fa fa-list mr-2"></i>
+                        Search Filters
+                    </p>
+                    <button class="card-header-icon" type="button">
+                        <span class="icon">
+                            <i class="fa fa-angle-up"></i>
+                        </span>
+                    </button>
+                </header>
+                <div class="card-content">
+                    <div class="columns">
+
+                        <div class="column pr-1">
+                            <div class="field">
+                                <label class="label">Table Name:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="table_name" name="table_name">
+                                        <option value="">(Any)</option>
+                                        {{range .TableNames}}
+                                        <option value="{{.}}"{{if eq $Root.TableName .}} selected{{end}}>{{.}}</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label">Table ID:</label>
+                                <input type="number" class="input"
+                                    name="table_id"
+                                    autocomplete="off"
+                                    value="{{.TableID}}">
+                            </div>
+                        </div>
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label">About User:</label>
+                                <input type="text" class="input"
+                                    name="about_user_id"
+                                    autocomplete="off"
+                                    value="{{.AboutUserID}}">
+                                <p class="help">
+                                    ID number <em>or</em> username or email address.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="column pl-1">
+                            <div class="field">
+                                <label class="label">Admin User:</label>
+                                <input type="text" class="input"
+                                    name="admin_user_id"
+                                    autocomplete="off"
+                                    value="{{.AdminUserID}}">
+                                <p class="help">
+                                    ID number <em>or</em> username or email address.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="columns">
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label">Event Type:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="event" name="event">
+                                        <option value="">(Any)</option>
+                                        {{range .EventTypes}}
+                                        <option value="{{.}}"{{if eq $Root.Event .}} selected{{end}}>{{.}}</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column is-narrow">
+                            <label class="label">Search query:</label>
+                            <input type="text" class="input" name="search" value="{{$Root.SearchQuery}}">
+                            <p class="help">
+                                Tip: you can <span class="has-text-success">"quote exact phrases"</span> and
+                                <span class="has-text-success">-exclude</span> words (or
+                                <span class="has-text-success">-"exclude phrases"</span>) from your search.
+                            </p>
+                        </div>
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label">Sort:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="sort" name="sort">
+                                        <option value="created_at desc"{{if eq $Root.Sort "created_at desc"}} selected{{end}}>Newest first</option>
+                                        <option value="created_at asc"{{if eq $Root.Sort "created_at asc"}} selected{{end}}>Oldest first</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column has-text-right">
+                            <br>
+                            <a href="{{.Request.URL.Path}}" class="button">Reset</a>
+                            <button type="submit" class="button is-success">
+                                <span>Search</span>
+                                <span class="icon"><i class="fa fa-search"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {{SimplePager .Pager}}
+
+        <table class="table is-fullwidth is-striped">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>About&nbsp;User</th>
+                    <th>Admin&nbsp;User</th>
+                    <th>Table</th>
+                    <th>ID</th>
+                    <th>Message</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody class="is-size-7">
+                {{range .ChangeLog}}
+                <tr>
+                    <td>
+                        <a href="{{$Root.Request.URL.Path}}?{{QueryPlus "event" .Event}}">{{.Event}}</a>
+                    </td>
+                    <td>
+                        {{if $Root.UserMap.Has .AboutUserID}}
+                            {{$User := $Root.UserMap.Get .AboutUserID}}
+                            <a href="/u/{{$User.Username}}">{{$User.Username}}</a>
+                            <small>(ID: {{$User.ID}})</small>
+                            
+                            <!-- Filter by this user -->
+                            <a href="{{$Root.Request.URL.Path}}?{{QueryPlus "about_user_id" .AboutUserID}}">
+                                <i class="fa fa-search" title="Filter by this user ID"></i>
+                            </a>
+                        {{else}}
+                            {{.AboutUserID}}
+                            <i class="fa fa-exclamation-triangle has-text-danger" title="User Not Found" onclick="alert('User Not Found')"></i>
+                        {{end}}
+                    </td>
+                    <td>
+                        {{if $Root.UserMap.Has .AdminUserID}}
+                            {{$User := $Root.UserMap.Get .AdminUserID}}
+                            <a href="/u/{{$User.Username}}">{{$User.Username}}</a>
+                            <small>(ID: {{$User.ID}})</small>
+
+                            <!-- Filter by this user -->
+                            <a href="{{$Root.Request.URL.Path}}?{{QueryPlus "admin_user_id" .AdminUserID}}">
+                                <i class="fa fa-search" title="Filter by this user ID"></i>
+                            </a>
+                        {{else if .AdminUserID}}
+                            {{.AdminUserID}}
+                            <i class="fa fa-exclamation-triangle has-text-danger" title="User Not Found" onclick="alert('User Not Found')"></i>
+                        {{end}}
+                    </td>
+                    <td>
+                        <a href="{{$Root.Request.URL.Path}}?{{QueryPlus "table_name" .TableName}}">{{.TableName}}</a>
+
+                        <!-- Handy visitation links -->
+                        {{if eq .TableName "blocks"}}
+                        <a href="/admin/user-action?intent=insights&user_id={{.AboutUserID}}" target="_blank" class="has-text-success mx-1"
+                            title="User insights">
+                            <i class="fa fa-info-circle"></i>
+                        </a>
+                        {{end}}
+                    </td>
+                    <td>
+                        <a href="{{$Root.Request.URL.Path}}?{{QueryPlus "table_name" .TableName "table_id" .TableID}}">{{.TableID}}</a>
+
+                        <!-- Handy visitation links -->
+                        {{if eq .TableName "photos"}}
+                            <a href="/photo/view?id={{.TableID}}" target="_blank" class="has-text-success mx-1"
+                                title="Visit this photo">
+                                <i class="fa fa-image"></i>
+                            </a>
+                        {{else if eq .TableName "comments"}}
+                            <a href="/go/comment?id={{.TableID}}" target="_blank" class="has-text-success mx-1"
+                                title="Visit this comment">
+                                <i class="fa fa-comments"></i>
+                            </a>
+                        {{else if eq .TableName "comment_photos"}}
+                            <a href="/go/comment-photo?id={{.TableID}}" target="_blank" class="has-text-success mx-1"
+                                title="Visit the comment for this photo">
+                                <i class="fa fa-comments"></i>
+                            </a>
+                        {{else if eq .TableName "blocks"}}
+                            <a href="/admin/changelog?table_name=blocks&about_user_id={{.TableID}}" target="_blank" class="has-text-success mx-1"
+                                title="View this user's blocks instead">
+                                <i class="fa fa-search"></i>
+                            </a>
+
+                            <a href="/admin/user-action?intent=insights&user_id={{.TableID}}" target="_blank" class="has-text-success mx-1"
+                                title="User insights (ID: {{.TableID}})">
+                                <i class="fa fa-info-circle"></i>
+                            </a>
+                        {{else if eq .TableName "friends"}}
+                            <a href="/admin/changelog?table_name=friends&about_user_id={{.TableID}}" target="_blank" class="has-text-success mx-1"
+                                title="View this user's friends instead">
+                                <i class="fa fa-search"></i>
+                            </a>
+
+                            <a href="/admin/user-action?intent=insights&user_id={{.TableID}}" target="_blank" class="has-text-success mx-1"
+                                title="User insights (ID: {{.TableID}})">
+                                <i class="fa fa-info-circle"></i>
+                            </a>
+                        {{else if and (eq .TableName "certification_photos") .AboutUserID}}
+                            {{$User := $Root.UserMap.Get .AboutUserID}}
+                            <a href="/admin/photo/certification?username={{$User.Username}}" target="_blank" class="has-text-success mx-1"
+                                title="Visit this comment">
+                                <i class="fa fa-certificate"></i>
+                            </a>
+                        {{else if eq .TableName "users"}}
+                            <a href="/admin/user-action?intent=insights&user_id={{.TableID}}" target="_blank" class="has-text-success mx-1"
+                                title="User insights (ID: {{.TableID}})">
+                                <i class="fa fa-info-circle"></i>
+                            </a>
+                        {{end}}
+                    </td>
+                    <td>
+                        <div class="content">
+                            {{ToMarkdown .Message}}
+                        </div>
+                    </td>
+                    <td>
+                        {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+
+        {{SimplePager .Pager}}
+
+    </div>
+    </form>
+</div>
+
+<!-- Style override, allow a horizontal scrollbar if needed, e.g. mobile -->
+<style>
+    body {
+        overflow-x: auto;
+    }
+</style>
+{{end}}

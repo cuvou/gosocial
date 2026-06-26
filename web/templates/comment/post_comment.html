@@ -1,0 +1,94 @@
+{{define "title"}}
+    {{if .EditCommentID}}
+        Edit Comment
+    {{else}}
+        New Comment
+    {{end}}
+{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    {{if .EditCommentID}}
+                        Edit Comment
+                    {{else}}
+                        Add Comment
+                    {{end}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon"><i class="fa fa-message"></i></span>
+                            {{if .EditCommentID}}
+                            Edit Comment
+                            {{else}}
+                            New Comment
+                            {{end}}
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        {{if and (eq .Request.Method "POST") (ne .Message "")}}
+                        <label class="label">Preview:</label>
+                        <div class="box content has-background-warning-light has-text-dark">
+                            {{ToMarkdown .Message}}
+                        </div>
+                        {{end}}
+
+                        <form action="{{.Request.URL.Path}}" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="table_name" value="{{.TableName}}">
+                            <input type="hidden" name="table_id" value="{{.TableID}}">
+                            <input type="hidden" name="next" value="{{.Next}}">
+                            <input type="hidden" name="edit" value="{{.EditCommentID}}">
+
+                            <div class="field block">
+                                <label for="message" class="label">Message</label>
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "message"
+                                    "ID" "message"
+                                    "Required" true
+                                    "Placeholder" "Message"
+                                    "Value" .Message
+                                    "Rows" 8
+                                )}}
+                                <p class="help">
+                                    <a href="/markdown" target="_blank">Markdown formatting</a> supported.
+                                </p>
+                            </div>
+
+                            <div class="field has-text-centered">
+                                <button type="submit"
+                                    name="intent"
+                                    value="preview"
+                                    class="button is-link gosocial-hide-on-load">
+                                    Preview
+                                </button>
+                                <button type="submit"
+                                    name="intent"
+                                    value="submit"
+                                    class="button is-success">
+                                    Post Comment
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

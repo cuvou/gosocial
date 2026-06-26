@@ -1,0 +1,179 @@
+{{define "title"}}Security Checkup{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-light is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-lock mr-2"></i>
+                    Security Checkup
+                </h1>
+                <h2 class="subtitle">
+                    {{.RecommendedActions}} recommended action{{Pluralize .RecommendedActions}}
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half content">
+
+                <form action="/settings/security-checkup" method="POST">
+                    <input type="hidden" name="next" value="{{.NextURL}}">
+                    <input type="hidden" name="login" value="{{.IsLoginEvent}}">
+                    {{InputCSRF}}
+
+                    <p>
+                        There {{Pluralize .RecommendedActions "is" "are"}} <strong>{{.RecommendedActions}} recommended action{{Pluralize .RecommendedActions}}</strong> you can take to better protect
+                        your {{PrettyTitle}} account from unauthorized access.
+                    </p>
+
+                    {{if not .IsLoginEvent}}
+                    <p class="help mb-5">
+                        <strong class="has-text-success">
+                            <i class="fa fa-info-circle"></i>
+                            Tip:
+                        </strong>
+                        Click on the "Remind me later" button at the bottom of this page to continue
+                        <em>without</em> setting up Two-Factor Auth.
+                    </p>
+                    {{end}}
+
+                    <div class="card">
+                        <header class="card-header has-background-success">
+                            <p class="card-header-title">
+                                {{if .TwoFactor.Enabled}}
+                                    1. Two Factor Authentication (2FA) Enabled!
+                                {{else}}
+                                    1. Enable Two-Factor Authentication (2FA)
+                                {{end}}
+                            </p>
+                        </header>
+                        <div class="card-content">
+                            {{if .TwoFactor.Enabled}}
+                            <p class="has-text-smaller">
+                                Your Two-Factor Authentication (2FA) is: <strong class="has-text-success">
+                                    <i class="fa fa-check mr-1"></i>
+                                    Enabled!
+                                </strong>
+                            </p>
+                            <p class="has-text-smaller">
+                                If you haven't saved or printed off your Backup Codes, please visit your 2FA settings
+                                page to see them.
+                            </p>
+                            {{else}}
+                            <p class="has-text-smaller">
+                                Two Factor Authentication can help to protect your account even if somebody
+                                manages to figure out your password. In 2025,
+                                <a href="https://www.namecheap.com/blog/beware-of-browser-extensions-that-steal-your-logins/">it is increasingly common</a> that
+                                compromised web browser add-ons are stealing peoples' passwords, even if you
+                                make use of a password manager.
+                            </p>
+                            <p class="has-text-smaller">
+                                By enabling Two Factor Authentication, you can use an app on your phone that provides a
+                                temporary six-digit code to log in to your account, in addition to your password. This
+                                prevents hackers who steal your password from getting into your account, as they do not
+                                have physical access to your phone to get these temporary rotating codes.
+                            </p>
+                            <p class="has-text-smaller">
+                                <strong>Note:</strong> this feature is optional, but highly recommended!
+                            </p>
+                            <p class="has-text-smaller">
+                                Learn more <a href="/faq#2fa-faqs">about 2FA on the FAQ page</a>!
+                            </p>
+                            {{end}}
+                            <p>
+                                <a href="/account/two-factor/setup" class="button">
+                                    {{if .TwoFactor.Enabled}}
+                                    Go to My 2FA Settings
+                                    {{else}}
+                                    Set up Two Factor Auth (2FA)
+                                    {{end}}
+                                </a>
+                            </p>
+                            {{if not .TwoFactor.Enabled}}
+                            <p>
+                                <!-- Google Translate link -->
+                                {{$Message := "Enable Two-Factor Authentication (2FA)\n\nTwo Factor Authentication can help to protect your account even if somebody manages to figure out your password. In 2025, it is increasingly common that compromised web browser add-ons are stealing peoples' passwords, even if you make use of a password manager.\n\nBy enabling Two Factor Authentication, you can use an app on your phone that provides a temporary six-digit code to log in to your account, in addition to your password. This prevents hackers who steal your password from getting into your account, as they do not have physical access to your phone to get these temporary rotating codes.\n\nNote: this feature is optional, but highly recommended!"}}
+                                <a href="https://translate.google.com/?sl=auto&tl=en&text={{$Message}}&op=translate"
+                                    target="_blank" class="is-small is-size-7">
+                                    <i class="fab fa-google mr-1"></i> Open in Google Translate <i class="fa fa-external-link ml-1"></i>
+                                </a>
+                            </p>
+                            {{end}}
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <header class="card-header has-background-success">
+                            <p class="card-header-title">
+                                2. Review your Logged-In Devices
+                            </p>
+                        </header>
+                        <div class="card-content">
+                            <p class="has-text-smaller">
+                                You are currently logged in <strong>from {{.LoginSessionCount}} device{{Pluralize64 .LoginSessionCount}}.</strong>
+                            </p>
+                            <p class="has-text-smaller">
+                                Please review your <a href="/settings/sessions">Login Sessions</a> and verify that
+                                you recognize all of these devices. You may also log these other sessions out of your
+                                account from that page.
+                            </p>
+                            <p>
+                                <a href="/settings/sessions" class="button">
+                                    Go to My Login Sessions
+                                </a>
+                            </p>
+                            <p>
+                                <!-- Google Translate link -->
+                                {{$Message := "Please review your Login Sessions and verify that you recognize all of these devices. You may also log these other sessions out of your account from that page."}}
+                                <a href="https://translate.google.com/?sl=auto&tl=en&text={{$Message}}&op=translate"
+                                    target="_blank" class="is-small is-size-7">
+                                    <i class="fab fa-google mr-1"></i> Open in Google Translate <i class="fa fa-external-link ml-1"></i>
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="field has-text-centered">
+                        <button type="submit" class="button is-outlined is-success has-text-dark">
+                            {{if .IsLoginEvent}}
+                                Continue to my account
+                            {{else}}
+                                Remind me later ({{.SecurityCheckupCooldownDays}} days)
+                            {{end}}
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    window.addEventListener("DOMContentLoaded", (event) => {
+        let $manualEntry = document.querySelector("#manualEntry"),
+            $dob = document.querySelector("#dob");
+
+        $manualEntry.addEventListener("click", function(e) {
+            $manualEntry.blur();
+            e.preventDefault();
+
+            let answer = window.prompt("Enter your birthdate in 'YYYY-MM-DD' format").trim().replace(/\//g, '-');
+            if (answer.match(/^(\d{2})-(\d{2})-(\d{4})/)) {
+                let group = answer.match(/^(\d{2})-(\d{2})-(\d{4})/);
+                answer = `${group[3]}-${group[1]}-${group[2]}`;
+                modalAlert({message: `NOTE: Your input was interpreted to be in MM/DD/YYYY order and has been read as: ${answer}`});
+            } else if (!answer.match(/^\d{4}-\d{2}-\d{2}/)) {
+                modalAlert({message: `Please enter the date in YYYY-MM-DD format.`});
+                return;
+            }
+
+            $dob.value = answer;
+        });
+    });
+</script>
+{{end}}

@@ -1,0 +1,141 @@
+{{define "title"}}Edit Photo Album{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-images mr-2"></i>
+                    Edit Photo Album
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-4">
+        <div class="level">
+            <div class="level-item">
+                <div class="card gosocial-fullwidth" style="max-width: 800px">
+                    <header class="card-header {{if eq .Intent "delete"}}has-background-danger{{else}}has-background-link{{end}}">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-images mr-2"></i>
+                            Photo Album Settings
+                        </p>
+                    </header>
+                    <div class="card-content">
+                        <form method="POST" action="{{.Request.URL.Path}}">
+                            {{InputCSRF}}
+                            <input type="hidden" name="id" value="{{.PhotoAlbum.ID}}">
+
+                            <div class="field">
+                                <label class="label" for="title">Album Title</label>
+                                <input type="text" class="input"
+                                    name="title" id="title"
+                                    value="{{.PhotoAlbum.Title}}"
+                                    required>
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="description">Description</label>
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "description"
+                                    "ID" "description"
+                                    "Value" .PhotoAlbum.Description
+                                    "Placeholder" "An optional description for your album."
+                                    "Rows" 6
+                                )}}
+                                <p class="help">
+                                    <a href="/markdown" target="_blank">Markdown formatting</a> supported.
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Options</label>
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="pinned"
+                                        value="true"
+                                        {{if .PhotoAlbum.Pinned}}checked{{end}}>
+                                    <span class="has-text-success">
+                                        Pin <i class="fa fa-thumbtack"></i>
+                                    </span>
+                                    this album to the top of my list.
+                                </label>
+                            </div>
+
+                            <div class="block has-text-center">
+                                <button type="submit" class="button is-primary mr-2"
+                                    name="intent"
+                                    value="save">
+                                    <i class="fa fa-save mr-2"></i>
+                                    Save Changes
+                                </button>
+                                <button type="submit" class="button is-danger is-outlined gosocial-confirm-submit mr-2"
+                                    name="intent"
+                                    value="delete"
+                                    data-confirm="Are you sure you want to delete this photo album?">
+                                    <i class="fa fa-trash mr-2"></i>
+                                    Delete
+                                </button>
+                                <button type="button" class="button" onclick="history.back()">Cancel</button>
+                            </div>
+
+                            <hr>
+
+                            <div class="content">
+                                <h4>Frequently Asked Questions</h4>
+
+                                <h6>How do I change the order that my Photo Albums will be listed?</h6>
+
+                                <p>
+                                    Your list of photos albums are sorted as follows:
+                                </p>
+
+                                <ul>
+                                    <li>
+                                        Pinned albums are first, and always stay in the front.
+                                    </li>
+                                    <li>
+                                        Then they are sorted by most recently 'updated.'
+                                    </li>
+                                </ul>
+
+                                <p>
+                                    To 'bump' an album back to the front of your list, open its Edit Settings
+                                    page (this page) and click on 'Save Changes' to bump its 'last updated' time.
+                                </p>
+
+                                <h6>How do I change the Cover Photo for my album?</h6>
+
+                                <p>
+                                    To change the Cover Photo for your album, follow these steps:
+                                </p>
+
+                                <ol>
+                                    <li>
+                                        Visit <a href="/u/{{.CurrentUser.Username}}/album/{{.PhotoAlbum.Fragment}}">your photo album.</a>
+                                    </li>
+                                    <li>
+                                        Check the <i class="fa fa-square-check"></i> box for <strong>only one photo</strong> in the album.
+                                    </li>
+                                    <li>
+                                        At the bottom of the page, click on the "Update Album Entry" button.
+                                    </li>
+                                </ol>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional scripts -->
+    {{if eq .Intent "album"}}
+        <script type="text/javascript" src="/static/js/photo-album-selector.js?build={{.BuildHash}}"></script>
+    {{end}}
+
+</div>
+{{end}}

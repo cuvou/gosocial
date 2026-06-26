@@ -1,0 +1,50 @@
+<!--
+Markdown editor textarea with preview ability
+
+Usage is like:
+
+    {{$Vars := NewHashMap "Name" "about_me" "Value" .Value "Placeholder" "write something"}}
+    {{template "markdown-editor" $Vars}}
+
+The HashMap allows setting the textarea's name and properties. Valid HashMap
+choices include the following:
+
+    Name: for the textarea field.
+    ID: an id attribute (optional)
+    Value: default text to display in the textarea.
+    Placeholder: the placeholder attribute (optional).
+    Cols: integer, default 80
+    Rows: integer, default 4
+    Required: bool
+
+Special options include:
+
+    GalleryLinks: string = "footer" | "inline"
+        Render attached Gallery photo references in the footer, e.g.
+        for previewing in forum threads.
+-->
+{{define "markdown-editor"}}
+<div class="gosocial-markdown-editor">
+    <div class="tabs mb-0">
+        <ul>
+            <li class="gosocial-markdown-editor-write"><a>Write</a></li>
+            <li class="gosocial-markdown-editor-preview"><a>Preview</a></li>
+        </ul>
+    </div>
+
+    <div class="gosocial-markdown-editor-write-panel">
+        <textarea class="textarea"
+            cols="{{or .Cols 80}}" rows="{{or .Rows 4}}"
+            {{if .Name}}name="{{.Name}}"{{end}}
+            {{if .ID}}id="{{.ID}}"{{end}}
+            placeholder="{{.Placeholder}}"
+            {{if .Required}}required{{end}}
+            {{if .GalleryLinks}}data-gallery-links="{{.GalleryLinks}}"{{end}}
+            >{{.Value}}</textarea>
+    </div>
+
+    <div class="gosocial-markdown-editor-preview-panel box">
+        <div class="content" style="max-height: 250px; overflow: auto"></div>
+    </div>
+</div>
+{{end}}

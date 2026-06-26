@@ -1,0 +1,267 @@
+{{define "title"}}Features{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-light is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">Features of {{PrettyTitle}}</h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="content">
+
+            <p>
+                The GoSocial codebase is released in multiple editions:
+            </p>
+
+            <ul>
+                <li>
+                    The <strong>Free &amp; Open Source Edition</strong> contains all of the baseline
+                    functionality that any social networking site needs to be basically usable.
+                </li>
+                <li>
+                    The <strong>Paid &amp; Licensed Editions</strong> bridge the gap between the Open
+                    Source features and the <strong>full</strong> set of features that the upstream
+                    production website had that GoSocial is based upon.
+                </li>
+            </ul>
+
+            <p>
+                The Free &amp; Open Source Edition is released as free software under the GNU General
+                Public License. You are free to take it and build on it, but any changes you make to
+                the codebase must also be released as open source software to your users, and you must
+                credit the GoSocial project for giving you the foundation for your website.
+            </p>
+
+            <p>
+                The Paid &amp; Licensed Editions are suitable to be used for closed source and commercial
+                projects. If interested, visit <a href="https://www.cuvou.com">Cuvou.com</a> and get in
+                touch to discuss your project's needs and pricing information. See the feature list below
+                for an idea on the delta between the Free &amp; Licensed feature set: any of the additional
+                features can be backported to suit your custom project, with licensing fees scaling in
+                proportion to how many of these features you need.
+            </p>
+
+            <hr>
+
+            <!-- Copy/Pasted from README.md rendered to HTML -->
+<h2 id="user-content-features" dir="auto">Features</h2>
+<p dir="auto">The <strong>Free &amp; Open Source Edition</strong> comes with all of the basic features that
+<em>any</em> social networking website would need to be basically useful.</p>
+<p dir="auto">Some of these features include:</p>
+<ul dir="auto">
+<li><strong>User Accounts</strong>
+<ul dir="auto">
+<li>Sign up (w/ optional e-mail verification), Log in, Forgotten Password
+workflows (e-mailed links to reset passwords).</li>
+<li>Two-Factor Auth supported (TOTP).</li>
+<li>Profile Pages, with custom theme support (background/header images,
+colors). Essay fields like &#39;About Me&#39; and basic fields like location,
+age and gender.</li>
+<li>Login Sessions: users can see the devices they&#39;re logged in from and
+remotely log out other devices.</li>
+<li>Compliance with GDPR and similar privacy laws: users may deeply delete
+their account and all their media and data, and user data export to ZIP
+file supported.</li>
+</ul>
+</li>
+<li><strong>Social Features</strong>
+<ul dir="auto">
+<li>Friend Requests &amp; Follows. Users can mark some of their media as &#39;friends
+only&#39; or they may Follow people and be notified about public media they
+share.</li>
+<li>Likes &amp; Comments.</li>
+<li>On-site Notifications &amp; Web Push Notifications supported.</li>
+<li>Direct Messages with on-site inboxes.</li>
+<li>A &#34;Member Directory&#34; to browse and search for profiles on the site.</li>
+<li>&#34;Who&#39;s Nearby?&#34; to sort members on the directory by their distance to you,
+or by their proximity to a major city you search for.</li>
+</ul>
+</li>
+<li><strong>Forums</strong>
+<ul dir="auto">
+<li>The admin can create a handful of Forum boards around various topics and
+users can create threads and replies under each forum.</li>
+<li>Polls may be added to forum threads to collect votes from other users.</li>
+</ul>
+</li>
+<li><strong>Photo Galleries</strong>
+<ul dir="auto">
+<li>Each user has their own Photo Gallery that they can upload media to.</li>
+<li>There is a Site-wide Photo Gallery which shows photos from the community
+all in one place. Users opt in photos to be featured on the Site Gallery.</li>
+<li>Photo visibility options include &#34;Public&#34; (any logged-in user can see it),
+&#34;Friends only&#34; (only your friends can see it), or &#34;Private&#34; (you selectively
+unlock your private content for others on a per-person basis, with ability
+to revoke that share from one or all easily).</li>
+<li>Animated GIFs supported: uploaded GIF images are encoded to small .mp4
+video clips using ffmpeg, for file size/bandwidth/performance reasons.</li>
+<li>Media Quotas: set a file size limit for how much media each user may upload.
+With a quota set at 25 MiB for example, users may be able to share about
+200 photos (depending on the original quality and how it got compressed
+at upload time).</li>
+<li>Optional support for &#39;Explicit&#39; (NSFW) media. If enabled, Explicit content
+is hidden except to users who opt-in to see it on their settings.</li>
+</ul>
+</li>
+<li>Optional <strong>Webcam Chat Room</strong> integration
+<ul dir="auto">
+<li><a href="https://git.kirsle.net/apps/BareRTC" rel="nofollow">BareRTC</a> is a Free &amp; Open Source
+multi-user chat room application with video streaming (webcam) support
+included.</li>
+<li>BareRTC was created specifically for the upstream website that GoSocial
+was branched from. As such, GoSocial has tight integration support with
+BareRTC &#39;out of the box.&#39;</li>
+<li>User Authentication (profile pictures, admin status), Profile Cards,
+Block Lists, Friendship Status, the ability to Report chat messages to
+your site&#39;s admin, etc. are all included.</li>
+</ul>
+</li>
+<li><strong>User Safety</strong>
+<ul dir="auto">
+<li>Block lists: when users block each other, the site will completely hide
+the pair of users from each other everywhere, giving an identical
+appearance that the other user may have just deleted their account entirely.</li>
+<li>Privacy Settings: users can limit who can send them messages, view
+their profile page, or comment on their content.</li>
+<li>Two-Factor Auth and Login Sessions for your users to secure their own
+accounts.</li>
+</ul>
+</li>
+<li><strong>Admin</strong>
+<ul dir="auto">
+<li>An &#39;Admin Flag&#39; for user accounts and &#39;Admin Permission Scopes&#39; to control
+which specific admin features that user has access to. An admin who has no
+scopes assigned has very limited permission to actually do anything beyond
+the normal user capabilities.</li>
+<li>Feedback &amp; Reports: there are handy Report buttons all throughout the site
+to enable users to easily flag inappropriate content for admin review.</li>
+<li>Change Logs keep a history of when things on the site were modified, such as
+a history of friend requests, photo gallery changes, etc.</li>
+<li>Admin dashboards to get insights about a user account (see their block lists,
+media usage quota, IP address history, etc.)</li>
+</ul>
+</li>
+<li><strong>Security</strong>
+<ul dir="auto">
+<li>Protection from CSRF (Cross Site Request Forgery) on every POST-able form.</li>
+<li>Rate limiting on failed login attempts and to reduce spam.</li>
+<li>Optional Cloudflare Turnstile CAPTCHA support to protect your signup and
+public contact forms from spammers.</li>
+<li>Optional <a href="#user-content-signed-photo-urls-nginx" rel="nofollow">Signed Photo URLs</a> to protect the static
+photos shared by your users (so the direct link to the .jpg image has a URL
+signature unique to the logged-in viewer to protect against off-site deep
+links to the content).</li>
+</ul>
+</li>
+</ul>
+<p dir="auto">The <strong>Paid &amp; Licensed Editions</strong> come with additional features that were built
+for the upstream production website that this codebase was branched from. Get
+in touch to inquire about access to these features and to discuss what your
+project&#39;s needs are and pricing.</p>
+<ul dir="auto">
+<li><strong>Certification Photos</strong>
+<ul dir="auto">
+<li>Create a barrier to entry that helps keep fake profiles and spam bots off
+your platform. All social features of the site (chat, forums, etc.) can be
+gated to &#39;Certified Users Only&#39; to protect your community from bad actors.</li>
+<li>This workflow requires new user accounts to submit a selfie of themselves
+holding onto a sheet of paper that has their username, the site&#39;s name, and
+today&#39;s date written on it.</li>
+<li>Admins review submitted Certification Photos and can approve them or reject
+them with an explanation sent back to the user.</li>
+</ul>
+</li>
+<li><strong>Photo Gallery</strong> Enhancements
+<ul dir="auto">
+<li>On the Site Gallery, users may &#39;Mute&#39; people who they don&#39;t want to see
+there and have the muted person&#39;s content not appear for them again.</li>
+<li>If &#39;Explicit&#39; media is enabled, your community members may help to flag
+photos that should have been marked as &#39;Explicit,&#39; with a workflow for the
+photo&#39;s owner to appeal that decision and have an admin weigh in.</li>
+</ul>
+</li>
+<li><strong>Video Gallery</strong>
+<ul dir="auto">
+<li>Allow your users to upload videos with audio, with an ffmpeg video encoding
+workflow.</li>
+<li>Chunked file uploads: arbitrarily large videos may be uploaded and they are
+uploaded in multiple chunks, for robustness against network outages or
+failures. A failed video upload can be resumed later with only the still
+pending chunks needing to be uploaded.</li>
+<li>Arbitrary max upload size: you can set a hard limit on the total size of the
+original media uploaded. After encoding, the final size on disk will often
+be smaller than the original upload.</li>
+<li>An encoding worker uses ffmpeg to encode the upload to be suitable for Web
+playback (e.g. using h.264 and AAC for video/audio codecs, scaling down to
+a max resolution like 1080p, etc.)</li>
+</ul>
+</li>
+<li><strong>Events</strong>
+<ul dir="auto">
+<li>A fully featured &#39;Events &amp; RSVP&#39; feature where users can schedule their own
+(in-person) events and manage RSVPs from others who want to attend the event.</li>
+<li>Event Photo, Comment Form, Calendar Links.</li>
+</ul>
+</li>
+<li><strong>Travel Plans</strong>
+<ul dir="auto">
+<li>Allow your users to advertise their upcoming travel plans in case they want
+to meet up with locals of that area. Start+End Dates, City, GPS location,
+custom description and comment threads.</li>
+</ul>
+</li>
+<li><strong>Places</strong>
+<ul dir="auto">
+<li>Allow your community to &#39;crowd source&#39; a database of interesting places in
+the world relating to your community&#39;s niche.</li>
+<li>Users may write a description, upload a photo, mark a spot on the map where
+the place exists, checkbox all the features and amenities of the place,
+list directions and parking information, and each place has its own
+discussion forum as well.</li>
+<li>Map View to browse all the places visually on a map of the world.</li>
+</ul>
+</li>
+<li><strong>Miscellaneous</strong>
+<ul dir="auto">
+<li>Footprints: allow users to see who has visited their profile page.</li>
+<li>Deleted User Memories: store a user&#39;s block lists when they delete their
+account, so if they sign up later with the same username or e-mail you can
+restore their blocked lists for them.</li>
+<li>Optional: Admin Content Approval -- screen all user submitted media
+(photos/videos) and let your admin team check them out first to ensure
+appropriateness for your community.</li>
+</ul>
+</li>
+<li>Optional <strong>Specific Vendor Integrations</strong>
+<ul dir="auto">
+<li>The upstream website that GoSocial was branched from had integrations with
+specific business partners. In case your platform would want to use these
+same partners, the source code for these integrations can also be made available.</li>
+<li>Yoti: Age Verification as part of the Certification Photos workflow.</li>
+<li>CCBill: payment provider for paid supporter features.</li>
+</ul>
+</li>
+</ul>
+<h2 id="user-content-tech-stack" dir="auto">Tech Stack</h2>
+<p dir="auto">On the technical side, some of the features of GoSocial&#39;s codebase include:</p>
+<ul dir="auto">
+<li>Backend written in Go using largely the standard library (net/http, html/template).</li>
+<li>Database: <a href="https://gorm.io/" rel="nofollow">GORM</a> for the ORM and query builder, with built-in
+support for PostgreSQL (preferred) or SQLite. Some website features require
+Postgres, notably the location-aware ones like Who&#39;s Nearby, which are not
+supported when using SQLite.</li>
+<li>Redis cache for rate limiting and temporary tokens (new account e-mail verification
+URLs, forgotten password links sent by e-mail, etc.)</li>
+<li>Front-end uses server-side rendered templates (html/template) and minimal
+JavaScript (mostly vanilla JS, Vue.js on some pages where appropriate).
+The default front-end design uses <a href="https://bulma.io/" rel="nofollow">Bulma.css</a>.</li>
+</ul>
+
+        </div>
+
+    </div>
+</div>
+{{end}}

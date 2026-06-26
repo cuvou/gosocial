@@ -1,0 +1,164 @@
+<!--
+User Settings Menu
+
+Usage is like:
+
+    {{template "settings-menu" (NewHashMap
+        "Active" "profile"
+        "Expanded" true
+    )}}
+
+HashMap parameters to this component:
+
+    Active (string): name of the currently highlighted menu item.
+    Expanded (bool): force the menu to be fully visible on mobile, e.g. for the
+        settings landing page.
+-->
+{{define "settings-menu"}}
+<div class="card{{if not .Expanded}} gosocial-collapsible-mobile{{end}}">
+    <div class="card-header has-background-link">
+        <p class="card-header-title has-text-light">
+            <i class="fa fa-list mr-2"></i>
+            Settings Menu
+        </p>
+        {{if not .Expanded}}
+        <button class="card-header-icon" type="button">
+            <span class="icon">
+                <i class="fa fa-angle-up"></i>
+            </span>
+        </button>
+        {{end}}
+    </div>
+
+    <div class="card-content p-4">
+        <aside class="menu">
+            <p class="menu-label">
+                My Profile
+            </p>
+
+            <ul class="menu-list">
+                <li>
+                    <a href="/settings/profile"{{if eq .Active "profile"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-address-card mr-1"></i> My Profile</strong>
+                        <p class="help">Manage your profile page &amp; essays.</p>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/settings/look"{{if eq .Active "look"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-palette mr-1"></i> Look &amp; Feel</strong>
+                        <p class="help">
+                            Customize your profile with a color scheme.
+                        </p>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/settings/location"{{if eq .Active "location"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-globe mr-1"></i> Location Settings</strong>
+                        <p class="help">
+                            For the "Who's Nearby?" feature.
+                        </p>
+                    </a>
+                </li>
+            </ul>
+
+            <p class="menu-label">
+                Preferences
+            </p>
+
+            <ul class="menu-list">
+                <li>
+                    <a href="/settings/prefs"{{if eq .Active "prefs"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-square-check mr-1"></i> Website Preferences</strong>
+                        <p class="help">
+                            {{if IsFeatureFlagExplicitEnabled}}
+                                Explicit content filter <i class="fa fa-fire"></i>; photo blur.
+                            {{else}}
+                                Automatically play animated GIFs, etc.
+                            {{end}}
+                        </p>
+                    </a>
+                </li>
+                <li>
+                    <a href="/settings/notifications"{{if eq .Active "notifications"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-bell mr-1"></i> Notifications</strong>
+                        <p class="help">
+                            Website &amp; Web Push notifications.
+                        </p>
+                    </a>
+                </li>
+            </ul>
+
+            <p class="menu-label">
+                Privacy &amp; Safety
+            </p>
+
+            <ul class="menu-list">
+                <li>
+                    <a href="/settings/privacy"{{if eq .Active "privacy"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-lock mr-1"></i> Privacy Settings</strong>
+                        <p class="help">
+                            Profile visibility; who can slide into your DMs.
+                        </p>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/photo/private"{{if eq .Active "private-photos"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-eye mr-1"></i> Private Photos</strong>
+                        <p class="help">
+                            Manage who can see your private photos.
+                        </p>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/users/blocked"{{if eq .Active "blocklist"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-hand mr-1"></i> Blocked Users</strong>
+                        <p class="help">
+                            View and manage your block list.
+                        </p>
+                    </a>
+                </li>
+            </ul>
+
+            <p class="menu-label">
+                My Account
+            </p>
+
+            <ul class="menu-list">
+                <li>
+                    <a href="/settings/account"{{if eq .Active "account"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-user mr-1"></i> Account Settings</strong>
+                        <p class="help">
+                            Change password or e-mail; set up Two-Factor Authentication (2FA).
+                        </p>
+                    </a>
+                </li>
+                <li>
+                    <a href="/settings/sessions"{{if eq .Active "sessions"}} class="is-active"{{end}}>
+                        <strong><i class="fa-solid fa-mobile-screen-button mr-1"></i> Login Sessions</strong>
+                        <p class="help">
+                            Manage the devices you have logged in from.
+                        </p>
+                    </a>
+                </li>
+                <li>
+                    <a href="/settings/deactivate"{{if eq .Active "deactivate"}} class="is-active"{{end}}>
+                        <strong><i class="fa fa-exclamation-triangle mr-1"></i> Deactivate Account</strong>
+                        <p class="help">
+                            Temporarily deactivate or permanently delete my account.
+                        </p>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+    </div>
+</div>
+{{if not .Expanded}}
+<p class="help">
+    Tip: on mobile, tap to expand the "Settings Menu."
+</p>
+{{end}}
+{{end}}

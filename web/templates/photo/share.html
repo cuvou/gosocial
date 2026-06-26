@@ -1,0 +1,164 @@
+{{define "title"}}Share Private Photos{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Share Private Photos
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon mr-2"><i class="fa fa-eye"></i></span>
+                            <span>Share Private Photos</span>
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <!-- Show the introduction or selected user profile -->
+                        {{if not .User}}
+                            <div class="block">
+                                You may use this page to grant access to your
+                                <span class="has-text-private">
+                                    <i class="fa fa-eye"></i>
+                                    Private Photos
+                                </span>
+                                to another member on this site by entering their
+                                username below.
+                            </div>
+                        {{else}}
+                            <div class="block">
+                                Confirm that you wish to grant <strong>{{.User.Username}}</strong>
+                                access to view your
+                                <span class="has-text-private">
+                                    <i class="fa fa-eye"></i>
+                                    Private Photos
+                                </span>
+                                and blogs by clicking the button below.
+                            </div>
+                            <div class="media block">
+                                <div class="media-left">
+                                    {{template "avatar-64x64" .User}}
+                                </div>
+                                <div class="media-content">
+                                    <p class="title is-4">{{.User.NameOrUsername}}</p>
+                                    <p class="subtitle is-6">
+                                        <span class="icon"><i class="fa fa-user"></i></span>
+                                        <a href="/u/{{.User.Username}}" target="_blank">{{.User.Username}}</a>
+                                    </p>
+                                </div>
+                            </div>
+                        {{end}}
+
+                        <!-- No private photos warning -->
+                        {{if not .CanSharePrivatePhotos}}
+                        <div class="notification is-warning is-light">
+                            <strong>
+                                <i class="fa fa-exclamation-triangle"></i>
+                                Notice:
+                            </strong>
+                            You currently do not have any private photo or blog to share, so you will not be able
+                            to create new private photo grants at this time.
+                        </div>
+                        {{end}}
+
+                        <!-- Show the relevant form -->
+                        <form action="/photo/private/share" method="POST">
+                            {{InputCSRF}}
+
+                            {{if .User}}
+                            <input type="hidden" name="to" value="{{.User.Username}}">
+                            {{else}}
+                            <div class="field block">
+                                <label for="to" class="label">Share with Username:</label>
+                                <input type="text" class="input"
+                                    name="to" id="to"
+                                    placeholder="Search by name or username"
+                                    autocomplete="off">
+                            </div>
+
+                            <!-- Show a paginated friend list for convenience -->
+                            <div class="field block">
+                                <label class="label">Share with a Friend:</label>
+                                <p class="help mb-4">
+                                    You may browse and select somebody from your friends list instead of entering
+                                    their username in the box above. The <i class="fa fa-unlock has-text-private"></i>
+                                    padlock icon means you are already sharing with that person.
+                                </p>
+
+                                <div hx-get="/htmx/friend-picker?context=private_photos" hx-trigger="revealed">
+                                    <i class="fa fa-spinner fa-spin mr-1"></i> Loading...
+                                </div>
+                            </div>
+                            {{end}}
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success"
+                                    name="intent"
+                                    value="{{if .User}}submit{{else}}preview{{end}}">
+                                    {{if .User}}
+                                        <span class="icon"><i class="fa fa-unlock"></i></span>
+                                        <span>Confirm Share</span>
+                                    {{else}}
+                                        Continue
+                                    {{end}}
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}
+{{define "scripts"}}
+<link rel="stylesheet" href="/static/css/typeahead.css?build={{.BuildHash}}">
+<link rel="stylesheet" href="/static/css/awesomplete-1.1.7.css">
+<script type="text/javascript" src="/static/js/awesomplete-1.1.7.min.js"></script>
+<script type="text/javascript">
+// Type-ahead search for the Username field.
+document.addEventListener('DOMContentLoaded', () => {
+    const $input = document.getElementById("to");
+
+    const autocomplete = new Awesomplete($input, {
+        minChars: 1,
+        maxItems: 10,
+        autoFirst: true,
+        tabSelect: true,
+        list: [],
+        filter(text, input) {
+            let words = input.split(/\s+/);
+            let match = 0;
+            for (let word of words) {
+                if (text.toLowerCase().indexOf(word.toLowerCase()) > -1) {
+                    match++;
+                }
+            }
+            return match === words.length;
+        }
+    });
+
+    $input.addEventListener('input', async function () {
+        const query = encodeURIComponent(this.value);
+        const res = await fetch(`/v1/users/username?query=${query}`);
+        const data = await res.json();
+        autocomplete.list = data;
+    });
+});
+</script>
+{{end}}

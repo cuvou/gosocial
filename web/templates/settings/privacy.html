@@ -1,0 +1,426 @@
+{{define "title"}}Privacy Settings{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-lock mr-2"></i>
+                    Privacy Settings
+                </h1>
+                <h2 class="subtitle">
+                    Profile visibility; who can slide into your DMs.
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "privacy")}}
+            </div>
+    
+            <div class="column">
+    
+                <!-- Privacy Settings -->
+                <div class="card mb-5" id="privacy">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-lock pr-2"></i>
+                            Privacy Settings
+                        </p>
+                    </header>
+    
+                    <div class="card-content">
+                        <form method="POST" action="{{.Request.URL.Path}}">
+                            {{InputCSRF}}
+
+                            <div class="block content">
+                                <p>
+                                    This page is your "one stop shop" to control your overall privacy and interaction
+                                    preferences on {{PrettyTitle}}.
+                                </p>
+
+                                <p>
+                                    With the settings available on this page, you may control:
+                                </p>
+
+                                <ul>
+                                    <li>
+                                        Who can see your profile page on the website at all.
+                                    </li>
+                                    <li>
+                                        Who you want to interact with (control who can slide into your DMs, comment
+                                        on your photos, see your friends list, or share their private pics with you).
+                                    </li>
+                                    <li>
+                                        Who can search for you on the Member Directory (e.g. whether you want to
+                                        be hidden from search results by age, gender, or orientation).
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <hr>
+
+                            <div class="field" id="profile">
+                                <label class="label">Profile Visibility</label>
+                                <label class="checkbox">
+                                    <input type="radio"
+                                        name="visibility"
+                                        value="public"
+                                        {{if eq .CurrentUser.Visibility "public"}}checked{{end}}>
+                                    Public + Login Required
+                                    <i class="fa fa-eye ml-2 has-text-info"></i>
+                                </label>
+                                <p class="help">
+                                    The default is that users must be logged-in to even look at your profile
+                                    page. If your profile URL (/u/{{.CurrentUser.Username}}) is visited by a
+                                    logged-out browser, they are prompted to log in.
+                                </p>
+    
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="visibility"
+                                        value="external"
+                                        {{if eq .CurrentUser.Visibility "external"}}checked{{end}}>
+                                    Public + Limited Logged-out View
+                                    <i class="fa fa-eye ml-2 has-text-danger"></i>
+                                </label>
+                                <p class="help">
+                                    Your profile is fully visible to logged-in users, but if a logged-out browser
+                                    visits your page they will see a very minimal view: only your profile picture
+                                    and display name are shown.
+                                    <a href="/u/{{.CurrentUser.Username}}?view=external" target="_blank">Preview <i class="fa fa-external-link"></i></a>
+                                </p>
+    
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="visibility"
+                                        value="private"
+                                        {{if eq .CurrentUser.Visibility "private"}}checked{{end}}>
+                                    Mark my profile page as "private"
+                                    <i class="fa fa-lock ml-2 has-text-private"></i>
+                                </label>
+                                <p class="help">
+                                    If you check this box then only friends who you have approved are able to
+                                    see your profile page and gallery. Your gallery photos also will NOT appear
+                                    on the Site Gallery page. If your profile page is visited by a logged-out
+                                    viewer, they are prompted to log in.
+                                </p>
+                            </div>
+    
+                            <hr>
+    
+                            <div class="field" id="messages">
+                                <label class="label mb-0">Who can send me the first <i class="fa fa-envelope"></i> Message?</label>
+    
+                                <div class="has-text-info">
+                                    <small><em>
+                                    Note: this refers to Direct Messages on the main website
+                                    (not inside the chat room).
+                                    </em></small>
+                                </div>
+    
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="dm_privacy"
+                                        value=""
+                                        {{if eq .PrivacySetting.FirstMessages ""}}checked{{end}}>
+                                    Anybody on the site
+                                </label>
+                                <p class="help">
+                                    Almost any member of the site may send you a Direct Message from your profile
+                                    page (except for maybe <a href="/faq#shy-faqs" target="_blank">Shy Accounts</a>).
+                                </p>
+    
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="dm_privacy"
+                                        value="friends"
+                                        {{if eq .PrivacySetting.FirstMessages "friends"}}checked{{end}}>
+                                    Only people on my Friends list
+                                    <i class="fa fa-user-group has-text-warning ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Nobody can slide into your DMs except for friends (and admins if needed). Anybody
+                                    may <em>reply</em> to messages that you send to them.
+                                </p>
+    
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="dm_privacy"
+                                        value="nobody"
+                                        {{if eq .PrivacySetting.FirstMessages "nobody"}}checked{{end}}>
+                                    Nobody (close my DMs)
+                                    <i class="fa fa-hand has-text-danger ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Nobody can start a Direct Message conversation with you on the main website
+                                    (except an admin if necessary). Anybody may <em>reply</em> to messages that you
+                                    sent to them first.
+                                </p>
+                            </div>
+    
+                            <hr>
+
+                            <div class="field" id="follow_me">
+                                <label class="label mb-0">Who can <i class="fa fa-star"></i> Follow my profile?</label>
+
+                                <div class="has-text-info">
+                                    <small><em>
+                                    When somebody Follows you, they will be notified when you upload a new photo, video
+                                    or blog post which they have permission to see.
+                                    </em></small>
+                                </div>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="follow_me"
+                                        value=""
+                                        {{if eq .PrivacySetting.FollowMe ""}}checked{{end}}>
+                                    Anybody on the site
+                                </label>
+                                <p class="help">
+                                    Any member of the website is allowed to follow you.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="follow_me"
+                                        value="friends"
+                                        {{if eq .PrivacySetting.FollowMe "friends"}}checked{{end}}>
+                                    Only my Friends and people who I followed first
+                                    <i class="fa fa-user-group has-text-warning ml-2"></i>
+                                    <i class="fa-regular fa-star-half-stroke has-text-success"></i>
+                                </label>
+                                <p class="help">
+                                    Only your friends may follow your profile. Upon accepting their friend request,
+                                    they will follow you automatically.
+                                </p>
+                            </div>
+
+                            <hr>
+
+                            <div class="field" id="friends">
+                                <label class="label mb-0">Who can see my <i class="fa fa-user-group"></i> Friends List?</label>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="friends_privacy"
+                                        value=""
+                                        {{if eq .PrivacySetting.FriendsList ""}}checked{{end}}>
+                                    Any certified member on the site
+                                </label>
+                                <p class="help">
+                                    Any certified member who can see your profile page can see your friend list.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="friends_privacy"
+                                        value="friends"
+                                        {{if eq .PrivacySetting.FriendsList "friends"}}checked{{end}}>
+                                    Only people on my Friends list
+                                    <i class="fa fa-user-group has-text-warning ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Only your friends can see who else is on your friends list.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="friends_privacy"
+                                        value="me"
+                                        {{if eq .PrivacySetting.FriendsList "me"}}checked{{end}}>
+                                    Only myself
+                                    <i class="fa fa-hand has-text-danger ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Nobody but yourself (and website admins) are able to see your friends list.
+                                </p>
+                            </div>
+
+                            <hr>
+
+                            <div class="field" id="comments">
+                                <label class="label mb-0">Who can comment on my <i class="fa fa-image"></i> Photos?</label>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="photo_comment_permission"
+                                        value=""
+                                        {{if eq .PrivacySetting.PhotoComments ""}}checked{{end}}>
+                                    Anybody on the site
+                                </label>
+                                <p class="help">
+                                    Any member of the site who can see your photo can leave a comment on it.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="photo_comment_permission"
+                                        value="friends"
+                                        {{if eq .PrivacySetting.PhotoComments "friends"}}checked{{end}}>
+                                    Only people on my Friends list
+                                    <i class="fa fa-user-group has-text-warning ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Only your approved friends are allowed to post comments on your photos.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="photo_comment_permission"
+                                        value="nobody"
+                                        {{if eq .PrivacySetting.PhotoComments "nobody"}}checked{{end}}>
+                                    Nobody
+                                    <i class="fa fa-hand has-text-danger ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Nobody can add comments to your photos. Note: existing comments will still remain.
+                                </p>
+                            </div>
+
+                            <hr>
+
+                            <div class="field" id="private_photos">
+                                <label class="label mb-0">
+                                    Who can share their
+                                    <span class="has-text-private">
+                                        <i class="fa fa-eye"></i> Private Photos
+                                    </span>
+                                    with me?
+                                </label>
+
+                                <p class="help">
+                                    This setting can help you to be in control of who else on {{PrettyTitle}} is allowed
+                                    to unlock their private photo gallery for you.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="private_photo_gate"
+                                        value=""
+                                        {{if eq .PrivacySetting.PrivatePhotos ""}}checked{{end}}>
+                                    Anybody on the site
+                                </label>
+                                <p class="help">
+                                    Any member of the website is able to share their private photo gallery with you.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="private_photo_gate"
+                                        value="friends"
+                                        {{if eq .PrivacySetting.PrivatePhotos "friends"}}checked{{end}}>
+                                    Only people on my Friends list
+                                    <i class="fa fa-user-group has-text-warning ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Only people who you have accepted as a friend will have the ability to share their private
+                                    photo gallery with you.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="private_photo_gate"
+                                        value="messaged"
+                                        {{if eq .PrivacySetting.PrivatePhotos "messaged"}}checked{{end}}>
+                                    Only my friends and people I have sent a DM to
+                                    <i class="fa fa-user-group has-text-warning ml-2"></i>
+                                    <i class="fa fa-envelope has-text-link"></i>
+                                </label>
+                                <p class="help">
+                                    People on your friend list and people who <strong>you</strong> have sent a Direct Message to
+                                    (on the main website - not the chat room) will be able to share their private photos with you.
+                                    Note: for example, if somebody sends <em>you</em> an unsolicited DM and you did not respond,
+                                    that person can not share their private photos with you.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="radio"
+                                        name="private_photo_gate"
+                                        value="nobody"
+                                        {{if eq .PrivacySetting.PrivatePhotos "nobody"}}checked{{end}}>
+                                    Nobody <i class="fa fa-hand has-text-danger ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Nobody on the website will be allowed to share their private gallery with you. Note: this
+                                    will mean that you will have no method to see private photos on the site except those which
+                                    had already been shared with you in the past.
+                                </p>
+                            </div>
+
+                            <hr>
+
+                            <div class="field" id="search">
+                                <label class="label mb-0">
+                                    Who can search for me on the
+                                    <i class="fa fa-people-group"></i> Member Directory?
+                                </label>
+
+                                <p class="help">
+                                    These settings allow you to "opt-out" and be hidden from search results for
+                                    certain fields such as your gender or sexual orientation.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="checkbox"
+                                        name="hidden_age"
+                                        value="true"
+                                        {{if .PrivacySetting.HiddenAge}}checked{{end}}>
+                                    Hide from search results by <strong>Age</strong>
+                                    <i class="fa-regular fa-calendar has-text-info ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Any search that includes age range filters will hide you from the results.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="checkbox"
+                                        name="hidden_gender"
+                                        value="true"
+                                        {{if .PrivacySetting.HiddenGender}}checked{{end}}>
+                                    Hide from search results by <strong>Gender</strong>
+                                    <i class="fa fa-mars-and-venus has-text-success ml-2"></i>
+                                </label>
+                                <p class="help">
+                                    Any search that includes a gender filter will hide you from the results.
+                                </p>
+
+                                <label class="checkbox mt-3">
+                                    <input type="checkbox"
+                                        name="hidden_orientation"
+                                        value="true"
+                                        {{if .PrivacySetting.HiddenOrientation}}checked{{end}}>
+                                    Hide from search results by <strong>Sexual Orientation</strong>
+                                    <i class="fa fa-venus-mars ml-2 has-text-success"></i>
+                                    <i class="fa fa-mars-double has-text-info"></i>
+                                    <i class="fa fa-venus-double has-text-private"></i>
+                                </label>
+                                <p class="help">
+                                    Any search that includes an orientation filter will hide you from the results.
+                                </p>
+                            </div>
+
+                            <hr>
+
+                            <div class="field">
+                                <button type="submit" class="button is-primary">
+                                    <i class="fa fa-save mr-2"></i> Save Privacy Settings
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+    
+            </div>
+    
+        </div>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,39 @@
+<!--
+Reusable Forums tab bar.
+
+Usage: [[ForumTabs .]]
+
+Variables that your template should set:
+
+- CurrentForumTab (string): one of categories, newest, search.
+-->
+{{define "ForumTabs"}}
+<div class="block p-4 mb-0">
+    <div class="tabs is-boxed">
+        <ul>
+            <li {{if or (eq .CurrentForumTab "categories") (not .CurrentForumTab) }}class="is-active"{{end}}>
+                <a href="/forum">
+                    Categories
+                </a>
+            </li>
+            {{if .FeatureUserForumsEnabled}}
+            <li {{if eq .CurrentForumTab "explore" }}class="is-active"{{end}}>
+                <a href="/forum/explore">
+                    Explore
+                </a>
+            </li>
+            {{end}}
+            <li {{if eq .CurrentForumTab "newest" }}class="is-active"{{end}}>
+                <a href="/forum/newest">
+                    Newest
+                </a>
+            </li>
+            <li {{if eq .CurrentForumTab "search" }}class="is-active"{{end}}>
+                <a href="/forum/search">
+                    <i class="fa fa-search mr-2"></i> Search
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+{{end}}

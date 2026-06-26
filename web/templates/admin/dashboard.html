@@ -1,0 +1,330 @@
+{{define "title"}}Admin Dashboard{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">Admin Dashboard</h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns">
+
+            <div class="column">
+                <div class="card block">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-peace mr-2"></i>
+                            Admin Menu
+                        </p>
+                    </header>
+
+                    <div class="card-content">
+                        <aside class="menu">
+                            <p class="menu-label">General / Most Common Links</p>
+                            <ul class="menu-list">
+                                <li {{if not (.CurrentUser.HasAdminScope "social.moderator.photo")}}class="line-through"{{end}}>
+                                    <a href="/photo/gallery?admin_view=true">
+                                        <i class="fa fa-image mr-2"></i>
+                                        Gallery: Admin View
+                                        <p class="help">
+                                            Browse all user photos on the Site Gallery.
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <p class="menu-label">Action Items</p>
+                            <ul class="menu-list">
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.feedback")}}class="line-through"{{end}}>
+                                    <a href="/admin/feedback">
+                                        <i class="fa fa-message mr-2"></i>
+                                        Feedback &amp; User Reports
+                                        {{if .NavAdminFeedback}}<span class="tag is-danger ml-1">{{.NavAdminFeedback}}</span>{{end}}
+                                        <p class="help">
+                                            Review &amp; acknowledge reports and 'Contact Us' messages from users.
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <p class="menu-label">Website Data &amp; Insights</p>
+                            <ul class="menu-list">
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.changelog")}}class="line-through"{{end}}>
+                                    <a href="/admin/changelog">
+                                        <i class="fa fa-clipboard-list mr-2 ml-1"></i>
+                                        Change Log Viewer
+                                        <p class="help">
+                                            Search history of user accounts, photos, blogs, etc.
+                                        </p>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.insights")}}class="line-through"{{end}}>
+                                    <a href="/admin/ip-addresses">
+                                        <i class="fa fa-network-wired mr-2"></i>
+                                        IP Addresses
+                                        <p class="help">
+                                            Browse &amp; search for shared and banned IP addresses.
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <p class="menu-label">Super-Admin Tools</p>
+                            <ul class="menu-list">
+                                <li>
+                                    <a href="/admin/scopes">
+                                        <i class="fa fa-gavel mr-2"></i>
+                                        Admin Permissions Management
+                                        <p class="help">
+                                            Admin accounts and their permission groups.
+                                        </p>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.user.create")}}class="line-through"{{end}}>
+                                    <a href="/admin/add-user">
+                                        <i class="fa fa-user mr-2"></i>
+                                        Create User Account
+                                        <p class="help">
+                                            Create a new user account, bypassing the signup page.
+                                        </p>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.bulk-message")}}class="line-through"{{end}}>
+                                    <a href="/admin/bulk-message">
+                                        <i class="fa fa-envelope mr-2"></i>
+                                        Broadcast/Bulk Messages
+                                        <p class="help">
+                                            Send a main website DM to many people at once.
+                                        </p>
+                                    </a>
+                                </li>
+                                <li {{if not (.CurrentUser.HasAdminScope "admin.maintenance")}}class="line-through"{{end}}>
+                                    <a href="/admin/maintenance">
+                                        <i class="fa fa-wrench mr-2"></i>
+                                        Maintenance Mode
+                                        <p class="help">
+                                            Lock down website features for maintenance or emergencies.
+                                        </p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </aside>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="card">
+                    <header class="card-header has-background-warning">
+                        <p class="card-header-title has-text-dark-dark">
+                            <i class="fa fa-book mr-2"></i>
+                            Admin Guidelines
+                        </p>
+                    </header>
+
+                    <div class="card-content content">
+                        <p>
+                            <strong>Table of contents:</strong>
+                        </p>
+                        <ul>
+                            <li><a href="#role">What is my role as an admin?</a></li>
+                            <li><a href="#privacy">Respect the privacy of our users</a></li>
+                            <li><a href="#moderate">What we moderate</a></li>
+                            <li><a href="#impersonate">Impersonating users</a></li>
+                            <li><a href="#chat">Chat room commands</a></li>
+                        </ul>
+
+                        <h2 id="role">What is my role as an admin?</h2>
+
+                        <p>
+                            Please see <a href="/admin/transparency/{{.CurrentUser.Username}}">your Admin Transparency page</a> to
+                            review the list of permissions and roles you are capable of. Then, review the relevant sections
+                            below for some guidelines and information relating to that role.
+                        </p>
+
+                        <h2 id="privacy">Respect the privacy of our users</h2>
+
+                        <ul>
+                            <li>
+                                We do not snoop on our users' Direct Messages unless they <strong>report</strong> a conversation
+                                for us to check out. The only way to access DMs is to <a href="#impersonate">impersonate</a> a
+                                user, which can't be done in secret.
+                            </li>
+                            <li>
+                                We treat the Certification Photos as sensitive information. Go there only when a certification
+                                photo is pending approval (green notification badges will guide the way). Do not download or leak
+                                these images; be respectful.
+                            </li>
+                        </ul>
+
+                        <h2 id="moderate">What we moderate</h2>
+
+                        Admin users are only expected to help moderate the following areas of the site:
+
+                        <h3>1. User photo galleries</h3>
+
+                        <p>
+                        Every picture uploaded to a user's profile page can be seen by (some) admin users. The
+                        <a href="/photo/gallery?admin_view=true">admin gallery view</a> can find <strong>all</strong>
+                        user photos, whether private or friends-only, whether opted-in for the Site Gallery or not.
+                        </p>
+
+                        <p>
+                        <strong>Notice:</strong> the website will not allow you to accidentally "like" a photo
+                        that you should not have been able to see. "Like" buttons are hidden during the admin view
+                        of the Site Gallery, but in case you click it on their profile page, the website will display
+                        an error message "You aren't allowed to like that photo" so the user isn't alarmed.
+                        </p>
+
+                        <h3>2. The Forums</h3>
+
+                        <p>
+                        Keep up with the <a href="/forum/newest">newest</a> forum posts and generally make sure
+                        people aren't fighting or uploading inappropriate photos to one of the few photo boards.
+                        </p>
+
+                        <h3>3. The Chat Room</h3>
+
+                        <p>
+                        If you are moderating the chat rooms, your main responsibilities are to:
+                        </p>
+
+                        <ul>
+                            <li>
+                                Ensure that people mark their webcams as 'Explicit' / red if they are jerking off
+                                or being sexual. Use the <a href="#chat">/nsfw command</a> to set their camera to
+                                red.
+                                <ol>
+                                    <li>
+                                        The first action is to mark their camera red for them - sometimes people just
+                                        forget!
+                                    </li>
+                                    <li>
+                                        If the user fights you and removes the 'explicit' flag on their camera, you
+                                        may send them a verbal warning or kick them from the room. Please wait until
+                                        they have fought your flag at least <strong>two</strong> times: sometimes users
+                                        are confused by the wording of the "your cam was marked explicit" message and
+                                        accidentally un-mark their camera.
+                                    </li>
+                                    <li>
+                                        If users are being difficult and insisting on keeping an explicit camera blue,
+                                        kicking or banning them from the room is OK.
+                                    </li>
+                                </ol>
+                            </li>
+                            <li>
+                                Ensure that people are behaving themselves: not spamming or breaking the rules
+                                by posting explicit photos in non-explicit channels. As above: a gentle warning is
+                                often the first step before you kick or ban problematic people.
+                            </li>
+                        </ul>
+
+                        <h3>4. Reported DMs only</h3>
+
+                        <p>
+                        If a user reports a Direct Message conversation
+                        they're having, a link to view that chat thread will be available from the report.
+                        This will <a href="#impersonate">impersonate</a> the reporter and will be logged
+                        - see "Impersonating users," below.
+                        </p>
+
+                        <p>
+                        DMs are text-based only, so users won't be sending any image attachments that need
+                        moderating and their privacy is to be respected. A user may report a problematic
+                        conversation for us to take a look at.
+                        </p>
+
+                        <hr>
+
+                        <h2 id="impersonate">Impersonating users</h2>
+
+                        <p>
+                        From a user's profile page you can "impersonate," or log in as them. You should almost
+                        never need to do this, and only to diagnose a reported issue from their account or
+                        something like that.
+                        </p>
+
+                        <p>
+                        You will need to write a <strong>reason</strong> for impersonating a user. The event is
+                        logged and will be e-mailed to the admin team along with your reason. The admin team is
+                        alerted any time an Impersonate action is performed.
+                        </p>
+
+                        <p>
+                        Note: when you impersonate, their "Last logged in at" time is not updated by your actions.
+                        So if a user were last seen a month ago, they will still appear last seen a month ago.
+                        But other interactions you make as their account (e.g. marking notifications read, reading
+                        their unread DMs) will work and may be noticed.
+                        </p>
+
+                        <hr>
+
+                        <h2 id="chat">Chat room commands</h2>
+
+                        <p>
+                        If you are moderating the chat room, these are useful commands to know. You can type
+                        these commands into the message box on the room.
+                        </p>
+
+                        <dl>
+                            <dt><strong>/help</strong></dt>
+                            <dd>Shows a reminder in chat about the available operator commands.</dd>
+
+                            <dt><strong>/nsfw <span class="has-text-info">username</span></strong></dt>
+                            <dd>Mark a user's webcam as 'explicit' on their behalf (turning it from a blue cam into a red cam).</dd>
+
+                            <dt><strong>/kick <span class="has-text-info">username</span></strong></dt>
+                            <dd>Kick a user from the chat room. They will be able to log back in.</dd>
+
+                            <dt><strong>/ban <span class="has-text-info">username</span></strong></dt>
+                            <dd>Temporarily ban the user from the chat room for 24 hours (by default).</dd>
+
+                            <dt><strong>/ban <span class="has-text-info">username</span> <span class="has-text-warning">hours</span></strong></dt>
+                            <dd>Provide a number of hours to set a different ban duration than the default (see examples below).</dd>
+
+                            <dt><strong>/bans</strong></dt>
+                            <dd>Get a list of currently active chat room bans.</dd>
+
+                            <dt><strong>/unban <span class="has-text-info">username</span></strong></dt>
+                            <dd>Immediately remove the ban flag on this username.</dd>
+                        </dl>
+
+                        <p>
+                            <strong class="has-text-danger">Important:</strong>
+
+                            The <code>/help</code> command lists some additional options that you generally should
+                            never need to use. Be <strong>very</strong> careful not to issue commands like shutdown
+                            which will reboot the chat server, as this can be very disruptive to our members.
+                        </p>
+
+                        <p>
+                            Generally, as a volunteer chat moderator you will only be using the /nsfw, /kick and /ban
+                            commands as needed.
+                        </p>
+
+                        <h4>Examples</h4>
+
+                        <ul>
+                            <li>/kick {{.CurrentUser.Username}}</li>
+                            <li>/ban {{.CurrentUser.Username}}</li>
+                            <li>/ban {{.CurrentUser.Username}} 12</li>
+                        </ul>
+
+                        <p>
+                            Note: the @ symbol should NOT appear in front of the username, the chat server currently
+                            won't recognize the user. If you use the @ mention auto-complete, be sure to remove the @
+                            symbol before sending the command. This is a bug that will probably be fixed soon.
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{{end}}

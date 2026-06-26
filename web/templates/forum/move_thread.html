@@ -1,0 +1,73 @@
+{{define "title"}}Move Forum Thread{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Move Forum Thread
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon mr-2"><i class="fa fa-eye"></i></span>
+                            <span>Move Forum Thread</span>
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <!-- Show the relevant form -->
+                        <form action="{{.Request.URL.Path}}" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="thread_id" value="{{.Thread.ID}}">
+
+                            <div class="field is-horizontal block">
+                                <div class="field-label">
+                                    <label for="fragment" class="label">Move to:</label>
+                                </div>
+                                <div class="field-body">
+                                    <div class="field is-expanded">
+                                        <div class="field has-addons">
+                                            <p class="control">
+                                                <a class="button is-static">
+                                                    /f/
+                                                </a>
+                                            </p>
+                                            <p class="control is-expanded">
+                                                <input type="text" class="input"
+                                                    name="fragment" id="fragment"
+                                                    placeholder="forum URL fragment"
+                                                    value="{{.Thread.Forum.Fragment}}">
+                                            </p>
+                                        </div>
+                                        <p class="help">
+                                            Enter the forum URL fragment to move this thread to.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success">
+                                    Move Thread
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

@@ -1,0 +1,149 @@
+<!--
+Reusable Friend Picker UX.
+-->
+{{define "base"}}
+<div id="htmx-friendpicker-{{.UniqueID}}">
+    {{$Root := .}}
+
+    <div class="columns is-mobile">
+        <div class="column is-narrow pr-1">
+            Sort by:
+        </div>
+        <div class="column is-narrow pl-1">
+            <div class="dropdown">
+                <div class="dropdown-trigger">
+                    <button type="button" class="button is-small" aria-haspopup="true" aria-controls="friend-sort-menu">
+                        <span>
+                            {{if eq .Sort "updated_at desc"}}
+                                Most recent
+                            {{else if eq .Sort "updated_at asc"}}
+                                Oldest
+                            {{else if eq .Sort "users.username asc"}}
+                                Username (A-Z)
+                            {{else if eq .Sort "users.username desc"}}
+                                Username (Z-A)
+                            {{else}}
+                                Sort by...
+                            {{end}}
+                        </span>
+                        <i class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </i>
+                    </button>
+                    <div class="dropdown-menu" id="friend-sort-menu" role="menu">
+                        <div class="dropdown-content">
+                            <a href="#"
+                                hx-get="{{.Request.URL.Path}}?{{QueryPlus "sort" "updated_at desc"}}"
+                                hx-target="#htmx-friendpicker-{{.UniqueID}}"
+                                hx-swap="outerHTML"
+                                class="dropdown-item">Most recent</a>
+                            <a href="#"
+                                hx-get="{{.Request.URL.Path}}?{{QueryPlus "sort" "updated_at asc"}}"
+                                hx-target="#htmx-friendpicker-{{.UniqueID}}"
+                                hx-swap="outerHTML"
+                                class="dropdown-item">Oldest</a>
+                            <a href="#"
+                                hx-get="{{.Request.URL.Path}}?{{QueryPlus "sort" "users.username asc"}}"
+                                hx-target="#htmx-friendpicker-{{.UniqueID}}"
+                                hx-swap="outerHTML"
+                                class="dropdown-item">Username (A-Z)</a>
+                            <a href="#"
+                                hx-get="{{.Request.URL.Path}}?{{QueryPlus "sort" "users.username desc"}}"
+                                hx-target="#htmx-friendpicker-{{.UniqueID}}"
+                                hx-swap="outerHTML"
+                                class="dropdown-item">Username (Z-A)</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Paginator, based on SimplePager but with HTMX hooks. -->
+    <!-- TODO: make this more general for other HTMX widgets? -->
+    {{if .Pager.Pages}}
+    <nav class="pagination is-small" role="navigation" aria-label="pagination">
+        <a class="pagination-previous{{if not .Pager.HasPrevious}} is-disabled{{end}}" title="Previous"
+            href="#"
+            hx-get="{{.Request.URL.Path}}?{{QueryPlus "page" .Pager.Previous}}"
+            hx-target="#htmx-friendpicker-{{.UniqueID}}"
+            hx-swap="outerHTML">
+            Previous
+        </a>
+        <a class="pagination-next is-primary{{if not .Pager.HasNext}} is-disabled{{end}}" title="Next"
+            href="#"
+            hx-get="{{.Request.URL.Path}}?{{QueryPlus "page" .Pager.Next}}"
+            hx-target="#htmx-friendpicker-{{.UniqueID}}"
+            hx-swap="outerHTML">
+            Next page
+        </a>
+        <ul class="pagination-list">
+            {{$Root := .}}
+
+            <!-- First Page button -->
+            <li>
+                <a class="pagination-link"
+                    aria-label="First page"
+                    title="First page"
+                    href="#"
+                    hx-get="{{.Request.URL.Path}}?{{QueryPlus "page" 1}}"
+                    hx-target="#htmx-friendpicker-{{.UniqueID}}"
+                    hx-swap="outerHTML"
+                    {{if eq .Pager.Page 1}}disabled{{end}}>
+                    <i class="fa fa-angles-left"></i>
+                </a>
+            </li>
+
+            {{range .Pager.Iter}}
+            <li>
+                <a class="pagination-link{{if .IsCurrent}} is-current{{end}}"
+                    aria-label="Page {{.Page}}"
+                    title="Page {{.Page}}"
+                    href="#"
+                    hx-get="{{$Root.Request.URL.Path}}?{{QueryPlus "page" .Page}}"
+                    hx-target="#htmx-friendpicker-{{$Root.UniqueID}}"
+                    hx-swap="outerHTML">
+                    {{.Page}}
+                </a>
+            </li>
+            {{end}}
+
+            <!-- Final Page button -->
+            <li>
+                <a class="pagination-link"
+                    aria-label="Final page"
+                    title="Final page ({{.Pager.Pages}})"
+                    href="#"
+                    hx-get="{{$Root.Request.URL.Path}}?{{QueryPlus "page" .Pager.Pages}}"
+                    hx-target="#htmx-friendpicker-{{$Root.UniqueID}}"
+                    hx-swap="outerHTML"
+                    {{if ge .Pager.Page .Pager.Pages}}disabled{{end}}>
+                    <i class="fa fa-angles-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {{end}}
+    <!-- /Not so SimplePager -->
+
+    <div class="columns is-multiline is-mobile">
+        {{range .Friends}}
+        <div class="column is-half-mobile is-half-tablet is-one-third-desktop">
+            {{$Granted := $Root.GranteeMap.Get .ID}}
+            {{template "avatar-16x16" .}}
+            <a href="{{if $Root.UsernameLinkTo}}{{Sprintf $Root.UsernameLinkTo .Username}}{{else}}#{{end}}"
+                {{if $Root.UsernameOnClick}}
+                    onclick="{{ToUnsafeJavaScript (Sprintf $Root.UsernameOnClick .Username)}}"
+                {{else if $Granted}}
+                    class="has-text-private" onclick="modalAlert({message: 'You had already granted @{{.Username}} access to your private photos.', title: 'Already Granted'}); return false"
+                {{end}}>
+                {{.Username}}
+                {{if $Granted}}
+                    <sup class="fa fa-unlock has-text-private"></sup>
+                {{end}}
+            </a>
+        </div>
+        {{end}}
+    </div>
+</div><!-- /component wrapper with unique ID -->
+{{end}}

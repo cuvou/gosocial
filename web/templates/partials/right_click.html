@@ -1,0 +1,49 @@
+<!-- Right-click deterrent modal -->
+
+{{define "right-click-modal"}}
+<div class="modal gosocial-important-modal" id="rightclick-modal">
+        <div class="modal-background"></div>
+        <div class="modal-content">
+            <div class="card">
+                <div class="card-header has-background-warning">
+                    <p class="card-header-title has-text-dark-dark">
+                        <i class="fa fa-info-circle mr-2"></i> Please respect peoples' privacy
+                    </p>
+                </div>
+                <div class="card-content content">
+                    <p>
+                        Please respect our members' privacy and refrain from downloading any pictures from {{PrettyTitle}}.
+                    </p>
+                    <p>
+                        It is <a href="/tos#downloading">against the rules</a> to download a copy of other peoples' photos
+                        from this site. I know that I can't stop you from doing so anyway if you're so determined, but
+                        please consider that many of us don't wish for our pictures to end up reposted somewhere
+                        else on the Internet or seen by people outside of the {{PrettyTitle}} community.
+                    </p>
+
+                    <p>
+                        Thank you for your understanding!
+                    </p>
+
+                    {{if and .LoggedIn (.CurrentUser.IsAdmin)}}
+                    <p class="gosocial-rc-admin">
+                        <a href="#" target="_blank" class="is-size-7 has-text-danger">
+                            <i class="fa fa-peace mr-1"></i>
+                            Open image in new tab
+                            <sup class="fa fa-external-link"></sup>
+                        </a>
+                    </p>
+                    {{end}}
+                </div>
+                <div class="card-footer has-text-centered">
+                    <div class="card-footer-item">
+                        <button type="button" class="button is-success">
+                            Acknowledge
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+<script type="text/javascript" src="/static/js/right-click.js?build={{.BuildHash}}"></script>
+{{end}}

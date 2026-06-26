@@ -1,0 +1,55 @@
+{{define "title"}}Delete Photo{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Delete Photo
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="level">
+            <div class="level-item">
+                <div class="card" style="max-width: 512px">
+                    <header class="card-header has-background-danger">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon"><i class="fa fa-trash"></i></span>
+                            Delete Photo
+                        </p>
+                    </header>
+                    <div class="card-content">
+                        <form method="POST" action="/photo/delete">
+                            {{InputCSRF}}
+                            <input type="hidden" name="id" value="{{.Photo.ID}}">
+                            <input type="hidden" name="confirm" value="true">
+
+                            <div class="image block">
+                                <!-- GIF video? -->
+                                {{if HasSuffix .Photo.Filename ".mp4"}}
+                                <video autoplay loop controls controlsList="nodownload" playsinline>
+                                    <source src="{{PhotoURL .Photo.Filename}}" type="video/mp4">
+                                </video>
+                                {{else}}
+                                <img src="{{PhotoURL .Photo.Filename}}">
+                                {{end}}
+                            </div>
+                            <div class="block">
+                                Are you sure you want to delete this photo?
+                            </div>
+                            <div class="block has-text-center">
+                                <button type="submit" class="button is-danger">Delete Photo</button>
+                                <button type="button" class="button" onclick="history.back()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

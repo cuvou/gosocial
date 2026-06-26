@@ -1,0 +1,269 @@
+{{define "title"}}Admin - Scopes &amp; Permissions{{end}}
+{{define "content"}}
+{{$Root := .}}
+<div class="container">
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Scopes &amp; Permissions
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{if or (eq .Intent "new") (eq .Intent "edit")}}
+    <!-- Create New/Edit a Group -->
+    <div class="columns mt-2">
+        <div class="column is-three-quarters">
+            <h1 class="title">
+                {{if .EditGroupID}}Edit{{else}}New{{end}} Admin Group
+            </h1>
+            <form action="{{.Request.URL.Path}}" method="POST">
+                {{InputCSRF}}
+                <input type="hidden" name="id" value="{{.EditGroupID}}">
+
+                <div class="field">
+                    <label class="label" for="name">Group Name</label>
+                    <input type="text" class="input"
+                        name="name"
+                        id="name"
+                        autocomplete="off"
+                        value="{{.EditGroup.Name}}"
+                        placeholder="Forum Moderators">
+                </div>
+
+                <div class="field">
+                    <label class="label" for="scopes">Scopes</label>
+                    <textarea class="textarea"
+                        cols="80" rows="4"
+                        name="scopes"
+                        id="scopes"
+                        placeholder="one.scope.per.line">{{.EditGroup.ScopesString}}</textarea>
+                    <p class="help">
+                        Enter scopes one per line. Wildcards (*) may be used, as in <code>social.moderator.*</code>
+                    </p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Admin Users</label>
+                    {{range .AdminUsers}}
+                    <div>
+                        <label class="checkbox">
+                            <input type="checkbox"
+                                name="username"
+                                value="{{.Username}}"
+                                {{if $Root.EditGroup.HasAdmin .Username}}checked{{end}}>
+                                {{.Username}}
+                        </label>
+                    </div>
+                    {{end}}
+                    <p class="help">
+                        Select the admin user(s) who should be a part of this group.
+                    </p>
+                </div>
+
+                <div class="field">
+                    <button type="submit" class="button is-primary"
+                        name="intent"
+                        value="save">
+                        Save Changes
+                    </button>
+
+                    {{if .EditGroupID}}
+                    <button type="submit" class="button is-danger gosocial-confirm-submit"
+                        name="intent"
+                        value="delete"
+                        data-confirm="Are you sure you want to delete this group?">
+                        <i class="fa fa-trash mr-1"></i>
+                        Delete
+                    </button>
+                    {{end}}
+
+                    <a href="{{.Request.URL.Path}}" class="button is-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="column is-one-quarter">
+            <div class="card">
+                <div class="card-header has-background-info">
+                    <p class="card-header-title has-text-light">
+                        Admin Scopes
+                    </p>
+                </div>
+                <div class="card-content">
+                    <p class="block">
+                        The complete listing of available admin scopes on the website
+                        are as follows:
+                    </p>
+
+                    <ul>
+                        {{range .AdminScopes}}
+                        <li>{{.}}</li>
+                        {{end}}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="p-4">
+
+        <p class="block">
+            This page allows you to manage the nuanced permissions for admin accounts on {{PrettyTitle}}.
+            Permissions are managed by placing admins into groups, and in turn, assigning one or more
+            scopes to each group.
+        </p>
+
+        {{if not (.CurrentUser.HasAdminScope "admin.scope.manage")}}
+        <p class="block">
+            <strong class="has-text-success">
+                <i class="fa fa-info-circle mr-1"></i>
+                Read-Only:
+            </strong>
+            You do not have permission to make changes on this page, but you may look at it and see who
+            your fellow admins are and what groups they are in.
+        </p>
+        {{end}}
+
+        <!-- Superusers group init? -->
+        {{if .NeedSuperuserInit}}
+        <div class="notification is-warning content">
+            <p>
+                The <strong>Superusers</strong> group was not found! Click the button below
+                to initialize the Superusers group and add yourself to it automatically.
+            </p>
+
+            <p>
+                <form action="{{.Request.URL.Path}}" method="POST">
+                    {{InputCSRF}}
+                    <button type="submit"
+                        name="intent"
+                        value="init-superusers"
+                        class="button is-danger">
+                        Initialize the Superusers Group
+                    </button>
+                </form>
+            </p>
+        </div>
+        {{end}}
+
+        <hr>
+
+        <h1 class="title">Admin Users</h1>
+
+        <p class="block">
+            Found <strong>{{len .AdminUsers}}</strong> admin user account{{Pluralize (len .AdminUsers)}}.
+        </p>
+
+        <p class="block">
+            <strong>Legend:</strong>
+            <i class="fa fa-lock has-text-success"></i>     Has Two-Factor Auth set up
+        </p>
+
+        <table class="table is-striped is-fullwidth">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <!-- <th>2FA</th> -->
+                    <th>Admin Groups</th>
+                    <th>Scopes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .AdminUsers}}
+                <tr>
+                    <td>{{.ID}}</td>
+                    <td>
+                        <a href="/u/{{.Username}}">{{.Username}}</a>
+                        {{if $Root.TwoFactorMap.Has .ID}}
+                        <i class="fa fa-lock has-text-success"></i>
+                        {{end}}
+                    </td>
+                    <!-- <td>
+                        {{if $Root.TwoFactorMap.Has .ID}}
+                        <strong class="fa fa-lock has-text-success"></strong>
+                        {{else}}
+                        <i class="fa fa-unlock has-text-danger"></i>
+                        {{end}}
+                    </td> -->
+                    <td>
+                        <ul>
+                            {{range .ListAdminGroups}}
+                            <li>{{.}}</li>
+                            {{end}}
+                        </ul>
+                    </td>
+                    <td>
+                        <ul>
+                            {{range .ListAdminScopes}}
+                            <li>{{.}}</li>
+                            {{end}}
+                        </ul>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h1 class="title">Admin Groups</h1>
+
+        <p class="block">
+            Found <strong>{{len .AdminGroups}}</strong> admin group{{Pluralize (len .AdminUsers)}}.
+            <a href="{{.Request.URL.Path}}?intent=new">Create new group.</a>
+        </p>
+
+        <table class="table is-striped is-fullwidth">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Scopes</th>
+                    <th>Users</th>
+                    {{if .CurrentUser.HasAdminScope "admin.scope.manage"}}
+                    <th>Edit</th>
+                    {{end}}
+                </tr>
+            </thead>
+            <tbody>
+                {{range .AdminGroups}}
+                <tr>
+                    <td>{{.ID}}</td>
+                    <td>{{.Name}}</td>
+                    <td>
+                        <ul>
+                            {{range .Scopes}}
+                            <li>{{.Scope}}</li>
+                            {{end}}
+                        </ul>
+                    </td>
+                    <td>
+                        <ul>
+                            {{range .Users}}
+                            <li>
+                                <a href="/u/{{.Username}}">{{.Username}}</a>
+                            </li>
+                            {{end}}
+                        </ul>
+                    </td>
+                    {{if $Root.CurrentUser.HasAdminScope "admin.scope.manage"}}
+                    <td>
+                        <a href="{{$Root.Request.URL.Path}}?intent=edit&id={{.ID}}">Edit</a>
+                    </td>
+                    {{end}}
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+
+    </div>
+    {{end}}
+
+</div>
+{{end}}

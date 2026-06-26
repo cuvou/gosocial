@@ -1,0 +1,128 @@
+{{define "title"}}Delete My Account{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-danger is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-trash mr-2"></i>
+                    Delete My Account
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <div class="card">
+                    <header class="card-header has-background-danger">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-trash mr-2"></i>
+                            Delete My Account
+                        </p>
+                    </header>
+                    <div class="card-content">
+                        <form method="POST" action="/account/delete">
+                            {{InputCSRF}}
+                            <div class="block content">
+                                <p>
+                                    We're sorry to see you go! If you wish to delete your account, you may do
+                                    so on this page. Your account <strong>will not be recoverable</strong> after deletion!
+                                    This will permanently delete <strong>everything</strong> we know about your account
+                                    on {{PrettyTitle}}:
+                                </p>
+
+                                <ul>
+                                    <li>Your account and profile data.</li>
+                                    <li>Your photos and their data.</li>
+                                    <li>Your certification photo.</li>
+                                    <li>Your friends, direct messages, forum posts, comments, likes, and so on.</li>
+                                    <li>
+                                        Your username ({{.CurrentUser.Username}}) will be made available again
+                                        and somebody else (or you, should you sign up again) may be able to use
+                                        it in the future.
+                                    </li>
+                                </ul>
+
+                                <div class="notification is-success is-light content">
+                                    <p>
+                                        <i class="fa fa-info-circle"></i>
+                                        <strong>Do you think you'll come back again later?</strong>
+                                    </p>
+
+                                    <p>
+                                        You may want to consider <a href="/account/deactivate"><strong>Deactivating your account</strong></a> instead.
+                                    </p>
+
+                                    <p>
+                                        If you <a href="/account/deactivate"><strong>Deactivate</strong></a> instead of Delete your account, then
+                                        {{PrettyTitle}} can keep your data safe for you while you decide if you'll want to come
+                                        back again.
+                                    </p>
+
+                                    <p>
+                                        That way, you won't need to start over from scratch with a new account or need to again
+                                        wait for your Certification Photo to be approved. To other members on {{PrettyTitle}}, your account would
+                                        be hidden and appear in all the same ways as if it had been deleted.
+                                    </p>
+                                </div>
+
+                                <p>
+                                    To confirm the <strong>permanent deletion</strong> of your account, please enter your current account
+                                    password into the box below.
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="password">Your current password:</label>
+                                <input type="password" class="input"
+                                    name="password"
+                                    id="password"
+                                    placeholder="Password">
+                            </div>
+
+                            <!-- A superfluous checkbox that the front-end makes the user click, to
+                                 ensure the user knows what's going to happen.
+                             -->
+                            <div class="field mb-4">
+                                <label class="checkbox">
+                                    <input type="checkbox" required>
+                                    I acknowledge that my account will be <strong>permanently deleted</strong>.
+                                </label>
+                            </div>
+
+                            <!-- Ask for feedback ONLY from members who have been here for a while. -->
+                            <!-- Too much spam from straight guys who didn't read the disclaimer ON THE SIGNUP PAGE -->
+                            <!-- and then delete their account saying "no women here" 🙄🙄🙄🙄 -->
+                            {{if .CurrentUser.IsCertifiedLongEnoughForAccountDeletionFeedback}}
+                            <div class="field">
+                                <label class="label" for="feedback">Do you want to leave any feedback for us?</label>
+                                <textarea class="textarea"
+                                    name="feedback"
+                                    id="feedback"
+                                    placeholder="Let us know what we could have done better."
+                                    cols="80"
+                                    rows="3"></textarea>
+                                <p class="help">
+                                    If you would like, please let us know why you have decided to delete your account in case
+                                    it can help us improve the website for others in the future.
+                                </p>
+                            </div>
+                            {{end}}
+
+                            <div class="block has-text-center">
+                                <button type="submit" class="button is-danger gosocial-confirm-submit"
+                                    data-confirm="Your {{.Title}} account and all of its data will be PERMANENTLY DELETED.\n\nIf you wish to sign up again later, you will need to start over from a new account and wait for your Certification Photo to be approved all over again.\n\nConfirm if you wish to PERMANENTLY DELETE your {{.Title}} account."
+                                >Delete My Account</button>
+                                <a href="/me" class="button is-success">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

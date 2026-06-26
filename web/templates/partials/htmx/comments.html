@@ -1,0 +1,293 @@
+<!--
+Comment Thread UX
+-->
+{{define "base"}}
+<div id="htmx-comments-{{.UniqueID}}">
+    {{$Root := .}}
+
+    <!-- Comments enabled? -->
+    {{if .CommentsDisabled}}
+        <div class="notification is-info is-light">
+            This post is not accepting any new comments.
+        </div>
+    {{else}}
+        <form action="/comments" method="POST">
+            {{InputCSRF}}
+            <input type="hidden" name="table_name" value="{{.TableName}}">
+            <input type="hidden" name="table_id" value="{{.TableID}}">
+            <input type="hidden" name="next" value="{{.NextURL}}">
+
+            <!-- Admin Comment Warning -->
+            {{if .AdminCommentWarning}}
+            <div class="notification is-warning is-light">
+                <p class="block">
+                    <strong class="has-text-danger">
+                        <i class="fa fa-peace mr-1"></i> Admin: Please Be Careful!
+                    </strong>
+                </p>
+                <p class="block">
+                    This content is not Public and was not shared with you; you can see it only because
+                    of your admin privileges.
+                </p>
+                <p class="block">
+                    Please <strong>do not comment</strong> unless you have official admin business for doing so!
+                </p>
+            </div>
+            {{end}}
+
+            <div class="field">
+                <label for="message">Add your comment</label>
+                {{template "markdown-editor" (
+                    NewHashMap "Name" "message"
+                    "ID" "message"
+                    "Placeholder" "Add your comment"
+                    "Required" true
+                    "Value" .Message
+                )}}
+                <p class="help">
+                    <a href="/markdown" target="_blank">Markdown formatting</a> supported.
+                </p>
+            </div>
+
+            <div class="field">
+                <p class="help">
+                    <span class="has-text-warning">
+                        <i class="fa fa-info-circle"></i>
+                        <strong class="has-text-warning">Remember:</strong>
+                    </span>
+                    If you don't have anything <strong>nice</strong> to say, don't say anything at all!
+                    It is <a href="/tos#hateful-content">strictly against the rules</a> to insult people
+                    or be a bully.
+                </p>
+            </div>
+
+            <div class="field has-text-centered">
+                <button type="submit" class="button is-success gosocial-confirm-submit"
+                    name="intent" value="submit"
+                    {{if .AdminCommentWarning}}data-confirm="Reminder: this content is NOT PUBLIC and you can only see this content because of your admin privileges.\n\nPlease DO NOT COMMENT unless it is for official admin business, as the owner of this content may not expect that you were able to see it at all.\n\nAre you sure you want to post this comment?"{{end}}>
+                    Post Comment
+                </button>
+            </div>
+        </form>
+
+        <hr class="is-dark">
+    {{end}}
+
+    {{if .CanSubscribe}}
+    <p class="mb-4">
+        <a href="/comments/subscription?table_name={{.TableName}}&table_id={{.TableID}}&next={{UrlEncode .NextURL}}&subscribe={{if not .IsSubscribed}}true{{else}}false{{end}}">
+            <span class="icon"><i class="fa fa-bell{{if not .IsSubscribed}}-slash{{end}}"></i></span>
+            <span>
+                {{if .IsSubscribed}}
+                Disable notifications about this comment thread
+                {{else}}
+                Enable notifications about this comment thread
+                {{end}}
+            </span>
+        </a>
+    </p>
+    {{end}}
+
+    <div class="columns is-mobile">
+        <div class="column is-narrow pr-1">
+            Sort by:
+        </div>
+        <div class="column is-narrow pl-1">
+            <div class="dropdown">
+                <div class="dropdown-trigger">
+                    <button type="button" class="button is-small" aria-haspopup="true" aria-controls="friend-sort-menu">
+                        <span>
+                            {{if eq .Sort "created_at desc"}}
+                                Most recent first
+                            {{else if eq .Sort "created_at asc"}}
+                                Oldest first
+                            {{else}}
+                                Sort by...
+                            {{end}}
+                        </span>
+                        <i class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </i>
+                    </button>
+                    <div class="dropdown-menu" id="friend-sort-menu" role="menu">
+                        <div class="dropdown-content">
+                            <a href="#"
+                                hx-get="{{.Request.URL.Path}}?{{QueryPlus "sort" "created_at desc" "message" ""}}"
+                                hx-target="#htmx-comments-{{.UniqueID}}"
+                                hx-include="#message"
+                                hx-swap="outerHTML"
+                                class="dropdown-item">Most recent</a>
+                            <a href="#"
+                                hx-get="{{.Request.URL.Path}}?{{QueryPlus "sort" "created_at asc" "message" ""}}"
+                                hx-target="#htmx-comments-{{.UniqueID}}"
+                                hx-include="#message"
+                                hx-swap="outerHTML"
+                                class="dropdown-item">Oldest first</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{if not .Comments}}
+    <p>
+        <em>There are no comments yet.</em>
+    </p>
+    {{else}}
+        {{range .Comments}}
+            <div class="box gosocial-forum-box-1 has-text-dark" id="p{{.ID}}">
+                <div class="columns">
+                    <div class="column is-2 has-text-centered">
+                        <!-- User has no display name distinct from their username? -->
+                        {{ $NoDisplayName := eq .User.NameOrUsername .User.Username }}
+
+                        <div>
+                            <a href="/u/{{.User.Username}}">
+                                {{template "avatar-96x96" .User}}
+                            </a>
+                        </div>
+                        <a href="/u/{{.User.Username}}">
+                            {{- if $NoDisplayName}}<small class="is-size-7">@</small>{{end -}}
+                            {{.User.NameOrUsername}}
+                        </a>
+
+                        <!-- Username if the display name wasn't identical -->
+                        {{if not $NoDisplayName}}
+                        <div class="is-size-7">
+                            @{{.User.Username}}
+                        </div>
+                        {{end}}
+                    </div>
+
+                    <div class="column content">
+                        {{ToMarkdown .Message}}
+
+                        {{if .IsEdited}}
+                        <div class="mt-4">
+                            <em title="{{.UpdatedAt.Format "2006-01-02 15:04:05"}}">
+                                <small>Edited {{SincePrettyCoarse .UpdatedAt}} ago</small>
+                            </em>
+                        </div>
+                        {{end}}
+
+                        <div class="mt-2">
+                            <!-- Google Translate link -->
+                            <a href="https://translate.google.com/?sl=auto&tl=en&text={{.Message}}&op=translate"
+                                target="_blank" class="is-small is-size-7 has-text-success">
+                                <i class="fab fa-google mr-1"></i> Open in Google Translate <i class="fa fa-external-link ml-1"></i>
+                            </a>
+                        </div>
+
+                        <hr class="has-background-grey mb-2">
+
+                        <div class="columns is-mobile is-multiline is-size-7 mb-0">
+                            <div class="column is-narrow">
+                                <span title="{{.CreatedAt.Format "2006-01-02 15:04:05"}}">
+                                    {{SincePrettyCoarse .CreatedAt}} ago
+                                </span>
+                            </div>
+
+                            <div class="column is-narrow">
+                                {{$Like := $Root.LikeMap.Get .ID}}
+                                <a href="#" class="has-text-dark gosocial-like-button"
+                                    data-table-name="comments" data-table-id="{{.ID}}"
+                                    title="Like">
+                                    <span class="icon{{if $Like.UserLikes}} has-text-danger{{end}}"><i class="fa fa-heart"></i></span>
+                                    <span class="gosocial-likes">
+                                        Like
+                                        {{if gt $Like.Count 0}}
+                                            ({{$Like.Count}})
+                                        {{end}}
+                                    </span>
+                                </a>
+                            </div>
+
+                            <div class="column is-narrow">
+                                <!-- Button to inspect the likes -->
+                                <a href="#" class="has-text-dark"
+                                    onclick="ShowLikeModal('comments', {{.ID}}); return false">
+                                    <span class="icon"><i class="fa fa-eye"></i></span>
+                                    <span>Likes</span>
+                                </a>
+                            </div>
+
+                            <div class="column is-narrow">
+                                <a href="#"
+                                    class="has-text-dark gosocial-quote-button" data-quote-body="{{.Message}}" data-reply-to="{{.User.Username}}" data-comment-id="{{.ID}}">
+                                    <span class="icon"><i class="fa fa-quote-right"></i></span>
+                                    <span>Quote</span>
+                                </a>
+                            </div>
+                            <div class="column is-narrow">
+                                <a href="#"
+                                    class="has-text-dark gosocial-reply-button" data-reply-to="{{.User.Username}}" data-comment-id="{{.ID}}">
+                                    <span class="icon"><i class="fa fa-reply"></i></span>
+                                    <span>Reply</span>
+                                </a>
+                            </div>
+
+                            {{if or $Root.CurrentUser.IsAdmin (eq $Root.CurrentUser.ID .User.ID)}}
+                            <div class="column is-narrow">
+                                <a href="/comments?table_name={{$Root.TableName}}&table_id={{$Root.TableID}}&edit={{.ID}}&next={{UrlEncode $Root.NextURL}}" class="has-text-dark">
+                                    <span class="icon"><i class="fa fa-edit"></i></span>
+                                    <span>Edit</span>
+                                </a>
+                            </div>
+                            {{end}}
+
+                            <!-- The poster, the blog owner, and the admin can delete the comment -->
+                            {{if or ($Root.CurrentUser.HasAdminScope "social.moderator.blog") (eq $Root.CurrentUser.ID .User.ID) $Root.IsOwnedThread}}
+                            <div class="column is-narrow">
+                                <a href="/comments?table_name={{$Root.TableName}}&table_id={{$Root.TableID}}&edit={{.ID}}&delete=true&next={{UrlEncode $Root.NextURL}}"
+                                    data-confirm="Are you sure you want to delete this comment?"
+                                    class="has-text-dark gosocial-confirm-submit">
+                                    <span class="icon"><i class="fa fa-trash"></i></span>
+                                    <span>Delete</span>
+                                </a>
+                            </div>
+                            {{end}}
+
+                            <div class="column is-narrow">
+                                <a href="/contact?intent=report&subject=report.comment&id={{.ID}}" class="has-text-dark">
+                                    <span class="icon"><i class="fa fa-flag"></i></span>
+                                    <span>Report</span>
+                                </a>
+                            </div>
+
+                            <!-- Copy link to clipboard -->
+                            <div class="column is-narrow">
+                                <a href="/go/comment?id={{.ID}}" onclick="navigator.clipboard.writeText(this.href); window.location='#p{{.ID}}'; return false"
+                                    class="has-text-dark"
+                                    title="Copy link to clipboard">
+                                    <span class="icon"><i class="fa fa-paragraph"></i></span>
+                                    <span>Link</span>
+                                </a>
+                            </div>
+
+                            <!-- Admin: history -->
+                            {{if $Root.CurrentUser.IsAdmin}}
+                            <div class="column is-narrow">
+                                <a href="/admin/changelog?table_name=comments&table_id={{.ID}}" class="has-text-warning">
+                                    <span class="icon"><i class="fa fa-clipboard-list"></i></span>
+                                    <span>Change log</span>
+                                </a>
+                            </div>
+                            {{end}}
+                        </div>
+
+                        {{if $Root.CurrentUser.IsAdmin}}
+                        <div>
+                            <span class="tag is-primary is-light">
+                                <span class="icon"><i class="fa fa-database"></i></span>
+                                <span>ID: {{.ID}}</span>
+                            </span>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        {{end}}
+    {{end}}
+</div><!-- /component wrapper with unique ID -->
+{{end}}

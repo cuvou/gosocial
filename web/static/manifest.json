@@ -1,0 +1,42 @@
+{
+    "short_name": "gosocial",
+    "name": "gosocial",
+    "icons": [
+        {
+            "src": "/static/img/favicon.svg",
+            "type": "image/svg+xml",
+            "sizes": "512x512"
+        },
+        {
+            "src": "/static/img/favicon-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        },
+        {
+            "src": "/static/img/favicon-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        }
+    ],
+    "id": "/?source=pwa",
+    "start_url": "/me?source=pwa",
+    "background_color": "#17181c",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#17181c",
+    "description": "A social networking website.",
+    "screenshots": [
+        {
+            "src": "/static/img/screenshot-tall.png",
+            "type": "image/png",
+            "sizes": "750x1334",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "/static/img/screenshot-wide.png",
+            "type": "image/png",
+            "sizes": "2048x1536",
+            "form_factor": "wide"
+        }
+    ]
+}

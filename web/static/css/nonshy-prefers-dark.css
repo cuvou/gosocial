@@ -1,0 +1,3 @@
+/* Custom gosocial color overrides for Bulma's dark theme
+   (prefers-dark edition) */
+@import url("dark-theme.css?nocache=2") screen and (prefers-color-scheme: dark);

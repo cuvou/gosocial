@@ -1,0 +1,242 @@
+{{define "title"}}Admin Transparency{{if .User}} for: {{.User.Username}}{{end}}{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-peace mr-1"></i> Admin Transparency Page
+                </h1>
+                <h2 class="subtitle">Scopes &amp; permissions available to{{if .User}}: {{.User.Username}}{{else}} admins{{end}}</h2>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    {{if .User}}
+    <div class="block p-4 mb-0">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li><a href="/admin/transparency">Admin Transparency</a></li>
+                <li class="is-active"><a href="/admin/transparency/{{.User.Username}}">{{.User.Username}}</a></li>
+            </ul>
+        </nav>
+    </div>
+    {{end}}
+
+    <div class="block content p-4">
+        <p>
+            This web page provides transparency for the website administrators and what their specific
+            responsibilities and capabilities are.
+        </p>
+
+        <p>
+            Administrators on {{PrettyTitle}} do not automatically have access to "god mode" powers to
+            use every admin feature across the entire website. Instead, admin accounts are assigned to
+            specific limited roles with related, narrowly scoped, permissions related to that role.
+            For example: an admin who only moderates the chat room will <strong>not</strong> have access
+            to see certification pictures or your private gallery pictures.
+        </p>
+
+        <p>
+            This enables {{PrettyTitle}} to recruit help from volunteer moderators to help with very
+            specific tasks (such as chat room or forum moderation) while keeping their permissions locked
+            down so they can't access other, more sensitive areas of the admin website.
+        </p>
+
+        {{if not .User}}
+        <p>
+            <strong class="has-text-success">
+                <i class="fa fa-info-circle mr-1"></i>
+                Pro Tip:
+            </strong>
+            You can check a specific admin's permissions at any time by going to their Profile Page
+            and clicking on the
+            "<strong class="has-text-danger">
+                <i class="fa fa-peace mr-1"></i>
+                Admin
+                <sup class="fa fa-info-circle has-text-success"></sup>
+            </strong>" badge in their profile's header area.
+        </p>
+        {{else}}
+        <p>
+            <strong class="has-text-success">
+                <i class="fa fa-info-circle mr-1"></i>
+                See also:
+            </strong> the <a href="/admin/transparency">Admin Transparency home page</a> to meet all of the
+            admins grouped by their permissions.
+        </p>
+        {{end}}
+    </div>
+
+    <div class="block">
+
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <!-- Specific user: showing their groups and scopes -->
+                {{if .User}}
+                <div class="card mb-6" style="width: 100%; max-width: 800px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-user-group mr-2"></i> Admin Permission Groups
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="media block">
+                            <div class="media-left">
+                                {{template "avatar-64x64" .User}}
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-4">{{.User.NameOrUsername}}</p>
+                                <p class="subtitle is-6">
+                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                    <a href="/u/{{.User.Username}}">{{.User.Username}}</a>
+                                    <span class="tag is-danger is-light ml-2">
+                                        <i class="fa fa-peace mr-1"></i> Admin
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="content">
+
+                            <p>
+                                Admin accounts on {{PrettyTitle}} are assigned permissions based on the "groups"
+                                they are in: each group relates to a specific role (such as chat moderator) and
+                                grants the specific website permissions related to that role.
+                            </p>
+
+                            <p>
+                                <strong>@{{.User.Username}}</strong> is a member of <strong>{{len .User.AdminGroups}} admin group{{Pluralize (len .User.AdminGroups)}}:</strong>
+                            </p>
+
+                            {{if eq (len .User.AdminGroups) 0}}
+                            <div class="notification is-info is-light">
+                                They are not assigned to any admin groups and so they have no special permissions aside
+                                from the 'Admin' badge appearing on their profile page.
+                            </div>
+                            {{end}}
+
+                            {{range .User.AdminGroups}}
+                            <hr>
+                            <h4 class="has-text-success">{{.Name}}</h4>
+
+                            <p>
+                                Permission scopes:
+                            </p>
+
+                            <dl>
+                                {{range .Scopes}}
+                                <dt>
+                                    <strong>
+                                        {{.Scope}}
+                                        {{if eq .Scope "*"}}
+                                            <small><em>(wildcard scope that grants all permissions)</em></small>
+                                        {{end}}
+                                    </strong>
+                                </dt>
+                                <dd>{{AdminScopeDescription .Scope}}</dd>
+                                {{end}}
+                            </dl>
+                            {{end}}
+
+                        </div>
+
+                    </div>
+                </div>
+                {{end}}
+
+                <!-- Listing of all possible admin scopes -->
+                <div class="card" style="width: 100%; max-width: 800px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-clipboard-list mr-2"></i> All Possible Admin Permissions
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="content">
+
+                            <!-- Giving context to the Specific User above's scopes -->
+                            {{if .User}}
+                                <p>
+                                    For context to the above, the following is the complete and exhaustive list of
+                                    {{PrettyTitle}} admin capabilities that could be granted to an admin account.
+                                </p>
+
+                                <p>
+                                    Permissions that this admin has will be highlighted in
+                                    <strong class="has-text-success"><i class="fa fa-check mr-1"></i> green</strong>,
+                                    and permissions they <em>do not</em> have will be in
+                                    <strong class="has-text-danger"><i class="fa fa-xmark mr-1"></i> red</strong>.
+                                </p>
+                            {{else}}
+                                <p>
+                                    The following is a complete and exhaustive list of {{PrettyTitle}} admin
+                                    capabilities that could be granted to an admin account.
+                                </p>
+                                <p>
+                                    Below each permission, a listing of which admin users have that permission
+                                    is displayed. For added context, <strong>click on their username</strong> to
+                                    visit their Admin Transparency page where you can see what "groups" (or roles)
+                                    they are assigned to.
+                                </p>
+                            {{end}}
+
+                            <hr>
+
+                            <dl>
+                                {{range .AdminScopes}}
+                                <dt>
+                                    {{if not $Root.User}}
+                                    <strong class="has-text-success">
+                                        <span class="icon"><i class="fa fa-peace mr-1"></i></span>
+                                        <span>{{.}}</span>
+                                    </strong>
+                                    {{else if $Root.User.HasAdminScope .}}
+                                    <strong class="has-text-success">
+                                        <span class="icon"><i class="fa fa-check mr-1"></i></span>
+                                        <span>{{.}}</span>
+                                    </strong>
+                                    {{else}}
+                                    <strong class="has-text-danger">
+                                        <span class="icon"><i class="fa fa-xmark mr-1"></i></span>
+                                        <span>{{.}}</span>
+                                    </strong>
+                                    {{end}}
+                                </dt>
+                                <dd>
+                                    {{AdminScopeDescription .}}
+
+                                    <!-- Index page (not specific user?) - show the admins with this scope. -->
+                                    {{if not $Root.User}}
+                                        <div class="columns is-mobile is-multiline my-4">
+                                            {{$CurrentAdminScope := .}}
+                                            {{range $Root.AdminUsers}}
+                                                {{if .HasAdminScope $CurrentAdminScope}}
+                                                <div class="column is-half-mobile is-half-tablet is-one-third-widescreen">
+                                                    {{template "avatar-16x16" .}}
+                                                    <a href="/admin/transparency/{{.Username}}">{{.Username}}</a>
+                                                </div>
+                                                {{end}}
+                                            {{end}}
+                                        </div>
+                                    {{end}}
+                                </dd>
+                                {{end}}
+                            </dl>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

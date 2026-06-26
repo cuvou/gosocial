@@ -1,0 +1,188 @@
+{{define "title"}}Chat Rooms{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <div class="level">
+                    <div class="level-left">
+                        <h1 class="title">
+                            <span class="icon mr-4"><i class="fa fa-image"></i></span>
+                            <span>{{template "title" .}}</span>
+                        </h1>
+                    </div>
+                    <div class="level-right">
+                        <div>
+                            <a href="/chat?intent=join" target="_blank" rel="external noopener noreferrer" class="button">
+                                <span>Join the Chat Room</span>
+                                <span class="icon"><i class="fa fa-external-link"></i></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        {{if .CurrentUser.IsBirthday}}
+        <div class="notification is-success is-light content">
+            <span class="is-size-3">🎂 Happy birthday!</span>
+
+            <p>
+                When you join the chat room today, you will have a special <i class="fa fa-cake-candles has-text-info"></i>
+                birthday cake icon next to your username!
+            </p>
+        </div>
+        {{end}}
+
+        {{if .IsShyUser}}
+        <div class="notification is-warning is-light content">
+            <p>
+                <i class="fa fa-exclamation-triangle"></i> You have a <strong>Shy Account</strong>, so you will experience
+                limited functionality on the chat room:
+            </p>
+
+            <ul>
+                <li>You may not broadcast or watch any webcam on chat.</li>
+                <li>You may not share or see pictures shared by other members on chat.</li>
+            </ul>
+
+            <p>
+                This is because, as a Shy Account, you are not sharing any public photos with the community on your profile
+                page, so to most other members of {{PrettyTitle}} you appear to be a "blank, faceless profile" and people on
+                the chat room generally feel uncomfortable having their webcams be watched by such a Shy Account.
+            </p>
+
+            <p>
+                <a href="/faq#shy-faqs">Click here to learn more</a> about your Shy Account, including steps on how to
+                resolve this.
+            </p>
+        </div>
+        {{end}}
+
+        <div class="content">
+            <p>
+                {{PrettyTitle}} has a chat room! Come and check it out. It features some public rooms, direct
+                messages, and optional webcam support too. You may broadcast your video and other users may click
+                to watch yours, and you can open one or multiple videos broadcasted by the other chatters.
+            </p>
+
+            <div class="notification is-success is-light" id="chatStatsBanner" style="display: none">
+                <span id="usersOnline"></span>
+                <a id="whoLink" href="#" style="visibility: hidden">Who?</a>
+                <span id="whoList" style="display: none"></span>
+
+                <!-- Friends online? -->
+                {{if .FriendsOnline}}
+                <div class="mt-2">
+                    <i class="fa fa-user-group mr-1"></i>
+                    <strong>{{len .FriendsOnline}} friend{{Pluralize (len .FriendsOnline)}}</strong>
+                    {{Pluralize (len .FriendsOnline) "is" "are"}} currently online:
+                    {{$FriendsOnline := .FriendsOnline}}
+                    {{range $i, $name := .FriendsOnline -}}
+                        {{- if $i -}}, {{end}}<a href="/u/{{ $name }}">{{ $name }}</a>
+                    {{- end}}
+                </div>
+                {{end}}
+
+                <!-- Camera stats if active -->
+                <div id="cameraStats" style="display: none" class="mt-2">
+                    <i class="fa fa-camera mr-1"></i>
+                    <span id="cameraCount">0 people are on camera</span>
+                    <span class="is-size-7">
+                        (<i class="fa fa-video has-text-info"></i> <span id="cameraBlue" class="has-text-info">0</span> /
+                        <i class="fa fa-video has-text-danger"></i> <span id="cameraRed" class="has-text-danger">0</span>).
+                    </span>
+                </div>
+
+                <!-- Link to the search page if people are online -->
+                <div class="mt-2">
+                    <strong>New:</strong> you can now search for <a href="/members?on_chat=true">who's on chat</a> in the member directory!
+                </div>
+            </div>
+
+            <h3>
+                Chat Room Rules
+            </h3>
+
+            <p>
+                Please observe the following rules for the chat room.
+            </p>
+
+            <ol>
+                <li class="mb-4">
+                    Be nice and respectful. <a href="/tos">Global website rules</a> apply to the chat room as well!
+                </li>
+            </ol>
+
+            <p>
+                Click on the button below to join the chat room:
+            </p>
+
+            <p>
+                <a href="/chat?intent=join" target="_blank"
+                    rel="external noopener noreferrer"
+                    class="button is-large is-link">
+                    Join the Chat Room Now
+                    <i class="fa fa-external-link ml-3"></i>
+                </a>
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function showWhoBanner(chatStatistics) {
+    const $banner = document.querySelector("#chatStatsBanner"),
+        $whoLink = document.querySelector("#whoLink"),
+        $whoList = document.querySelector("#whoList"),
+        $usersOnline = document.querySelector("#usersOnline")
+        $cameraStats = document.querySelector("#cameraStats")
+        $cameraCount = document.querySelector("#cameraCount")
+        $cameraRed = document.querySelector("#cameraRed")
+        $cameraBlue = document.querySelector("#cameraBlue");
+
+    $banner.style.display = "block";
+
+    let people = chatStatistics.UserCount === 1 ? 'person' : 'people';
+    let isAre = chatStatistics.UserCount === 1 ? 'is' : 'are';
+    $usersOnline.innerHTML = `There ${isAre} currently <strong>${chatStatistics.UserCount}</strong> ${people}</span> in the chat room`;
+    $whoList.innerHTML = chatStatistics.Usernames !== null ? chatStatistics.Usernames.join(", ") : "";
+
+    // Show the "Who?" link if there's anybody.
+    if (chatStatistics.UserCount > 0) {
+        $usersOnline.innerHTML += ":";
+        $whoLink.style.visibility = "visible";
+    } else {
+        $usersOnline.innerHTML += ".";
+    }
+
+    // Camera stats too?
+    if (chatStatistics.Cameras.Blue + chatStatistics.Cameras.Red > 0) {
+        let count = chatStatistics.Cameras.Blue + chatStatistics.Cameras.Red;
+        $cameraStats.style.display = "block";
+        $cameraCount.innerHTML = `<strong>${count} webcam${count === 1 ? '</strong> is' : 's</strong> are'} active`;
+        $cameraRed.innerHTML = chatStatistics.Cameras.Red;
+        $cameraBlue.innerHTML = chatStatistics.Cameras.Blue;
+    }
+
+    $whoLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        $whoLink.style.display = "none";
+        $whoList.style.display = "";
+    });
+}
+window.addEventListener("DOMContentLoaded", () => {
+    let ChatStatistics = {{.ChatStatistics}},
+        $banner = document.querySelector("#chatStatsBanner"),
+        $usersOnline = document.querySelector("#usersOnline");
+
+    // If we already know people are online, show the banner immediately while we refresh from live data
+    if (ChatStatistics.UserCount > 0) {
+        showWhoBanner(ChatStatistics);
+    }
+});
+</script>
+{{end}}

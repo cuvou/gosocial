@@ -1,0 +1,148 @@
+{{define "title"}}Login Sessions{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa-solid fa-mobile-screen-button mr-2"></i>
+                    Login Sessions
+                </h1>
+                <h2 class="subtitle">
+                    Manage the devices you have logged in from.
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $Root := . }}
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "sessions")}}
+            </div>
+    
+            <div class="column">
+    
+                <div class="card mb-5">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa-solid fa-mobile-screen-button pr-2"></i>
+                            Login Sessions
+                        </p>
+                    </header>
+
+                    <div class="card-content">
+                        <p class="block">
+                            On this page you may view and manage all of the devices which are logged
+                            in to your {{PrettyTitle}} account. This page provides a view of where
+                            these devices are located, when you have last used them, and you may
+                            disconnect and log these devices out from this page.
+                        </p>
+
+                        <!-- Log out ALL devices button. -->
+                        <form action="{{.Request.URL.Path}}" method="POST" class="block">
+                            {{InputCSRF}}
+                            <button type="submit" name="intent" value="revoke-all" class="button is-danger gosocial-confirm-submit"
+                                data-confirm="Do you want to log out ALL devices (except for your current one)?">
+                                <i class="fa fa-user-xmark mr-2"></i>
+                                Log out ALL other sessions
+                            </button>
+                        </form>
+
+                        <p class="block">
+                            Found <strong>{{FormatNumberCommas .Pager.Total}}</strong> login session{{Pluralize64 .Pager.Total}} (page {{.Pager.Page}} of {{.Pager.Pages}}).
+                        </p>
+
+                        {{SimplePager .Pager}}
+
+                        {{range .LoginSessions}}
+                        <form action="{{$Root.Request.URL.Path}}" method="POST" class="block">
+                            {{InputCSRF}}
+                            <input type="hidden" name="id" value="{{.ULID}}">
+
+                            <div class="card">
+                                {{$UserAgent := .GetParsedUserAgent}}
+                                {{$GeoIP := .GetGeoIP}}
+                                {{$IsCurrentDevice := eq $Root.MySessionID .ULID}}
+
+                                <div class="card-header has-background-success">
+                                    <p class="card-header-title">
+                                        <i class="{{$UserAgent.DeviceIcon}} mr-2"></i>
+                                        <i class="{{$UserAgent.BrowserIcon}} mr-2"></i>
+                                        <i class="{{$UserAgent.OSIcon}} mr-2"></i>
+                                        {{$UserAgent.DeviceType}}
+                                        {{if not $GeoIP.IsZero}}
+                                            at
+                                            {{$GeoIP.City}}, {{$GeoIP.CountryName}}
+                                        {{end}}
+                                    </p>
+                                </div>
+                                <div class="card-content">
+                                    <!-- Current session? -->
+                                    {{if $IsCurrentDevice}}
+                                    <div class="notification is-info is-light">
+                                        <strong>
+                                            <i class="fa fa-star mr-2"></i>
+                                            This is your current device!
+                                        </strong>
+                                    </div>
+                                    {{end}}
+
+                                    <div class="field">
+                                        <label class="label">Last Seen</label>
+                                        {{.UpdatedAt.Format "Jan _2, 2006 @ 15:04:05 MST"}}
+                                        <small>({{SincePrettyCoarse .UpdatedAt}} ago.)</small>
+                                    </div>
+
+                                    <div class="field">
+                                        <label class="label">IP Address</label>
+                                        {{.IPAddress}}
+                                    </div>
+
+                                    {{if not $GeoIP.IsZero}}
+                                    <div class="field">
+                                        <label class="label">Location</label>
+                                        {{$GeoIP.FlagEmoji}} {{$GeoIP.String}}
+                                    </div>
+                                    {{end}}
+
+                                    <div class="field mb-1">
+                                        <label class="label">Device Type</label>
+                                    </div>
+
+                                    <div class="columns is-mobile is-multiline">
+                                        <div class="column is-narrow">
+                                            <i class="{{$UserAgent.DeviceIcon}} mr-1"></i> {{$UserAgent.DeviceType}}
+                                        </div>
+                                        <div class="column is-narrow">
+                                            <i class="{{$UserAgent.BrowserIcon}} mr-1"></i> {{$UserAgent.BrowserName}}
+                                        </div>
+                                        <div class="column is-narrow">
+                                            <i class="{{$UserAgent.OSIcon}} mr-1"></i> {{$UserAgent.OS}}
+                                        </div>
+                                    </div>
+                                </div>
+                                {{if not $IsCurrentDevice}}
+                                <footer class="card-footer">
+                                    <button type="submit" name="intent" value="revoke" class="card-footer-item button is-danger is-outlined gosocial-confirm-submit"
+                                        data-confirm="Are you sure you want to log this device out?">
+                                        <i class="fa fa-trash mr-1"></i> Log out
+                                    </button>
+                                </footer>
+                                {{end}}
+                            </div>
+
+                        </form>
+                        {{end}}
+                    </div>
+                </div>
+    
+            </div>
+    
+        </div>
+    </div>
+</div>
+{{end}}

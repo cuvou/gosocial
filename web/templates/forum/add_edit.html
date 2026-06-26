@@ -1,0 +1,228 @@
+{{define "title"}}Forums{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-bold is-primary">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    {{if .EditForum}}Edit Forum{{else}}New Forum{{end}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-4">
+        <div class="columns is-multiline is-mobile">
+            <div class="column is-narrow">
+                <a href="/forum/admin">
+                    <i class="fa fa-book"></i> My Forums
+                </a>
+            </div>
+            {{if .EditForum}}
+            <div class="column is-narrow">
+                <a href="/f/{{.EditForum.Fragment}}">
+                    <i class="fa fa-comments"></i>
+                    Go to Forum
+                </a>
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-two-thirds">
+                <div class="card">
+                    <header class="card-header has-background-info">
+                        <p class="card-header-title">Forum Properties</p>
+                    </header>
+
+                    <div class="card-content">
+                        <form action="{{.Request.URL.Path}}" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="id" value="{{.EditID}}">
+
+                            <div class="field">
+                                <label class="label" for="title">
+                                    Forum Title
+                                </label>
+                                <input type="text" class="input"
+                                    name="title" id="title"
+                                    placeholder="Forum Title"
+                                    required
+                                    {{if .EditForum}}value="{{.EditForum.Title}}"{{end}}>
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="fragment">
+                                    URL Fragment
+                                </label>
+                                <input type="text" class="input"
+                                    name="fragment" id="fragment"
+                                    placeholder="url_fragment"
+                                    pattern="^[a-z0-9._-]+$"
+                                    required
+                                    {{if .EditForum}}value="{{.EditForum.Fragment}}" disabled{{end}}>
+                                <p class="help">
+                                    A unique URL path component for this forum. You can not modify this
+                                    after the forum is created. Acceptable characters in the range a-z, 0-9 and . - _
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="description">
+                                    Description
+                                </label>
+                                <textarea class="textarea" cols="80" rows="4"
+                                    name="description" id="description"
+                                    placeholder="A short description of the forum.">{{if .EditForum}}{{.EditForum.Description}}{{end}}</textarea>
+                                <p class="help">
+                                    Write a short description of the forum. <a href="/markdown" target="_blank">Markdown formatting</a>
+                                    is supported here.
+                                </p>
+                            </div>
+
+                            {{if .CurrentUser.HasAdminScope "admin.forum.manage"}}
+                            <div class="field">
+                                <label class="label" for="category">
+                                    Category
+                                    <i class="fa fa-peace has-text-danger ml-2" title="Admin Only"></i>
+                                </label>
+                                <div class="select is-fullwidth">
+                                    <select name="category" id="category">
+                                        <optgroup label="Community Forum">
+                                            <option value=""{{if and $Root.EditForum (eq $Root.EditForum.Category "")}} selected{{end}}>
+                                                This will be a community forum (no category set)
+                                            </option>
+                                        </optgroup>
+                                        <optgroup label="Official Forums">
+                                            {{range .Categories}}
+                                            <option value="{{.}}"{{if and $Root.EditForum (eq $Root.EditForum.Category .)}} selected{{end}}>
+                                                {{.}}
+                                            </option>
+                                            {{end}}
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </div>
+                            {{end}}
+
+                            <div class="field">
+                                <label class="label">Options</label>
+
+                                {{if IsFeatureFlagExplicitEnabled}}
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="explicit"
+                                        value="true"
+                                        {{if and .EditForum .EditForum.Explicit}}checked{{end}}>
+                                    Explicit <i class="fa fa-fire has-text-danger ml-1"></i>
+                                </label>
+                                <p class="help">
+                                    Check this box if the forum is intended for explicit content. Only members who have opted-in
+                                    to see explicit content can find this forum.
+                                </p>
+                                {{end}}
+
+                                {{if .CurrentUser.HasAdminScope "admin.forum.manage"}}
+                                <label class="checkbox mt-3">
+                                    <input type="checkbox"
+                                        name="privileged"
+                                        value="true"
+                                        {{if and .EditForum .EditForum.Privileged}}checked{{end}}>
+                                    Privileged <i class="fa fa-peace has-text-danger ml-1"></i>
+                                </label>
+                                <p class="help">
+                                    Check this box if only privileged users are allowed to create new threads
+                                    in this forum. Privileged users include the forum owner, site admins, and
+                                    forum moderators.
+                                </p>
+                                {{end}}
+
+                                <label class="checkbox mt-3">
+                                    <input type="checkbox"
+                                        name="permit_photos"
+                                        value="true"
+                                        {{if and .EditForum .EditForum.PermitPhotos}}checked{{end}}>
+                                    Permit Photos <i class="fa fa-camera ml-1"></i>
+                                </label>
+                                <p class="help">
+                                    Check this box if the forum allows photos to be uploaded.
+                                </p>
+
+                                {{if .CurrentUser.HasAdminScope "admin.forum.manage"}}
+                                <label class="checkbox mt-3">
+                                    <input type="checkbox"
+                                        name="private"
+                                        value="true"
+                                        {{if and .EditForum .EditForum.Private}}checked{{end}}>
+                                    Private forum <i class="fa fa-peace has-text-danger ml-1"></i>
+                                </label>
+                                <p class="help">
+                                    This forum is only visible to admins or approved subscribers.
+                                </p>
+                                {{end}}
+                            </div>
+
+                            <!-- On "Edit" of existing forum: show and allow adding Moderators. -->
+                            {{if .EditForum}}
+                            <hr>
+                            <div class="field">
+                                <label class="label">Forum Moderators</label>
+
+                                {{if .Moderators}}
+                                <table class="table">
+                                    <tbody>
+                                        {{range .Moderators}}
+                                        <tr>
+                                            <td>
+                                                {{template "avatar-16x16" .}}
+                                                <a href="/u/{{.Username}}">{{.Username}}</a>
+                                            </td>
+                                            <td>
+                                                <a href="/forum/admin/moderator?forum_id={{$Root.EditForum.ID}}&intent=remove&to={{.Username}}"
+                                                    class="has-text-danger"
+                                                    aria-label="Remove">
+                                                    <i class="fa fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {{end}}
+                                    </tbody>
+                                </table>
+                                {{end}}
+
+                                <a href="/forum/admin/moderator?forum_id={{.EditForum.ID}}">
+                                    <i class="fa fa-plus"></i> Appoint a moderator
+                                </a>
+                                <p class="help">
+                                    You may appoint other members from the {{PrettyTitle}} community to help you moderate your forum.
+                                </p>
+                            </div>
+                            {{end}}
+
+                            <hr>
+
+                            <div class="field">
+                                <button type="submit" class="button is-success">
+                                    <i class="fa fa-save mr-1"></i>
+                                    {{if .EditForum}}Save Forum{{else}}Create Forum{{end}}
+                                </button>
+
+                                {{if .EditForum}}
+                                <a href="/forum/admin/delete?id={{.EditForum.ID}}" class="button is-danger ml-2">
+                                    <i class="fa fa-trash mr-1"></i>
+                                    Delete Forum
+                                </a>
+                                {{end}}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

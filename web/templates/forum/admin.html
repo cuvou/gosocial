@@ -1,0 +1,198 @@
+{{define "title"}}Forums{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-info is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <span class="icon mr-4"><i class="fa fa-book"></i></span>
+                    <span>My Forums</span>
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-2 content">
+        <p>
+            On this page, you may <strong>create your own Forums</strong> around any topic of your choosing. Create
+            a forum for people in your local area, or create one for your favorite hobby so that others who share
+            your interests may join your forum.
+        </p>
+    </div>
+
+    <!-- Create New Forum button, if the user has quota -->
+    {{if .CurrentUser.HasAdminScope "admin.forum.manage"}}
+    <div class="block p-2">
+        <a href="/forum/admin/edit" class="button is-success">
+            <span class="icon"><i class="fa fa-plus"></i></span>
+            <span>Create New Forum</span>
+        </a>
+    </div>
+    {{end}}
+
+    <div class="block p-2">
+        <form action="{{.Request.URL.Path}}" method="GET">
+
+            <div class="card gosocial-collapsible-mobile">
+                <header class="card-header has-background-link-light">
+                    <p class="card-header-title has-text-dark">
+                        <i class="fa fa-list mr-2"></i>
+                        Search Filters
+                    </p>
+                    <button class="card-header-icon" type="button">
+                        <span class="icon">
+                            <i class="fa fa-angle-up"></i>
+                        </span>
+                    </button>
+                </header>
+                <div class="card-content">
+                    <div class="columns">
+
+                        <div class="column pr-1">
+                            <div class="field">
+                                <label class="label" for="q">Search terms:</label>
+                                <input type="text" class="input"
+                                    name="q" id="q"
+                                    autocomplete="off"
+                                    value="{{.SearchTerm}}">
+                                <p class="help">
+                                    Tip: you can <span class="has-text-success">"quote exact phrases"</span> and
+                                    <span class="has-text-success">-exclude</span> words (or
+                                    <span class="has-text-success">-"exclude phrases"</span>) from your search.
+                                </p>
+                            </div>
+                        </div>
+
+                        {{if .CurrentUser.IsAdmin}}
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label" for="show">Show:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="show" name="show">
+                                        <option value="">All forums</option>
+                                        <option value="official"{{if eq .Show "official"}} selected{{end}}>Official forums</option>
+                                        <option value="community"{{if eq .Show "community"}} selected{{end}}>Community forums</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label" for="sort">Sort by:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="sort" name="sort">
+                                        <option value="updated_at desc"{{if eq .Sort "updated_at desc"}} selected{{end}}>Last updated</option>
+                                        <option value="created_at desc"{{if eq .Sort "created_at desc"}} selected{{end}}>Newest created</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column is-narrow pl-1 has-text-right">
+                            <label class="label">&nbsp;</label>
+                            <a href="{{.Request.URL.Path}}" class="button">Reset</a>
+                            <button type="submit" class="button is-success">
+                                <span>Search</span>
+                                <span class="icon"><i class="fa fa-search"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <p class="block p-2">
+        Found <strong>{{.Pager.Total}}</strong> forum{{Pluralize64 .Pager.Total}} you can manage
+        (page {{.Pager.Page}} of {{.Pager.Pages}}).
+    </p>
+
+    <div class="block p-2">
+        {{SimplePager .Pager}}
+    </div>
+
+    <div class="block p-2">
+        {{range .Forums}}
+        <div class="box">
+            <div class="columns">
+                <div class="column">
+                    <h1 class="title">
+                        <a href="/f/{{.Fragment}}">{{.Title}}</a>
+                    </h1>
+                    <h2 class="subtitle">
+                        <a href="/f/{{.Fragment}}" class="has-text-grey">/f/{{.Fragment}}</a>
+                        {{if .Category}}<span class="ml-4">{{.Category}}</span>{{end}}
+                        <span class="ml-4 is-size-6">
+                            by <strong><a href="/u/{{.Owner.Username}}">@{{.Owner.Username}}</a></strong>
+                            {{if .Owner.IsAdmin}}<i class="fa fa-peace has-text-danger ml-1"></i>{{end}}
+                        </span>
+                    </h2>
+
+                    <div class="content">
+                        <p>
+
+                        </p>
+
+                        {{if eq .Description ""}}
+                            <p><em>No description</em></p>
+                        {{else}}
+                            {{ToMarkdown .Description}}
+                        {{end}}
+                    </div>
+
+                    <div>
+                        {{if .Explicit}}
+                        <div class="tag is-danger is-light">
+                            <span class="icon"><i class="fa fa-fire"></i></span>
+                            Explicit
+                        </div>
+                        {{end}}
+
+                        {{if .Privileged}}
+                        <div class="tag is-warning is-light">
+                            <span class="icon"><i class="fa fa-peace"></i></span>
+                            Privileged
+                        </div>
+                        {{end}}
+
+                        {{if .PermitPhotos}}
+                        <div class="tag is-info is-light">
+                            <span class="icon"><i class="fa fa-camera"></i></span>
+                            PermitPhotos
+                        </div>
+                        {{end}}
+
+                        {{if .PermitPhotos}}
+                        <div class="tag is-private is-light">
+                            <span class="icon"><i class="fa fa-lock"></i></span>
+                            Private
+                        </div>
+                        {{end}}
+
+                        <div class="tag">
+                            Created {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+                        </div>
+                        <div class="tag">
+                            Updated {{.UpdatedAt.Format "2006-01-02 15:04:05"}}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="column is-narrow">
+                    <a href="/forum/admin/edit?id={{.ID}}" class="button has-text-success">
+                        <span class="icon"><i class="fa fa-edit"></i></span>
+                        <span>Edit</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,284 @@
+{{define "title"}}Search Forums{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <h1 class="title">
+                <span class="icon mr-4"><i class="fa fa-comments"></i></span>
+                <span>Forums</span>
+            </h1>
+            <h2 class="subtitle">
+                <i class="fa fa-search mr-1"></i> Search
+            </h2>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <!-- Tab bar -->
+    {{template "ForumTabs" .}}
+
+    <!-- Search fields -->
+    <div class="p-4">
+
+        <form action="{{.Request.URL.Path}}" method="GET">
+
+            <div class="card gosocial-collapsible-mobile">
+                <header class="card-header has-background-link-light">
+                    <p class="card-header-title has-text-dark">
+                        <i class="fa fa-list mr-2"></i>
+                        Search Filters
+                    </p>
+                    <button class="card-header-icon" type="button">
+                        <span class="icon">
+                            <i class="fa fa-angle-up"></i>
+                        </span>
+                    </button>
+                </header>
+                <div class="card-content">
+                    <div class="columns">
+
+                        <div class="column pr-1">
+                            <div class="field">
+                                <label class="label" for="q">Search terms:</label>
+                                <input type="text" class="input"
+                                    name="q" id="q"
+                                    autocomplete="off"
+                                    value="{{.SearchTerm}}">
+                                <p class="help">
+                                    Tip: you can <span class="has-text-success">"quote exact phrases"</span> and
+                                    <span class="has-text-success">-exclude</span> words (or
+                                    <span class="has-text-success">-"exclude phrases"</span>) from your search.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label" for="username">Written by username:</label>
+                                <input type="text" class="input"
+                                    name="username" id="username"
+                                    autocomplete="off"
+                                    value="{{.ByUsername}}">
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="columns">
+
+                        <div class="column pr-1">
+                            <div class="field">
+                                <label class="label" for="type">Show:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="type" name="type">
+                                        <option value="all"{{if eq .Type "all"}} selected{{end}}>All threads and replies</option>
+                                        <option value="threads"{{if eq .Type "threads"}} selected{{end}}>Threads only</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="checkbox mt-2">
+                                        <input type="checkbox" name="photos" value="true"{{if .WithPhotos}} checked{{end}}>
+                                        With photos <i class="fa fa-image"></i>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{if .FeatureUserForumsEnabled}}
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label" for="in_forum">In forums:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="in_forum" name="in">
+                                        <option value="">All forums</option>
+                                        <option value="official"{{if eq .InForum "official"}} selected{{end}}>Official gosocial forums</option>
+                                        <option value="community"{{if eq .InForum "community"}} selected{{end}}>Community forums only</option>
+                                        {{if .CurrentUser.HasForumSubscriptions}}
+                                        <option value="followed"{{if eq .InForum "followed"}} selected{{end}}>My List</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label" for="in_forum">Specific forum:</label>
+                                <input type="text" class="input"
+                                    name="fragment"
+                                    placeholder="/f/fragment"
+                                    value="{{.ByFragment}}">
+                                <p class="help">
+                                    Specific forum URL fragment. Note: may be easiest to begin a search
+                                    from the forum's page.
+                                </p>
+                            </div>
+                        </div>
+                        {{end}}
+
+                        <div class="column px-1">
+                            <div class="field">
+                                <label class="label" for="sort">Sort by:</label>
+                                <div class="select is-fullwidth">
+                                    <select id="sort" name="sort">
+                                        <option value="comments.created_at desc"{{if eq .Sort "comments.created_at desc"}} selected{{end}}>Newest</option>
+                                        <option value="comments.created_at asc"{{if eq .Sort "comments.created_at asc"}} selected{{end}}>Oldest</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column is-narrow pl-1 has-text-right">
+                            <label class="label">&nbsp;</label>
+                            <a href="{{.Request.URL.Path}}" class="button">Reset</a>
+                            <button type="submit" class="button is-primary">
+                                <span>Search</span>
+                                <span class="icon"><i class="fa fa-search"></i></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="p-4">
+        Found {{FormatNumberCommas .Pager.Total}} posts (page {{.Pager.Page}} of {{.Pager.Pages}})
+    </div>
+
+    <div class="p-4">
+        {{SimplePager .Pager}}
+    </div>
+
+    <div class="p-4">
+        {{range .Comments}}
+        {{$Thread := $Root.ThreadMap.Get .ID}}
+        <div class="card block has-background-link-light">
+            <div class="card-content">
+                <div class="columns">
+                    <div class="column is-narrow has-text-centered pt-0 pb-1">
+                        <a href="/u/{{.User.Username}}">
+                            {{template "avatar-96x96" .User}}
+                            <div>
+                                <a href="/u/{{.User.Username}}" class="is-size-7">{{or .User.Username "[unavailable]"}}</a>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="column py-0">
+
+                            <div class="columns is-multiline is-gapless mb-0">
+                                <div class="column is-narrow">
+                                    <a href="/go/comment?id={{.ID}}" class="has-text-grey">
+                                        <h2 class="is-size-5 py-0 is-italic has-text-grey">
+                                            On thread:
+                                            {{if $Thread}}
+                                                {{$Thread.Title}}
+
+                                                {{if $Thread.Explicit}}
+                                                    <sup class="has-text-danger fa fa-fire is-size-6 ml-1"></sup>
+                                                {{end}}
+                                            {{else}}
+                                                [unavailable]
+                                            {{end}}
+                                        </h2>
+                                    </a>
+                                </div>
+
+                            </div>
+
+                            <a href="/go/comment?id={{.ID}}" class="has-text-dark">
+                                {{TrimEllipses (DeMarkify .Message) 512}}
+                            </a>
+
+                            {{$Photos := $Root.PhotoMap.Get .ID}}
+                            {{$ExplicitThread := and $Thread (or $Thread.Explicit $Thread.Forum.Explicit)}}
+                            {{if $Photos}}
+                                <div class="is-size-7 mt-2 has-text-success">
+                                    <i class="fa fa-image pr-1"></i>
+                                    Photo attachment
+                                </div>
+                                {{range $Photos}}
+                                <div>
+                                    {{if ne .Status "approved"}}
+                                        <div class="my-4">
+                                            {{if eq .Status "pending"}}
+                                                <span class="tag is-info">
+                                                    <i class="fa fa-clock mr-2"></i>
+                                                    Photo Pending Approval
+                                                </span>
+                                            {{else if eq .Status "rejected"}}
+                                                <span class="tag is-dark">
+                                                    <i class="fa fa-link mr-2"></i>
+                                                    Attached photo is not available
+                                                </span>
+                                            {{else}}
+                                                <span class="tag is-info">
+                                                    <i class="fa fa-clock mr-2"></i>
+                                                    Status: {{.Status}}
+                                                </span>
+                                            {{end}}
+                                        </div>
+                                    {{else if .ExpiredAt.IsZero}}
+                                        <!-- GIF video? -->
+                                        {{if HasSuffix .Filename ".mp4"}}
+                                        <div class="mt-4 is-clipped forum-thumbnail-img">
+                                            <video loop controls controlsList="nodownload" playsinline
+                                                {{if and $ExplicitThread (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true")}} class="blurred-explicit"{{end}}
+                                                {{if and (not (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true")) (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay{{end}}
+                                                >
+                                                <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                                            </video>
+                                        </div>
+                                        {{else}}
+                                        <div class="mt-4 is-clipped forum-thumbnail-img">
+                                            <a href="/go/comment?id={{.CommentID}}">
+                                                <img src="{{PhotoURL .Filename}}" loading="lazy"{{if and $ExplicitThread (eq ($Root.CurrentUser.GetProfileField "blur_explicit") "true")}} class="blurred-explicit"{{end}}>
+                                            </a>
+                                        </div>
+                                        {{end}}
+                                    {{end}}
+                                </div>
+                                {{end}}
+                            {{end}}
+
+                            <div class="is-size-7 is-italic is-grey mt-1">
+                                {{if $Thread}}
+                                    thread by {{$Thread.Comment.User.Username}} in
+                                    <a href="/f/{{$Thread.Forum.Fragment}}">
+                                        {{$Thread.Forum.Title}}
+
+                                        {{if $Thread.Forum.Privileged}}
+                                        <small class="has-text-warning fa fa-peace"></small>
+                                        {{end}}
+
+                                        {{if $Thread.Forum.Explicit}}
+                                        <small class="has-text-danger fa fa-fire"></small>
+                                        {{end}}
+
+                                        {{if $Thread.Forum.Private}}
+                                        <small class="has-text-private fa fa-lock"></small>
+                                        {{end}}
+                                    </a>
+                                    &ndash;
+                                    {{SincePrettyCoarse .UpdatedAt}} ago
+                                    <i class="fa fa-eye ml-3 mr-1"></i>
+                                    {{FormatNumberCommas $Thread.Views}}
+                                {{else}}
+                                    thread by [unavailable]
+                                {{end}}
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{end}}
+    </div>
+
+    <div class="p-4">
+        {{SimplePager .Pager}}
+    </div>
+</div>
+
+{{end}}

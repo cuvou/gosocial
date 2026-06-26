@@ -1,0 +1,433 @@
+{{define "title"}}Location Settings{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-globe mr-2"></i>
+                    Location Settings
+                </h1>
+                <h2 class="subtitle">
+                    For the "Who's Nearby?" feature.
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "location")}}
+            </div>
+    
+            <div class="column">
+    
+                <!-- Location Settings -->
+                <div id="location">
+                    <form method="POST" action="{{.Request.URL.Path}}">
+                        {{InputCSRF}}
+    
+                        <div class="card mb-5">
+                            <header class="card-header has-background-link">
+                                <p class="card-header-title has-text-light">
+                                    <i class="fa fa-globe mr-2"></i>
+                                    Location Settings
+                                </p>
+                            </header>
+    
+                            <div class="card-content">
+                                <p class="block">
+                                    The settings on this page control your location for the <a href="/members?sort=distance"><strong>Who's Nearby</strong></a>
+                                    feature of {{PrettyTitle}}. Being discoverable by your location is an <strong>opt-in</strong>
+                                    feature and you have your choice of options how you want your location to be found.
+                                </p>
+    
+                                <div class="notification is-info is-light py-2 px-3">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                    <strong>Notice:</strong>
+                                    Remember to click "Save" after setting your location preference!
+                                </div>
+    
+                                <div class="field">
+                                    <label class="label">How do you want your location to be determined?</label>
+                                    <label class="checkbox">
+                                        <input type="radio"
+                                            name="source"
+                                            value=""
+                                            id="location-option-none"
+                                            {{if eq .UserLocation.Source ""}}checked{{end}}>
+                                            <i class="fa fa-ban ml-2 mr-1 has-text-danger"></i>
+                                            Do not share my location with {{PrettyTitle}}.
+                                    </label>
+                                    <p class="help mb-4">
+                                        This option will opt-out of the Who's Nearby feature and your profile will not be
+                                        discoverable by distance to other members. Any location data already stored by
+                                        the website will be erased if you choose this option.
+                                    </p>
+    
+                                    <label class="checkbox">
+                                        <input type="radio"
+                                            name="source"
+                                            value="geoip"
+                                            id="location-option-geoip"
+                                            {{if eq .UserLocation.Source "geoip"}}checked{{end}}>
+                                            <i class="fa fa-network-wired ml-2 mr-1 has-text-info"></i>
+                                            Automatically detect my location by my IP address
+                                    </label>
+                                    <p class="help mb-4">
+                                        Coarse location data based on your IP address. Might be accurate to your
+                                        city level.
+    
+                                        <!-- Do we have GeoIP insights? -->
+                                        {{if not .GeoIPInsights.IsZero}}
+                                            <br>
+                                            <strong>Currently:</strong>
+                                            {{.GeoIPInsights}}
+                                        {{end}}
+                                    </p>
+    
+                                    <label class="checkbox">
+                                        <input type="radio"
+                                            name="source"
+                                            value="gps"
+                                            id="location-option-gps"
+                                            {{if eq .UserLocation.Source "gps"}}checked{{end}}>
+                                            <i class="fa fa-location-dot ml-2 mr-1 has-text-success"></i>
+                                            Automatically detect my current location by GPS (with your permission)
+                                    </label>
+                                    <p class="help mb-4">
+                                        Your web browser will prompt you to share your current location with {{PrettyTitle}}.
+                                        <br>
+                                        <strong>Currently:</strong>
+                                        <span id="location-status-gps">You have not granted permission.</span>
+                                        <a href="#" class="fa fa-arrows-rotate" id="gps-refresh" title="Refresh my location"></a>
+                                    </p>
+    
+                                    <label class="checkbox">
+                                        <input type="radio"
+                                            name="source"
+                                            value="pin"
+                                            id="location-option-pin"
+                                            {{if eq .UserLocation.Source "pin"}}checked{{end}}>
+                                            <i class="fa fa-map-pin ml-2 mr-1 has-text-info"></i>
+                                            Drop a pin on the map myself
+                                    </label>
+                                    <p class="help mb-4">
+                                        Use the map below and drop a pin anywhere you like to set your location.
+                                    </p>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="label">
+                                        Your Current Location (click "Save" when you are satisfied)
+                                    </label>
+                                    <p class="block">
+                                        Your location will be saved as the following in the database:
+                                    </p>
+                                    <div class="columns is-mobile" style="max-width: 500px">
+                                        <div class="column is-half pr-1">
+                                            <label class="label mb-0">Latitude:</label>
+                                            <input type="text" class="input is-fullwidth"
+                                                name="latitude"
+                                                id="saveLatitude"
+                                                value="{{.UserLocation.Latitude}}"
+                                                placeholder="None"
+                                                readonly>
+                                        </div>
+                                        <div class="column is-half pl-1">
+                                            <label class="label mb-0">Longitude:</label>
+                                            <input type="text" class="input is-fullwidth"
+                                                name="longitude"
+                                                id="saveLongitude"
+                                                value="{{.UserLocation.Longitude}}"
+                                                placeholder="None"
+                                                readonly>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Show the preview of their country emoji string for the chat room -->
+                                <div class="field" id="pretty-emoji-preview">
+                                    <strong>Your location on the chat room &amp; profile page will appear as:</strong>
+                                    <div>
+                                        <span>...</span>
+                                        <a href="/faq#locations" target="_blank" class="fa fa-info-circle ml-2 has-text-info"></a>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <button type="submit" class="button is-primary mr-2"
+                                        name="intent" value="location">
+                                        <i class="fa fa-save mr-2"></i>
+                                        Save My Location Settings
+                                    </button>
+                                </div>
+    
+                                <h3 class="is-size-3">Map</h3>
+    
+                                <p class="block">
+                                    This map shows your current location pin. To click and drop a pin manually,
+                                    select the "Drop a pin on the map myself" option above. Otherwise, the map will
+                                    center on your GPS location (if available) or your IP address location, depending
+                                    on your selection above.
+                                </p>
+    
+                                <div id="map" class="block" style="width: 100%; height: 450px"></div>
+    
+                                <p class="block">
+                                    Map tiles provided by <a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap.</a>
+                                </p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+    
+            </div>
+    
+        </div>
+    </div>
+</div>
+{{end}}
+{{define "scripts"}}
+<link rel="stylesheet" href="/static/js/openlayers-7.5.1/en/latest/ol/ol.css">
+<script src="/static/js/openlayers-7.5.1/en/latest/ol/dist/ol.js"></script>
+<script>
+// Location tab scripts.
+window.addEventListener("DOMContentLoaded", (event) => {
+    // Get useful controls from the tab.
+    const $optionGPS = document.querySelector("#location-option-gps"),
+        $optionGeoIP = document.querySelector("#location-option-geoip"),
+        $optionPin = document.querySelector("#location-option-pin"),
+        $optionNone = document.querySelector("#location-option-none"),
+        $gpsCurrentStatus = document.querySelector("#location-status-gps"),
+        $gpsRefreshButton = document.querySelector("#gps-refresh"),
+        $saveLatitude = document.querySelector("#saveLatitude"),
+        $saveLongitude = document.querySelector("#saveLongitude"),
+        $prettyPreview = document.querySelector("#pretty-emoji-preview");
+
+    // Function to massage coordinates for saving in the DB.
+    const saveCoords = (latitude, longitude) => {
+        $saveLatitude.value = latitude === null ? "" : latitude.toFixed(2);
+        $saveLongitude.value = longitude === null ? "" : longitude.toFixed(2);
+        refreshPrettyPreview();
+    };
+
+    // Function to refresh the pretty emoji preview.
+    const refreshPrettyPreview = () => {
+        const $div = $prettyPreview.getElementsByTagName("SPAN")[0];
+        $div.innerHTML = `<i class="fa fa-spinner fa-spin mr-2"></i> Calculating...`;
+
+        let lat = parseFloat($saveLatitude.value),
+            long = parseFloat($saveLongitude.value);
+        if (!lat && !long) {
+            $div.innerHTML = `<em>The chat will use an automatic location by your IP address.</em>`;
+            return;
+        }
+
+        fetch("/v1/location/pretty-flag", {
+            method: "POST",
+            mode: "same-origin",
+            cache: "no-cache",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "latitude": lat,
+                "longitude": long
+            }),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.StatusCode !== 200) {
+                modalAlert({message: data.data.error});
+                return;
+            }
+
+            let result = data.data.result;
+            $div.innerHTML = result;
+        }).catch(resp => {
+            console.error("Error:", resp);
+        });
+    };
+
+    // A lazy-initialized function to handle setting a new pin on the OpenStreetMap widget.
+    let setMapPin = null; // function(lonLat)
+
+    // The user's GeoIP coordinates, if available.
+    let geoIPInsights = {{ToJSON .GeoIPInsights}},
+        savedLocation = {{.UserLocation}};
+
+    // Default GPS coords to select on the map on page load:
+    // whatever we get from the backend DB.
+    let defaultCoords = [12.5, 41.9];
+    if (savedLocation.Latitude != 0 || savedLocation.Longitude != 0) {
+        // Prefer the DB saved coords.
+        defaultCoords = [
+            savedLocation.Longitude,
+            savedLocation.Latitude,
+        ];
+    } else if (geoIPInsights.Latitude != 0 || geoIPInsights.Longitude != 0) {
+        // Then fall back on GeoIP coords.
+        defaultCoords = [
+            geoIPInsights.Longitude,
+            geoIPInsights.Latitude,
+        ];
+    }
+
+    // Is geolocation not supported?
+    if (navigator.geolocation == undefined) {
+        $gpsCurrentStatus.className = "";
+        $gpsCurrentStatus.classList.add("has-text-danger");
+        $gpsCurrentStatus.innerHTML = "Geolocation is not supported by your browser.";
+    }
+
+    // Geolocation callback funcs.
+    const onSuccess = (pos) => {
+        const crd = pos.coords;
+        $gpsCurrentStatus.className = "";
+        $gpsCurrentStatus.classList.add("has-text-success");
+        $gpsCurrentStatus.innerHTML = `Lat: ${crd.latitude}; Long: ${crd.longitude}; Accuracy: ${crd.accuracy}`;
+        $gpsRefreshButton.style.display = "";
+
+        // Set the form fields.
+        saveCoords(crd.latitude, crd.longitude);
+
+        // Can we drop a pin?
+        if (setMapPin !== null) {
+            setMapPin([crd.longitude, crd.latitude]);
+        }
+    };
+    const onError = (err) => {
+        $gpsCurrentStatus.className = "";
+        $gpsCurrentStatus.classList.add("has-text-danger");
+        $gpsCurrentStatus.innerHTML = `${err.message} (code ${err.code})`;
+        $gpsRefreshButton.style.display = "";
+    };
+
+    // Get or refresh their location.
+    const getLocation = () => {
+        if (navigator.geolocation != undefined) {
+            $gpsRefreshButton.style.display = "none";
+            $gpsCurrentStatus.className = "";
+            $gpsCurrentStatus.classList.add("has-text-info");
+            $gpsCurrentStatus.innerHTML = "Requesting your current location...";
+            navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0,
+            });
+        }
+    };
+
+    // Set an onClick handler for the GPS location tab, to request
+    // permission from the user's browser.
+    $optionGPS.addEventListener("click", (e) => {
+        getLocation();
+    });
+
+    // If the page loaded w/ the GPS option on, ask right away.
+    if ($optionGPS.checked) {
+        $optionGPS.click();
+    }
+
+    // Wire the refresh button.
+    $gpsRefreshButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        getLocation();
+    });
+
+    // If the user goes back to GeoIP coords, reinitialize the defaults.
+    $optionGeoIP.addEventListener("click", (e) => {
+        // Set the form fields.
+        // NOTE: defaultCoords are [lon, lat] we want [lat, lon]
+        if (geoIPInsights.Latitude != 0 || geoIPInsights.Longitude != 0) {
+            defaultCoords = [
+                geoIPInsights.Longitude,
+                geoIPInsights.Latitude,
+            ];
+        }
+        saveCoords(defaultCoords[1], defaultCoords[0]);
+
+        if (setMapPin !== null) {
+            setMapPin(defaultCoords);
+        }
+    });
+
+    // If the user disables their geolocation.
+    $optionNone.addEventListener("click", (e) => {
+        saveCoords(null, null);
+    });
+
+    /***
+     * OpenLayers Map Widget
+     ***/
+
+    let vectorSource = new ol.source.Vector(),
+        vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+        });
+
+    let map = new ol.Map({
+        target: 'map',  // the <div id="map"> target
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            }),
+            vectorLayer
+        ],
+
+        // The view allows to specify the center, resolution, and rotation of the map.
+        view: new ol.View({
+            center: ol.proj.fromLonLat(defaultCoords),
+            zoom: 10
+        })
+    });
+
+    // Define the function to drop a pin.
+    let onMapClick = (coordinate, { center=true }) => {
+        vectorSource.clear();
+        let feature = new ol.Feature(new ol.geom.Point(coordinate));
+        vectorSource.addFeatures([feature]);
+
+        let prettyCoord = ol.coordinate.toStringHDMS(
+            ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326'),
+            2,
+        );
+
+        // Center the map on the pin.
+        if (center) {
+            map.setView(new ol.View({
+                center: coordinate,
+                zoom: 10
+            }));
+        }
+    };
+
+    setMapPin = (lonLat) => {
+        let center = ol.proj.fromLonLat(lonLat);
+        onMapClick(ol.proj.fromLonLat(lonLat), {center: true});
+    };
+
+    map.on('click', (e) => {
+        // Do not drop a pin if the option isn't set.
+        if (!$optionPin.checked) return;
+
+        // Save the selected coords to the form.
+        let center = ol.proj.toLonLat(e.coordinate);
+        saveCoords(center[1], center[0]);
+
+        onMapClick(e.coordinate, {center: false});
+    });
+
+    // Drop the initial pin at the default coords.
+    setMapPin(defaultCoords);
+
+    // Try and calculate current emoji flag.
+    refreshPrettyPreview();
+});
+</script>
+{{end}}

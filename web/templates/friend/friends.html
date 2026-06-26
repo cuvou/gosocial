@@ -1,0 +1,266 @@
+{{define "title"}}Friends{{end}}
+{{define "content"}}
+<div class="container">
+    {{$Root := .}}
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-user-group mr-2"></i>
+                    Friends
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="p-4">
+        <div class="tabs is-boxed">
+            <ul>
+                <li{{if and (not .IsRequests) (not .IsPending) (not .IsIgnored)}} class="is-active"{{end}}>
+                    <a href="/friends">Friends</a>
+                </li>
+                <li{{if .IsRequests}} class="is-active"{{end}}>
+                    <a href="/friends?view=requests">
+                        Requests
+                        {{if .NavFriendRequests}}<span class="tag is-warning ml-2">{{.NavFriendRequests}}</span>{{end}}
+                    </a>
+                </li>
+                <li{{if .IsPending}} class="is-active"{{end}}>
+                    <a href="/friends?view=pending">
+                        Sent
+                    </a>
+                </li>
+                <li{{if .IsIgnored}} class="is-active"{{end}}>
+                    <a href="/friends?view=ignored">
+                        Ignored
+                        {{if .IgnoredFriendCount}}<span class="tag ml-2">{{.IgnoredFriendCount}}</span>{{end}}
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="p-4">
+
+        {{if and (not .IsRequests) (not .IsPending) (not .IsIgnored)}}
+        <div class="block">
+            <strong class="has-text-success">
+                <i class="fa fa-info-circle mr-1"></i> Pro Tip:</strong>
+            You can <a href="/members?friends=true">search and sort</a> your friends list
+            in the <i class="fa fa-people-group"></i> Member Directory!
+        </div>
+        {{end}}
+
+        <div class="block">
+            <strong class="has-text-success">
+                <i class="fa fa-hand-point-right mr-1"></i> See also:
+            </strong>
+            Besides your friends, you can <a href="/followers">see your Followers list here</a>.
+        </div>
+
+        <div class="block">
+            {{if .IsPending}}
+                You have sent {{FormatNumberCommas .Pager.Total}} friend request{{Pluralize64 .Pager.Total}} which
+                {{Pluralize64 .Pager.Total "has" "have"}} not been approved yet.
+            {{else}}
+                You have {{FormatNumberCommas .Pager.Total}} friend{{if .IsRequests}} request{{end}}{{Pluralize64 .Pager.Total}}
+                {{if .IsIgnored}} on ignore -- they don't know you ignored their request and they can not send another one{{end}}
+                (page {{.Pager.Page}} of {{.Pager.Pages}}).
+            {{end}}
+        </div>
+
+        {{if .IsIgnored}}
+        <div class="block content">
+            <p>
+                <strong>Notice:</strong> you are not able to accept a friend request after you had put it on Ignore. If you
+                have changed your mind and want to befriend one of these people, please "Reject" their request from this
+                page and then send them a new friend request of your own.
+            </p>
+            <p>
+                The reason you can't accept these requests is because, after you had ignored them, these people are unable to
+                cancel their request to you (so that they can't keep re-requesting you again and again to be annoying). This
+                would in, in turn, mean that you could sit on these requests for months or years and then one day finally accept
+                these requests and be on their friends list, while they had no way to cancel those requests. So, ignored requests
+                can only be finally rejected, but not accepted.
+            </p>
+        </div>
+        {{end}}
+
+        <!-- On the Requests tab, the default sort is to prioritize requests with messages, by most recent. -->
+        <!-- This special 'sort' option is only available on the Requests page. -->
+        {{$RequestsSortIsRecentWithMessages := eq .Pager.Sort "CASE WHEN message IS NOT NULL THEN 0 ELSE 1 END, updated_at DESC"}}
+
+
+        <div class="columns is-mobile">
+            <div class="column is-narrow pr-1">
+                Sort by:
+            </div>
+            <div class="column is-narrow pl-1">
+                <div class="dropdown like-modal">
+                    <div class="dropdown-trigger">
+                        <button type="button" class="button is-small" aria-haspopup="true" aria-controls="friend-sort-menu">
+                            <span>
+                                {{if $RequestsSortIsRecentWithMessages}}
+                                    Recent with messages
+                                {{else if eq .Sort "updated_at desc"}}
+                                    Most recent
+                                {{else if eq .Sort "updated_at asc"}}
+                                    Oldest
+                                {{else if eq .Sort "users.username asc"}}
+                                    Username (A-Z)
+                                {{else if eq .Sort "users.username desc"}}
+                                    Username (Z-A)
+                                {{else}}
+                                    Sort by...
+                                {{end}}
+                            </span>
+                            <i class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </i>
+                        </button>
+                        <div class="dropdown-menu" id="friend-sort-menu" role="menu">
+                            <div class="dropdown-content">
+                                {{if .IsRequests}}
+                                    <a href="?{{QueryPlus "sort" ""}}" class="dropdown-item">Recent with messages</a>
+                                {{end}}
+                                <a href="?{{QueryPlus "sort" "updated_at desc"}}" class="dropdown-item">Most recent</a>
+                                <a href="?{{QueryPlus "sort" "updated_at asc"}}" class="dropdown-item">Oldest</a>
+                                <a href="?{{QueryPlus "sort" "users.username asc"}}" class="dropdown-item">Username (A-Z)</a>
+                                <a href="?{{QueryPlus "sort" "users.username desc"}}" class="dropdown-item">Username (Z-A)</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="block">
+            {{SimplePager .Pager}}
+        </div>
+
+        <div class="columns is-multiline">
+
+            {{range .Friends}}
+            <div class="column is-half-tablet is-one-third-desktop">
+
+                <form action="/friends/add" method="POST">
+                    {{InputCSRF}}
+                    <input type="hidden" name="username" value="{{.Username}}">
+
+                <div class="card">
+                    <div class="card-content">
+                        <div class="media mb-0">
+                            <div class="media-left">
+                                {{template "avatar-64x64" .}}
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-4">
+                                    <a href="/u/{{.Username}}" class="has-text-dark">
+                                        {{if ne .Status "active"}}
+                                            <del>{{.NameOrUsername}}</del>
+                                        {{else}}
+                                            {{.NameOrUsername}}
+                                        {{end}}
+                                    </a>
+                                </p>
+                                <p class="subtitle is-6">
+                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                    <a href="/u/{{.Username}}">{{.Username}}</a>
+
+                                    <!-- "(banned)" label -->
+                                    {{if ne .Status "active"}}<small>({{.Status}})</small>{{end}}
+
+                                    {{if .IsAdmin}}
+                                    <span class="has-text-danger">
+                                        <span class="icon"><i class="fa fa-peace"></i></span>
+                                        <span>Admin</span>
+                                    </span>
+                                    {{end}}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Attached friend request message? -->
+                        {{$FriendRequest := $Root.FriendRequestMap.Get .ID}}
+                        {{if $FriendRequest}}
+                            <div class="content mt-1">
+                                {{if $FriendRequest.Message}}
+                                <p class="has-text-success">
+                                    <i class="fa fa-envelope mr-1"></i>
+                                    A message was included:
+                                </p>
+                                <blockquote>{{$FriendRequest.Message}}</blockquote>
+                                <p>
+                                    <!-- Google Translate link -->
+                                    <a href="https://translate.google.com/?sl=auto&tl=en&text={{$FriendRequest.Message}}&op=translate"
+                                        target="_blank" class="is-small is-size-7 has-text-success">
+                                        <i class="fab fa-google mr-1"></i> Open in Google Translate <i class="fa fa-external-link ml-1"></i>
+                                    </a>
+                                </p>
+                                {{end}}
+
+                                <p title="{{$FriendRequest.UpdatedAt.Format "2006-01-02 15:04:05"}}">
+                                    <small><em>
+                                        {{if $Root.IsRequests}}
+                                            Received
+                                        {{else if $Root.IsIgnored}}
+                                            Put on ignore
+                                        {{else if $Root.IsPending}}
+                                            Request sent
+                                        {{else}}
+                                            Friends since
+                                        {{end}}
+                                        {{SincePrettyCoarse $FriendRequest.UpdatedAt}} ago.
+                                    </em></small>
+                                </p>
+                            </div>
+                        {{end}}
+                    </div>
+                    {{if $Root.IsIgnored}}
+                    <footer class="card-footer">
+                        <button type="submit" name="verdict" value="reject" class="card-footer-item button is-danger is-outlined gosocial-confirm-submit"
+                            data-confirm="Are you sure you want to Reject this friend request?">
+                            <span class="icon"><i class="fa fa-xmark"></i></span>
+                            <span>Reject</span>
+                        </button>
+                    </footer>
+                    {{else if $Root.IsRequests}}
+                    <footer class="card-footer">
+                        <button type="submit" name="verdict" value="approve" class="card-footer-item button is-success">
+                            <span class="icon"><i class="fa fa-check"></i></span>
+                            <span>Approve</span>
+                        </button>
+                        <button type="submit" name="verdict" value="reject" class="card-footer-item button is-danger gosocial-confirm-submit"
+                            data-confirm="Are you sure you want to Reject this friend request?">
+                            <span class="icon"><i class="fa fa-xmark"></i></span>
+                            <span>Reject</span>
+                        </button>
+                        <button type="submit" name="verdict" value="ignore" class="card-footer-item button gosocial-confirm-submit"
+                            data-confirm="Are you sure you want to ignore this friend request?\n\nIgnoring a friend request will clear out the unread indicator for this friend request, and move it to your Ignored tab. This person will be unable to send you a new friend request while it is being ignored.\n\nImportant: Once it is ignored, you will not be able to accept it later! If you change your mind later, you will need to reject the request from your Ignored tab and send them a new friend request.">
+                            <span class="icon"><i class="fa fa-moon"></i></span>
+                            <span>Ignore</span>
+                        </button>
+                    </footer>
+                    {{else}}
+                    <footer class="card-footer">
+                        <button type="submit" name="verdict" value="remove" class="card-footer-item button is-danger is-outlined gosocial-confirm-submit"
+                            data-confirm="Are you sure you want to {{if $Root.IsPending}}cancel{{else}}remove{{end}} this friendship{{if $Root.IsPending}} request{{end}}?">
+                            <span class="icon"><i class="fa fa-xmark"></i></span>
+                            <span>{{if $Root.IsPending}}Cancel{{else}}Remove{{end}}</span>
+                        </button>
+                    </footer>
+                    {{end}}
+                </div>
+                </form>
+
+            </div>
+            {{end}}<!-- range .Friends -->
+        </div>
+
+        <div class="block">
+            {{SimplePager .Pager}}
+        </div>
+
+    </div>
+</div>
+{{end}}

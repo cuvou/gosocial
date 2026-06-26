@@ -1,0 +1,28 @@
+{{define "content"}}
+<div class="container">
+    <section class="hero block is-warning is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">Not Available</h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block content p-4 mb-0">
+        <h1>{{PrettyTitle}} is not available in your area</h1>
+        <p>
+            We regret to inform you that {{PrettyTitle}} will not be available in your area.
+            This may likely be due to local laws and regulations in your country or state of
+            origin regarding 'adult sites' and whether they are required to ask for your
+            photo ID to be on file. We do not, at this time, wish to handle such sensitive
+            information from our users (so that we don't risk such information being hacked
+            or leaked, which you can probably agree is a good call).
+        </p>
+
+        <p>
+            If you already have an account with us, please <a href="/contact">contact support</a>
+            for next steps (e.g., in case you would like us to delete your account).
+        </p>
+    </div>
+</div>
+{{end}}

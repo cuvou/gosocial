@@ -1,0 +1,32 @@
+<!--
+Gallery photo embedding support for Markdown messages
+
+This template only handles Inline embedded images, e.g. for profile pages.
+
+For footer attached images (forums, DMs) see the htmx/gallery_embeds.html.
+-->
+
+{{define "base"}}
+    {{$Root := .}}
+
+    {{range .Photos}}
+    <p class="is-clipped">
+        {{if HasSuffix .Filename ".mp4"}}
+        <video loop controls controlsList="nodownload" playsinline
+            class="js-modal-trigger{{if BlurExplicit .}} blurred-explicit{{end}}"
+            data-url="{{PhotoURL .Filename}}" data-photo-id="{{.ID}}"
+            {{if .AltText}}title="{{.AltText}}"{{end}}
+            {{if and (not IsSafeMode) (not (BlurExplicit .)) (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay{{end}}
+            >
+            <source src="{{PhotoURL .Filename}}" type="video/mp4">
+        </video>
+        {{else}}
+        <a href="/photo/view?id={{.ID}}" data-url="{{PhotoURL .Filename}}" data-photo-id="{{.ID}}">
+            <img src="{{PhotoURL .Filename}}" loading="lazy"
+                {{if BlurExplicit .}}class="blurred-explicit"{{end}}
+                {{if .AltText}}alt="{{.AltText}}" title="{{.AltText}}"{{end}}>
+        </a>
+        {{end}}
+    </p>
+    {{end}}
+{{end}}

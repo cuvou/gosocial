@@ -1,0 +1,32 @@
+:root {
+    --bulma-primary-h: 300deg;
+    --bulma-primary-l: 80%;
+    --bulma-link-h: 204deg;
+    --bulma-link-l: 50%;
+    --bulma-scheme-h: 299;
+    --bulma-scheme-s: 22%;
+    --bulma-link-text: #0077ff;
+}
+
+/*
+ * Forum Colors: with all the nested boxes, Bulma's default color scheme is
+ * too limited for a good experience.
+ */
+.gosocial-forum-box-1 {
+    /* Outermost box: Forum or Thread top-level wrappers */
+    background-color: #feefff;
+}
+.gosocial-forum-box-2 {
+    /* Nested box: "Latest Post" on Forum-level views */
+    background-color: #f0e0f5;
+}
+.gosocial-forum-box-3 {
+    /* Nested box: Topics/Posts/Users/View counters */
+    background-color: #ebd1fc;
+}
+
+/* Chat members in top nav bar on desktop */
+.gosocial-navbar-notification-tag.is-link, .gosocial-mobile-notification .tag.is-link {
+    background-color: rgb(255, 104, 247);
+    color: #606;
+}

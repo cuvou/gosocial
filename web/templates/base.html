@@ -1,0 +1,589 @@
+{{define "title"}}Untitled{{end}}
+{{define "content"}}{{end}}
+{{define "scripts"}}{{end}}
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="/static/css/bulma.min.css?build={{.BuildHash}}">
+    <!-- Bulma theme CSS -->
+    {{- if eq .WebsiteTheme "light" -}}
+    <link rel="stylesheet" type="text/css" href="/static/css/bulma-no-dark-mode.min.css?build={{.BuildHash}}">
+    {{- else if eq .WebsiteTheme "dark" -}}
+    <link rel="stylesheet" type="text/css" href="/static/css/bulma-dark-theme.css?build={{.BuildHash}}">
+    {{- end -}}
+
+    <!-- gosocial bulma theme overrides -->
+    <link rel="stylesheet" type="text/css" href="/static/css/theme.css?build={{.BuildHash}}">
+    {{- if or (eq .WebsiteTheme "dark") (ne .WebsiteTheme "light") }}
+    <link rel="stylesheet" type="text/css" href="/static/css/dark-theme.css?build={{.BuildHash}}" {{if ne .WebsiteTheme "dark"}}media="(prefers-color-scheme: dark)"{{end}}>
+    {{- end -}}
+
+    <!-- Website theme hue (user customizable, if logged in) -->
+    {{- $WebsiteThemeHue := GetWebsiteThemeForUser .Request }}
+    {{if $WebsiteThemeHue}}
+        <link rel="stylesheet" type="text/css" href="/static/css/theme-{{$WebsiteThemeHue}}.css?build={{.BuildHash}}">
+
+        {{- /* Dark theme mixin */ -}}
+        {{- if or (eq .WebsiteTheme "dark") (ne .WebsiteTheme "light") }}
+        <link rel="stylesheet" type="text/css" href="/static/css/theme-{{$WebsiteThemeHue}}-dark.css?build={{.BuildHash}}"{{if ne .WebsiteTheme "dark"}} media="(prefers-color-scheme: dark)"{{end}}>
+        {{- end -}}
+    {{end}}
+
+    <link rel="stylesheet" href="/static/fontawesome-free-6.6.0-web/css/all.css">
+    <link rel="manifest" href="/manifest.json">
+    <title>{{template "title" .}} - {{ .Title }}</title>
+</head>
+<body class="has-navbar-fixed-top">
+    <nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                {{ PrettyTitleBranding }}
+            </a>
+
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+        <div id="navbarBasicExample" class="navbar-menu">
+            <div class="navbar-start">
+                {{if not .LoggedIn}}
+                    <a class="navbar-item" href="/">
+                        <span class="icon"><i class="fa fa-home"></i></span>
+                        <span>Home</span>
+                    </a>
+
+                    <a class="navbar-item" href="/about">
+                        About
+                    </a>
+
+                    <a class="navbar-item" href="/features">
+                        Features
+                    </a>
+                {{end}}
+
+                {{if .LoggedIn}}
+                <a class="navbar-item px-1" href="/me">
+                    <span class="icon"><i class="fa fa-house-user"></i></span>
+                    <span>Home</span>
+                </a>
+
+                {{if IsFeatureFlagBareRTCEnabled}}
+                <a class="navbar-item px-1" href="/chat">
+                    <span class="icon"><i class="fa fa-message"></i></span>
+                    <span>Chat</span>
+                    {{if .NavChatStatistics.UserCount}}<span class="gosocial-navbar-notification-tag is-link ml-1">{{.NavChatStatistics.UserCount}}</span>{{end}}
+                </a>
+                {{end}}
+
+                <a class="navbar-item px-1" href="/forum">
+                    <span class="icon"><i class="fa fa-comments"></i></span>
+                    <span>Forum</span>
+                </a>
+
+                <a class="navbar-item px-1" href="/photo/gallery">
+                    <span class="icon"><i class="fa fa-image"></i></span>
+                    <span>Gallery</span>
+                </a>
+
+                <a class="navbar-item px-1" href="/friends{{if gt .NavFriendRequests 0}}?view=requests{{end}}">
+                    <span class="icon"><i class="fa fa-user-group"></i></span>
+                    <span>Friends</span>
+                    {{if .NavFriendRequests}}<span class="gosocial-navbar-notification-tag is-warning ml-1">{{FormatNumberShort .NavFriendRequests}}</span>{{end}}
+                </a>
+
+                <a class="navbar-item px-1" href="/messages">
+                    <span class="icon"><i class="fa fa-envelope"></i></span>
+                    <span>Messages</span>
+                    {{if .NavUnreadMessages}}<span class="gosocial-navbar-notification-tag is-warning ml-1">{{FormatNumberShort .NavUnreadMessages}}</span>{{end}}
+                </a>
+
+                <a class="navbar-item px-1" href="/members">
+                    <span class="icon"><i class="fa fa-people-group"></i></span>
+                    <span>People</span>
+                </a>
+                {{end}}
+
+                <div id="navbar-more" class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">
+                        More
+                    </a>
+
+                    <div class="navbar-dropdown is-active">
+                        {{if .LoggedIn}}
+                            <a class="navbar-item" href="/members?sort=distance">
+                                <span class="icon"><i class="fa fa-location-dot"></i></span>
+                                <span>Who's Nearby</span>
+                            </a>
+                            <hr class="navbar-divider">
+                            <a class="navbar-item" href="/about">
+                                <span class="icon"><i class="fa fa-circle-info"></i></span>
+                                <span>About {{PrettyTitle}}</span>
+                            </a>
+                        {{end}}
+                        <a class="navbar-item" href="/tos">
+                            <span class="icon"><i class="fa fa-list"></i></span>
+                            <span>Terms of Service</span>
+                        </a>
+                        <a class="navbar-item" href="/privacy">
+                            <span class="icon"><i class="fa fa-file-shield"></i></span>
+                            <span>Privacy Policy</span>
+                        </a>
+                        <a class="navbar-item" href="/contact">
+                            <span class="icon"><i class="fa fa-message"></i></span>
+                            <span>Contact Us</span>
+                        </a>
+                        <hr class="navbar-divider">
+                        <a class="navbar-item" href="/contact?intent=report">
+                            <span class="icon"><i class="fa fa-triangle-exclamation"></i></span>
+                            <span>Report an issue</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navbar-end">
+                {{if .LoggedIn }}
+                    <div id="navbar-user" class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link" href="/me{{if .NavUnreadNotifications}}#notifications{{end}}">
+                            <div class="columns is-mobile is-gapless">
+                                <div class="column is-narrow">
+                                    <figure class="image is-24x24 mr-2">
+                                        {{if gt .CurrentUser.ProfilePhoto.ID 0}}
+                                        <img src="{{PhotoURL .CurrentUser.ProfilePhoto.CroppedFilename}}" class="is-rounded">
+                                        {{else}}
+                                        <img src="/static/img/shy.png" class="is-rounded has-background-warning">
+                                        {{end}}
+                                    </figure>
+                                </div>
+                                <div class="column">
+                                    {{.CurrentUser.Username}}
+                                    {{if .NavUnreadNotifications}}
+                                        <span class="gosocial-navbar-notification-tag is-warning ml-1">{{FormatNumberShort .NavUnreadNotifications}}</span>
+                                    {{end}}
+                                    {{if .NavAdminNotifications}}
+                                        {{if and (or .NavCertificationPhotos .NavContentApprovals) (not .NavAdminFeedback)}}
+                                        <span class="gosocial-navbar-notification-tag is-success ml-1">{{FormatNumberShort .NavAdminNotifications}}</span>
+                                        {{else if and (or .NavCertificationPhotos .NavContentApprovals) .NavAdminFeedback}}
+                                        <span class="gosocial-navbar-notification-tag is-mixed ml-1">{{FormatNumberShort .NavAdminNotifications}}</span>
+                                        {{else}}
+                                        <span class="gosocial-navbar-notification-tag is-danger ml-1">{{FormatNumberShort .NavAdminNotifications}}</span>
+                                        {{end}}
+                                    {{end}}
+                                </div>
+                            </div>
+                        </a>
+
+                        <div class="navbar-dropdown is-right is-hoverable">
+                            <a class="navbar-item" href="/me{{if .NavUnreadNotifications}}#notifications{{end}}">
+                                <span class="icon"><i class="fa fa-home-user"></i></span>
+                                <span>Dashboard</span>
+                                {{if .NavUnreadNotifications}}
+                                    <span class="gosocial-navbar-notification-tag is-warning ml-1">
+                                        <i class="fa fa-bell mr-1"></i>
+                                        {{FormatNumberShort .NavUnreadNotifications}}
+                                    </span>
+                                {{end}}
+                            </a>
+                            <a class="navbar-item" href="/u/{{.CurrentUser.Username}}">
+                                <span class="icon"><i class="fa fa-user"></i></span>
+                                <span>My Profile</span>
+                            </a>
+                            <a class="navbar-item" href="/followers">
+                                <span class="icon"><i class="fa fa-star"></i></span>
+                                <span>My Followers</span>
+                            </a>
+                            <a class="navbar-item" href="/u/{{.CurrentUser.Username}}/photos">
+                                <span class="icon"><i class="fa fa-image"></i></span>
+                                <span>My Photos</span>
+                            </a>
+                            <a class="navbar-item" href="/photo/upload">
+                                <span class="icon"><i class="fa fa-upload"></i></span>
+                                <span>Upload Photo</span>
+                            </a>
+                            <a class="navbar-item" href="/photo/private">
+                                <span class="icon"><i class="fa fa-eye"></i></span>
+                                <span>Private Photos</span>
+                            </a>
+                            <a class="navbar-item" href="/photo/media">
+                                <span class="icon"><i class="fa fa-hard-drive"></i></span>
+                                <span>My Media</span>
+                            </a>
+                            <hr class="navbar-separator my-2">
+                            <a class="navbar-item" href="/settings">
+                                <span class="icon"><i class="fa fa-gear"></i></span>
+                                <span>Settings</span>
+                            </a>
+                            <a class="navbar-item" href="/settings/theme">
+                                <span class="icon"><i class="fa fa-palette has-text-rainbow"></i></span>
+                                <span>Appearance</span>
+                            </a>
+                            <a class="navbar-item" href="/settings/safe-mode?next={{.RequestFullURIEscaped}}">
+                                <span class="icon"><i class="fa fa-shield-heart{{if IsSafeMode}} has-text-success{{end}}"></i></span>
+                                <span>Safe Mode{{if IsSafeMode}} <span class="gosocial-navbar-notification-tag is-warning">Enabled</span>{{end}}</span>
+                            </a>
+                            {{if .CurrentUser.IsAdmin}}
+                                <hr class="navbar-separator my-2">
+                                <a class="navbar-item has-text-danger" href="/admin">
+                                    <span class="icon"><i class="fa fa-peace"></i></span>
+                                    <span>Admin</span>
+                                    {{if .NavAdminNotifications}}
+                                        <!-- Color code them by the type -->
+                                        {{if and (.NavCertificationPhotos) (not .NavAdminFeedback)}}
+                                        <span class="gosocial-navbar-notification-tag is-success ml-1">{{FormatNumberShort .NavAdminNotifications}}</span>
+                                        {{else if and .NavCertificationPhotos .NavAdminFeedback}}
+                                        <span class="gosocial-navbar-notification-tag is-mixed ml-1">{{FormatNumberShort .NavAdminNotifications}}</span>
+                                        {{else}}
+                                        <span class="gosocial-navbar-notification-tag is-danger ml-1">{{FormatNumberShort .NavAdminNotifications}}</span>
+                                        {{end}}
+                                    {{end}}
+                                </a>
+
+                                <!-- Contextual admin shortcut links -->
+                                {{if .NavCertificationPhotos}}
+                                <a class="navbar-item" href="/admin/photo/certification">
+                                    <span class="icon"><i class="fa fa-certificate"></i></span>
+                                    <span>Cert Photos</span>
+                                    <span class="gosocial-navbar-notification-tag is-success ml-1">{{FormatNumberCommas .NavCertificationPhotos}}</span>
+                                </a>
+                                {{end}}
+
+                                <!-- Contextual admin shortcut links -->
+                                {{if .NavContentApprovals}}
+                                <a class="navbar-item" href="/admin/photo/approval">
+                                    <span class="icon"><i class="fa fa-image"></i></span>
+                                    <span>Content Approval</span>
+                                    <span class="gosocial-navbar-notification-tag is-success ml-1">{{FormatNumberCommas .NavContentApprovals}}</span>
+                                </a>
+                                {{end}}
+
+                                {{if .NavAdminFeedback}}
+                                <a class="navbar-item" href="/admin/feedback">
+                                    <span class="icon"><i class="fa fa-certificate"></i></span>
+                                    <span>Feedback &amp; Reports</span>
+                                    <span class="gosocial-navbar-notification-tag is-warning ml-1">{{FormatNumberCommas .NavAdminFeedback}}</span>
+                                </a>
+                                {{end}}
+
+                                {{if .NavAppealedExplicitPhotos}}
+                                <a class="navbar-item" href="/admin/photo/appeals?status=appealed">
+                                    <span class="icon"><i class="fa fa-fire"></i></span>
+                                    <span>Explicit Photos</span>
+                                    <span class="gosocial-navbar-notification-tag is-warning ml-1">{{FormatNumberCommas .NavAppealedExplicitPhotos}}</span>
+                                </a>
+                                {{end}}
+                            {{end}}
+                            <hr class="navbar-separator my-2">
+                            {{if .SessionImpersonated}}
+                                <a href="/admin/unimpersonate" class="navbar-item has-text-danger">
+                                    <span class="icon"><i class="fa fa-ghost"></i></span>
+                                    <span>Unimpersonate</span>
+                                </a>
+                            {{end}}
+                            <a class="navbar-item" href="/logout">
+                                <span class="icon"><i class="fa fa-arrow-right-from-bracket"></i></span>
+                                <span>Log out</span>
+                            </a>
+                        </div>
+                    </div>
+                {{ else }}
+                    <div class="navbar-item">
+                        <div class="buttons">
+                            <a class="button is-primary is-small" href="/signup">
+                                <strong>Sign up</strong>
+                            </a>
+                            <a class="button is-info is-small" href="/login">
+                                Log in
+                            </a>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile: bottom panel for logged-in users. -->
+    {{if .LoggedIn}}
+    <div class="mobile gosocial-mobile-notification">
+
+        <div class="columns is-mobile is-gapless">
+            <div class="column">
+                <a class="button is-small py-4 is-fullwidth {{if gt .NavUnreadNotifications 0}}has-text-warning{{end}}"
+                    href="/me#notifications">
+                    <span class="icon"><i class="fa fa-home-user"></i></span>
+                    {{if gt .NavUnreadNotifications 0}}
+                        <sup class="gosocial-navbar-notification-count">{{FormatNumberShort .NavUnreadNotifications}}</sup>
+                    {{end}}
+                </a>
+            </div>
+
+            {{if IsFeatureFlagBareRTCEnabled}}
+            <div class="column">
+                <a class="button is-small py-4 is-fullwidth {{if gt .NavChatStatistics.UserCount 0}}has-text-success{{end}}"
+                    href="/chat" >
+                    <span class="icon"><i class="fa fa-message"></i></span>
+                    {{if gt .NavChatStatistics.UserCount 0}}
+                        <small class="gosocial-navbar-notification-count">{{FormatNumberShort .NavChatStatistics.UserCount}}</small>
+                    {{end}}
+                </a>
+            </div>
+            {{end}}
+            <div class="column">
+                <a class="button is-small py-4 is-fullwidth"
+                    href="/forum">
+                    <span class="icon"><i class="fa fa-comments"></i></span>
+                </a>
+            </div>
+            <div class="column">
+                <a class="button is-small py-4 is-fullwidth"
+                    href="/photo/gallery">
+                    <span class="icon"><i class="fa fa-image"></i></span>
+                </a>
+            </div>
+            <div class="column">
+                <a class="button is-small py-4 is-fullwidth {{if gt .NavUnreadMessages 0}}has-text-warning{{end}}"
+                    href="/messages">
+                    <span class="icon"><i class="fa fa-envelope"></i></span>
+                    {{if gt .NavUnreadMessages 0}}
+                        <sup class="gosocial-navbar-notification-count">{{FormatNumberShort .NavUnreadMessages}}</sup>
+                    {{end}}
+                </a>
+            </div>
+
+            <!-- Mobile "More" menu -->
+            <div class="column has-text-centered">
+                <div class="dropdown is-up is-right">
+                    <div class="dropdown-trigger">
+                        <button type="button" class="button is-small{{if .NavMobileOverflowNotifications}} has-text-warning{{end}}" aria-haspopup="true" aria-controls="mobile-navbar-dropdown">
+                            <i class="fa fa-ellipsis"></i>
+                            {{if .NavMobileOverflowNotifications}}
+                                <sup class="gosocial-navbar-notification-count ml-1">{{FormatNumberShort .NavMobileOverflowNotifications}}</sup>
+                            {{end}}
+                        </button>
+                    </div>
+                    <div class="dropdown-menu has-text-left" id="mobile-navbar-dropdown" role="menu">
+                        <div class="dropdown-content">
+                            <a href="/u/{{.CurrentUser.Username}}" class="dropdown-item">
+                                <div class="columns is-mobile is-gapless">
+                                    <div class="column is-narrow">
+                                        <figure class="image is-24x24 mr-2">
+                                            {{if gt .CurrentUser.ProfilePhoto.ID 0}}
+                                            <img src="{{PhotoURL .CurrentUser.ProfilePhoto.CroppedFilename}}" class="is-rounded">
+                                            {{else}}
+                                            <img src="/static/img/shy.png" class="is-rounded has-background-warning">
+                                            {{end}}
+                                        </figure>
+                                    </div>
+                                    <div class="column">
+                                        {{.CurrentUser.Username}}
+                                    </div>
+                                </div>
+                            </a>
+                            <hr class="dropdown-divider">
+                            <a class="dropdown-item"
+                                href="/friends{{if gt .NavFriendRequests 0}}?view=requests{{end}}">
+                                <i class="fa fa-user-group mr-2"></i>
+                                Friends
+                                {{if gt .NavFriendRequests 0}}
+                                    <span class="gosocial-navbar-notification-tag is-warning">{{FormatNumberShort .NavFriendRequests}}</span>
+                                {{end}}
+                            </a>
+                            <a class="dropdown-item" href="/members">
+                                <i class="fa fa-people-group mr-2"></i>
+                                People
+                            </a>
+                            <a class="dropdown-item" href="/members?sort=distance">
+                                <i class="fa fa-location-dot mr-2 ml-1"></i>
+                                Who's Nearby?
+                            </a>
+
+                            <hr class="dropdown-divider">
+
+                            <!-- Admin quick links -->
+                            {{if .CurrentUser.IsAdmin}}
+                                <a class="dropdown-item has-text-danger" href="/admin">
+                                    <i class="fa fa-peace mr-2"></i>
+                                    Admin
+                                    {{if .NavAdminNotifications}}
+                                        <span class="gosocial-navbar-notification-tag is-warning">{{FormatNumberShort .NavAdminNotifications}}</span>
+                                    {{end}}
+                                </a>
+                            {{end}}
+
+                            <a class="dropdown-item gosocial-confirm-submit" href="/logout"
+                                data-confirm="Are you sure you want to log out?">
+                                <i class="fa fa-arrow-right-from-bracket mr-2"></i>
+                                Log out
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{end}}
+
+    <div class="container is-fullhd">
+        {{if .Flashes}}
+        <div class="notification block is-success">
+            <!-- <button class="delete"></button> -->
+
+            {{range .Flashes}}
+                <div class="block">{{.}}</div>
+            {{end}}
+        </div>
+        {{end}}
+
+        {{if .Errors}}
+        <div class="notification block is-danger">
+            <!-- <button class="delete"></button> -->
+
+            {{range .Errors}}
+                <div class="block">{{.}}</div>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Admin notice if the Emergency Kill Switch was activated -->
+        {{if and .LoggedIn .CurrentUser.IsAdmin}}
+            {{if .SiteEmergencyMode.Activated}}
+                <div class="notification block is-danger">
+                    <i class="fa fa-skull-crossbones mr-2"></i>
+                    The admin <a href="/admin/maintenance">Emergency Kill Switch</a> has been activated and all (non-admin) user
+                    interaction on the site has been locked down.
+                </div>
+            {{else if .SiteMaintenanceMode.PauseInteraction}}
+                <div class="notification block is-warning">
+                    <i class="fa fa-hammer mr-2"></i>
+                    The admin <a href="/admin/maintenance">Maintenance Mode</a> setting to block 'all website interaction' is
+                    currently enabled. All website features are now admin-only.
+                </div>
+            {{end}}
+        {{end}}
+
+        <!-- Maintenance Mode messaging ('all pages' banner) -->
+        {{if and .SiteMaintenanceMode.MessageOnAllPages (or .SiteMaintenanceMode.Headline .SiteMaintenanceMode.Message)}}
+        <div class="notification block py-3 is-warning content">
+            <p class="mb-1">
+                <i class="fa fa-exclamation-triangle mr-2"></i>
+                <strong>{{or .SiteMaintenanceMode.Headline "Maintenance Mode is Activated"}}</strong>
+            </p>
+            {{ToMarkdown .SiteMaintenanceMode.Message}}
+        </div>
+        {{end}}
+
+        <!-- Progressive Web App custom install prompt. -->
+        <div {{if not .LoggedIn}} style="display: none" {{end}}>
+            <div class="notification is-info is-light mb-4" id="pwa-custom-install-banner" style="display: none">
+                <p>
+                    <i class="fa fa-download mr-1"></i>
+                    {{PrettyTitle}} has a web app that can be installed to your device for a better experience.
+                </p>
+                <div class="mt-2">
+                    <a href="#" class="button is-success is-small mr-2 mt-2" id="pwa-custom-install-button">
+                        <i class="fa fa-mobile-screen mr-2"></i>
+                        Install web app
+                    </a>
+                    <a href="/faq#app" class="button is-info is-small mr-2 mt-2">
+                        <i class="fa fa-info-circle mr-2"></i>
+                        Learn more
+                    </a>
+                    <a href="#" class="button is-warning is-small mt-2" id="pwa-custom-install-hide">
+                        <i class="fa fa-ban mr-2"></i>
+                        Don't ask me again
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {{template "content" .}}
+
+        <footer class="block p-4 has-text-centered has-text-grey">
+            <div class="columns">
+                <div class="column">
+                    <a href="/">Home</a>
+                </div>
+                <div class="column">
+                    <a href="/about">About</a>
+                </div>
+                <div class="column">
+                    <a href="/tos">Terms of Service</a>
+                </div>
+                <div class="column">
+                    <a href="/privacy">Privacy Policy</a>
+                </div>
+                <div class="column">
+                    <a href="/tos#content-removal">Content Removal</a>
+                </div>
+                <div class="column">
+                    <a href="/contact">Contact Us</a>
+                </div>
+                {{if .LoggedIn}}
+                <div class="column">
+                    <a href="/logout">Log out</a>
+                </div>
+                {{else}}
+                <div class="column">
+                    <a href="/login">Log in</a>
+                </div>
+                <div class="column">
+                    <a href="/signup">Sign up</a>
+                </div>
+                {{end}}
+                <div class="column">
+                    <small class="has-text-grey is-size-7"><i class="fa-regular fa-clock"></i> {{RunTime .Request}}</small>
+                </div>
+            </div>
+            <div class="block">
+                Powered by <strong style="color: #FF7700">Go</strong><strong style="color: #0077FF">Social</strong>
+                courtesy of
+                 <a href="https://www.cuvou.com" target="_blank">
+                    <img src="/static/img/cuvou-16.png" width="16" height="16" aria-hidden="true">
+                    Cuvou LLC.
+                </a><br>
+                &copy; {{.YYYY}} &mdash; All rights reserved.
+            </div>
+        </footer>
+    </div>
+
+    <script type="text/javascript">
+        window.gosocialGlobalState = {
+            isLoggedIn: {{.LoggedIn}}
+        };
+    </script>
+    <script type="text/javascript" src="/static/js/bulma.js?build={{.BuildHash}}"></script>
+    <script type="text/javascript" src="/static/js/likes.js?build={{.BuildHash}}"></script>
+    <script type="text/javascript" src="/static/js/vue-3.2.45.js"></script>
+    <script type="text/javascript" src="/static/js/htmx-1.9.12.min.js"></script>
+    <script type="text/javascript" src="/static/js/slim-forms.js?build={{.BuildHash}}"></script>
+    {{if not .SessionImpersonated -}}
+        {{- /* Disable web push script if impersonated, so an admin doesn't subscribe to user's notifications */ -}}
+        <script type="text/javascript" src="/static/js/web-push.js?build={{.BuildHash}}"></script>
+    {{- end}}
+    <script type="text/javascript" src="/static/js/markdown-editor.js?build={{.BuildHash}}"></script>
+    {{template "scripts" .}}
+
+    <!-- Alert modal -->
+    {{template "alert-modal" .}}
+
+    <!-- Likes modal -->
+    {{template "like-modal"}}
+
+    <!-- Right-click modal -->
+    {{template "right-click-modal" .}}
+
+    <!-- PWA loading indicator -->
+    <div id="gosocial-pwa-loader">
+        <strong class="tag is-info py-4 px-3">
+            <i class="fa fa-spinner fa-spin mr-2"></i>
+            Loading...
+        </strong>
+    </div>
+</body>
+</html>
+{{end}}

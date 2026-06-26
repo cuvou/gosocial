@@ -1,0 +1,272 @@
+{{define "title"}}Profile Settings{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-address-card mr-2"></i>
+                    Profile Settings
+                </h1>
+                <h2 class="subtitle">
+                    Manage your profile page &amp; essays.
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "profile")}}
+            </div>
+
+            <div class="column">
+
+                <!-- Profile -->
+                <div class="card" id="profile">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-address-card pr-2"></i>
+                            My Profile
+                        </p>
+                    </header>
+
+                    <form method="POST" action="{{.Request.URL.Path}}">
+                        {{InputCSRF}}
+
+                        <div class="card-content">
+                            <p class="block">
+                                The fields here are shown on your <a href="/u/{{.CurrentUser.Username}}">profile page</a>
+                                and are all optional. Fields with a <i class="fa fa-lock"></i> icon are not shown on
+                                your page but may drive some data that is (e.g., your current age derived from your birthdate).
+                            </p>
+
+                            <div class="columns">
+                                <div class="column field is-half">
+                                    <label class="label" for="display_name">Display Name</label>
+                                    <input type="text" class="input"
+                                        id="display_name"
+                                        name="display_name"
+                                        placeholder="John Doe"
+                                        value="{{or $User.Name ""}}">
+                                    <p class="help">
+                                        Your Display Name is shown on your profile page, in the chat room, and on comments.
+                                    </p>
+                                </div>
+
+                                <div class="column field is-half">
+                                    <label class="label" for="dob">Birthdate <i class="fa fa-lock"></i></label>
+                                    <input type="date" class="input{{if not $User.Birthdate.IsZero}} cursor-not-allowed{{end}}"
+                                        id="dob"
+                                        name="dob"
+                                        value="{{if not $User.Birthdate.IsZero}}{{$User.Birthdate.Format "2006-01-02"}}{{end}}"
+                                        required>
+                                    <p class="help">
+                                        Used to show your age on your profile.
+                                        {{if not $User.Birthdate.IsZero}}
+                                            You can change your birthdate if it's incorrect; all changes
+                                            are subject to admin review.
+                                        {{end}}
+                                    </p>
+
+                                    <!-- Don't show age checkbox -->
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="hide_age"
+                                            value="true"
+                                            {{if eq ($User.GetProfileField "hide_age") "true"}}checked{{end}}>
+                                        Don't show my age on my profile
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="columns">
+                                <div class="column field is-half">
+                                    <label class="label" for="gender">Gender</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="gender" name="gender">
+                                            <option value="">No answer</option>
+                                            {{range .Enum.Gender}}
+                                            <option value="{{.}}"{{if eq ($User.GetProfileField "gender") .}} selected{{end}}>{{.}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="column field is-half">
+                                    <label class="label" for="pronouns">Pronouns</label>
+                                    <input type="text" class="input"
+                                        id="pronouns"
+                                        name="pronouns"
+                                        maxlength="30"
+                                        value="{{$User.GetProfileField "pronouns"}}">
+                                    <p class="help">e.g.
+                                        <a href="#" onclick="document.querySelector('#pronouns').value='he/him'; return false">he/him</a>;
+                                        <a href="#" onclick="document.querySelector('#pronouns').value='she/her'; return false">she/her</a>;
+                                        <a href="#" onclick="document.querySelector('#pronouns').value='they/them'; return false">they/them</a>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="columns">
+                                <div class="column field is-half">
+                                    <label class="label" for="city">Hometown</label>
+                                    <input type="text" class="input"
+                                        id="city"
+                                        name="city"
+                                        value="{{$User.GetProfileField "city"}}">
+                                </div>
+
+
+                                <div class="column field is-half">
+                                    <label class="label" for="job">Job/Occupation</label>
+                                    <input type="text" class="input"
+                                        id="job"
+                                        name="job"
+                                        value="{{$User.GetProfileField "job"}}">
+                                </div>
+                            </div>
+
+                            <div class="columns">
+                                <div class="column field is-half">
+                                    <label class="label" for="marital_status">Marital Status</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="marital_status" name="marital_status">
+                                            <option value="">No answer</option>
+                                            {{range .Enum.MaritalStatus}}
+                                            <option value="{{.}}"{{if eq ($User.GetProfileField "marital_status") .}} selected{{end}}>{{.}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="column field is-half">
+                                    <label class="label" for="relationship_type">Relationship Type</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="relationship_type" name="relationship_type">
+                                            <option value="">No answer</option>
+                                            {{range .Enum.RelationshipType}}
+                                            <option value="{{.}}"{{if eq ($User.GetProfileField "relationship_type") .}} selected{{end}}>{{.}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="columns">
+                                <div class="column field is-half">
+                                    <label class="label" for="orientation">Orientation</label>
+                                    <div class="select is-fullwidth">
+                                        <select id="orientation" name="orientation">
+                                            <option value="">No answer</option>
+                                            {{range .Enum.Orientation}}
+                                            <option value="{{.}}"{{if eq ($User.GetProfileField "orientation") .}} selected{{end}}>{{.}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Here For</label>
+                                {{range .HereForEnum}}
+                                <div class="mb-2">
+                                    <em>{{.Header}}:</em>
+                                </div>
+                                <div class="columns is-multiline">
+                                    {{range .Options}}
+                                    <div class="column is-one-third pb-0">
+                                        <label class="checkbox">
+                                            <input type="checkbox"
+                                                name="here_for"
+                                                value="{{.Value}}"
+                                                {{if $User.ProfileFieldIn "here_for" .Value}}checked{{end}}>
+                                            {{.Value}}
+                                        </label>
+                                    </div>
+                                    {{end}}
+                                </div>
+                                {{end}}
+                            </div>
+
+                            <div class="field mt-5">
+                                <label class="label">Spoken Languages</label>
+                                <p class="help">
+                                    Select the language(s) that you are the most fluent in. Note: this section
+                                    has a scrollbar to browse all of the available options.
+                                </p>
+                                <div class="columns is-multiline pb-5 mb-4 mt-2" style="max-height: 180px; overflow: auto">
+                                    {{range .Enum.SpokenLanguages}}
+                                    <div class="column is-one-third is-one-quarter-desktop is-one-fifth-fullhd pb-0">
+                                        <label class="checkbox">
+                                            <input type="checkbox"
+                                                name="spoken_languages"
+                                                value="{{.}}"
+                                                {{if $User.ProfileFieldIn "spoken_languages" .}}checked{{end}}>
+                                            {{.}}
+                                        </label>
+                                    </div>
+                                    {{end}}
+                                </div>
+                            </div>
+
+                            <div class="field" id="profile/about_me">
+                                <label class="label" for="about_me">About Me</label>
+                                <p class="help">
+                                    Write a bit about yourself.
+                                    <a href="/markdown" target="_blank">Markdown formatting</a> with
+                                    <a href="/faq#embed-photos" target="_blank">inline gallery photos</a> is supported
+                                    in these essay fields on your profile page.
+                                </p>
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "about_me"
+                                    "ID" "about_me"
+                                    "Placeholder" "A little blurb about myself"
+                                    "Value" ($User.GetLongProfileField "about_me")
+                                    "Rows" 10
+                                    "GalleryLinks" "inline"
+                                )}}
+                            </div>
+
+                            <div class="field" id="profile/interests">
+                                <label class="label" for="interests">My Interests</label>
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "interests"
+                                    "ID" "interests"
+                                    "Placeholder" "What kinds of things make you curious?"
+                                    "Value" ($User.GetLongProfileField "interests")
+                                    "Rows" 10
+                                    "GalleryLinks" "inline"
+                                )}}
+                            </div>
+
+                            <div class="field" id="profile/music_movies">
+                                <label class="label" for="music_movies">Music/Bands/Movies</label>
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "music_movies"
+                                    "ID" "music_movies"
+                                    "Placeholder" "What is your style of music or movie?"
+                                    "Value" ($User.GetLongProfileField "music_movies")
+                                    "Rows" 10
+                                    "GalleryLinks" "inline"
+                                )}}
+                            </div>
+
+                            <div class="field">
+                                <button type="submit" class="button is-primary">
+                                    <i class="fa fa-save mr-2"></i> Save Profile Settings
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+{{end}}

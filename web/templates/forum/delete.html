@@ -1,0 +1,90 @@
+{{define "title"}}Forums{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-bold is-primary">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Delete Forum: {{.Forum.Title}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-4">
+        <div class="columns is-multiline is-mobile">
+            <div class="column is-narrow">
+                <a href="/forum/admin">
+                    <i class="fa fa-book"></i> My Forums
+                </a>
+            </div>
+            <div class="column is-narrow">
+                <a href="/f/{{.Forum.Fragment}}">
+                    <i class="fa fa-comments"></i>
+                    Go to Forum
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-two-thirds">
+                <div class="card">
+                    <header class="card-header has-background-danger">
+                        <p class="card-header-title">Delete Forum</p>
+                    </header>
+
+                    <div class="card-content">
+                        <form action="{{.Request.URL.Path}}" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="id" value="{{.Forum.ID}}">
+
+                            <div class="content">
+                                <p>
+                                    Confirm that you wish to <strong>delete</strong> the forum "{{.Forum.Title}}"
+                                </p>
+                                <p>
+                                    This will remove <strong>all</strong> threads and comments that were ever posted to
+                                    this forum. This operation <strong>can not</strong> be undone.
+                                </p>
+                                <p>
+                                    To confirm, please <strong>type the forum's URL fragment below:</strong>
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label for="fragment" class="label">
+                                    The forum's URL fragment to confirm:
+                                </label>
+                                <input type="text" class="input"
+                                    name="fragment" id="fragment"
+                                    autocomplete="off"
+                                    required>
+                                <p class="help">
+                                    Enter the text <code class="has-text-danger">{{.Forum.Fragment}}</code> to confirm
+                                    deletion of this forum.
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <button type="submit" class="button is-danger" name="intent" value="confirm">
+                                    <i class="fa fa-trash mr-1"></i>
+                                    Confirm Deletion
+                                </button>
+
+                                <a href="/forum/admin/edit?id={{.Forum.ID}}" class="button is-success ml-2">
+                                    <i class="fa fa-xmark mr-1"></i>
+                                    Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

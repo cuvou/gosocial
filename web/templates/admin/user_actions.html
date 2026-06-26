@@ -1,0 +1,624 @@
+{{define "title"}}Admin Action: {{.User.Username}}{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Admin Action
+                </h1>
+                <h2 class="subtitle">On user {{.User.Username}}</h2>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            {{if eq .Intent "impersonate"}}
+                                <i class="mr-2 fa fa-ghost"></i>
+                                Impersonate User
+                            {{else if eq .Intent "ban"}}
+                                <i class="mr-2 fa fa-ban"></i>
+                                User Ban/Disabled Status
+                            {{else if eq .Intent "promote"}}
+                                <i class="mr-2 fa fa-peace"></i>
+                                Promote User
+                            {{else if eq .Intent "password"}}
+                                <i class="mr-2 fa fa-lock"></i>
+                                Reset Password
+                            {{else if eq .Intent "delete"}}
+                                <i class="mr-2 fa fa-trash"></i>
+                                Delete User
+                            {{else if eq .Intent "insights"}}
+                                <i class="mr-2 fa fa-search"></i>
+                                Admin Insights
+                            {{else if eq .Intent "reset.2fa"}}
+                                <i class="mr-2 fa fa-unlock"></i>
+                                Reset Two-Factor Auth
+                            {{end}}
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <div class="media block">
+                            <div class="media-left">
+                                {{template "avatar-64x64" .User}}
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-4">{{.User.NameOrUsername}}</p>
+                                <p class="subtitle is-6">
+                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                    <a href="/u/{{.User.Username}}" target="_blank">{{.User.Username}}</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <form action="/admin/user-action" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="intent" value="{{.Intent}}">
+                            <input type="hidden" name="user_id" value="{{.User.ID}}">
+
+                            {{if eq .Intent "insights"}}
+                                <div class="block content">
+                                    <h2>Admin Insights</h2>
+
+                                    <p>
+                                        This page gives a peek into the database to glean some insights about a user.
+                                        So far, this means taking a look at their block lists: how many people do they
+                                        block (and who), and more importantly, how many people are blocking them. It
+                                        may be useful information to guage a problematic user, if they are angering or
+                                        creeping a lot of people out and ending up on a lot of block lists.
+                                    </p>
+
+                                    <ul>
+                                        <li>
+                                            Explicit opt-in:
+                                            {{if .User.Explicit}}
+                                                <span class="tag is-danger is-light">
+                                                    <i class="fa fa-fire mr-2"></i> Explicit
+                                                </span>
+                                            {{else}}
+                                                <span class="tag is-info is-light">
+                                                    <i class="fa fa-fire-flame-simple mr-2"></i> Non-Explicit
+                                                </span>
+                                            {{end}}
+                                        </li>
+                                        <li>
+                                            Two-Factor Auth:
+                                            {{if .TwoFactorEnabled}}
+                                                <span class="tag is-success is-light">
+                                                    <i class="fa fa-lock mr-2"></i>
+                                                    Enabled
+                                                </span>
+                                                {{if .CurrentUser.HasAdminScope "admin.user.2fa"}}
+                                                <a href="{{.Request.URL.Path}}?intent=reset.2fa&user_id={{.User.ID}}"
+                                                    class="has-text-danger is-size-7 ml-2">
+                                                    <i class="fa fa-xmark"></i>
+                                                    Disable 2FA
+                                                </a>
+                                                {{end}}
+                                            {{else}}
+                                                <span class="tag is-warning is-light">
+                                                    <i class="fa fa-unlock mr-2"></i>
+                                                    Not Enabled
+                                                </span>
+                                            {{end}}
+                                        </li>
+                                    </ul>
+
+                                    <h3>Media Usage</h3>
+
+                                    {{$Q := .UserMediaQuota}}
+
+                                    <div class="columns">
+                                        <div class="column">
+                                            <ul>
+                                                <li>
+                                                    <strong>Total:</strong> {{FormatFilesize $Q.TotalSize}}
+                                                </li>
+                                                <li>
+                                                    Gallery ({{$Q.GalleryPhotoCount}}): {{FormatFilesize $Q.GalleryPhotoSize}}
+                                                </li>
+                                                <li>
+                                                    Forum ({{$Q.CommentPhotoCount}}): {{FormatFilesize $Q.CommentPhotoSize}}
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="column">
+                                            <div class="card">
+                                                <header class="card-header has-background-info">
+                                                    <p class="card-header-title">
+                                                        <i class="fa fa-hard-drive mr-2"></i>
+                                                        Used Storage
+                                                    </p>
+                                                </header>
+                                                <div class="card-content">
+                                                    <progress class="progress {{$Q.ProgressBarClass}}"
+                                                        value="{{$Q.PercentUsage}}"
+                                                        max="100"
+                                                        title="{{$Q.PercentUsage}}%">
+                                                        {{$Q.PercentUsage}}%
+                                                    </progress>
+                                                </div>
+                                                <footer class="card-footer">
+                                                    <span class="card-footer-item">
+                                                        {{FormatFilesize $Q.TotalSize}} / {{FormatFilesize $Q.MaxSize}}
+                                                        ({{$Q.PercentUsage}}%)
+                                                    </span>
+                                                </footer>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h3>Social Change Log</h3>
+
+                                    <p class="is-size-7">
+                                        These links go into the admin Change Log viewer to show history of the user's
+                                        interactions with parts of the website. Also look for "Change Log" buttons scattered
+                                        around various pages (profile, gallery, certification photo view) for history
+                                        about the user's data tables.
+                                    </p>
+
+                                    <ul>
+                                        <li>
+                                            <a href="/admin/changelog?table_name=comments&table_id={{.User.ID}}">
+                                                Comments written
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="/admin/changelog?table_name=threads&table_id={{.User.ID}}">
+                                                Forum threads started
+                                            </a>
+                                        </li>
+                                    </ul>
+
+                                    <h3>Message Insights</h3>
+
+                                    <p>
+                                        This section lists the people this user has been in contact with via Direct
+                                        Messages on the main website, including whether the other party has responded.
+                                    </p>
+
+                                    {{if len .MessageInsights.Items}}
+                                    <p>
+                                        <a href="/admin/bulk-message?to={{.MessageInsights.UsernameCSV}}" class="has-text-warning">
+                                            <i class="fa fa-envelope mr-2"></i>
+                                            Send bulk message to these users
+                                        </a><br>
+                                        <span class="is-size-7">
+                                            In case this user was spamming or scamming, you can send a bulk DM to everybody
+                                            they were in contact with below to give them the heads up.
+                                        </span>
+                                    </p>
+                                    {{end}}
+
+                                    <p>
+                                        {{len .MessageInsights.Items}} username{{Pluralize (len .MessageInsights.Items)}} found
+                                        in their messages:
+                                    </p>
+
+                                    <div style="max-height: 350px; overflow: auto">
+                                        <table class="table is-striped is-fullwidth">
+                                            <thead>
+                                                <tr>
+                                                    <th>User</th>
+                                                    <th>Count</th>
+                                                    <th>Replied?</th>
+                                                    <th>Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{range .MessageInsights.Items}}
+                                                <tr>
+                                                    <td>
+                                                        {{$User := .ContactUser}}
+                                                        {{if $User}}
+                                                            <a href="/u/{{$User.Username}}" class="is-size-7">@{{$User.Username}}</a>
+                                                        {{end}}
+                                                        <a href="/admin/user-action?intent=insights&user_id={{.ContactUserID}}" class="has-text-grey is-size-7">{{.ContactUserID}}</a>
+                                                    </td>
+                                                    <td>
+                                                        {{.MessageCount}}
+                                                    </td>
+                                                    <td>
+                                                        {{if .HasReplied}}
+                                                        <span class="tag is-info">YES</span>
+                                                        {{else}}
+                                                        <span class="tag is-primary">NO</span>
+                                                        {{end}}
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {{.LastMessageAt.Format "2006-01-02 15:04:05"}}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                {{end}}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <h3>Flagged Explicit Photos</h3>
+
+                                    <p>
+                                        This section shows insights on how this user has interacted with the community moderated
+                                        Explicit Photos feature: the counts of photos they have helped flag (by status), and conversely,
+                                        the count of the user's own photos that were flagged by others.
+                                    </p>
+
+                                    {{if .ExplicitPhotoInsights}}
+                                        <table class="table is-fullwidth is-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        Role
+                                                    </th>
+                                                    <th>Status</th>
+                                                    <th>Count</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{range .ExplicitPhotoInsights}}
+                                                <tr>
+                                                    <td>
+                                                        {{if eq .Role "as_source"}}
+                                                            <strong class="has-text-success">
+                                                                <i class="fa fa-flag mr-1"></i>
+                                                                Flagger
+                                                            </strong>
+                                                        {{else if eq .Role "as_target"}}
+                                                            <strong class="has-text-info">
+                                                                <i class="fa fa-user mr-1"></i>
+                                                                Owner
+                                                            </strong>
+                                                        {{else}}
+                                                            {{.Role}}
+                                                        {{end}}
+                                                    </td>
+                                                    <td>
+                                                        {{if eq .Status "flagged"}}
+                                                            <span class="tag is-warning">Flagged</span>
+                                                        {{else if eq .Status "appealed"}}
+                                                            <span class="tag is-success">Appealed</span>
+                                                        {{else if eq .Status "non-explicit"}}
+                                                            <span class="tag is-info">Non-Explicit</span>
+                                                        {{else if eq .Status "force-explicit"}}
+                                                            <span class="tag is-danger">Force-Explicit</span>
+                                                        {{else}}
+                                                            <span class="tag">{{.Status}}</span>
+                                                        {{end}}
+                                                    </td>
+                                                    <td>
+                                                        {{.Count}}
+                                                    </td>
+                                                </tr>
+                                                {{end}}
+                                            </tbody>
+                                        </table>
+                                    {{else}}
+                                        <p>
+                                            <em>No Explicit Photo flags from or about this user.</em>
+                                        </p>
+                                    {{end}}
+
+                                    <h3>Block Lists</h3>
+
+                                    <!-- Surface if admin users are blocked -->
+                                    {{if .AdminBlockCount}}
+                                        <h5 class="has-text-danger">
+                                            <i class="fa fa-peace"></i>
+                                            Blocked Admins <span class="tag is-danger">{{.AdminBlockCount}}</span>
+                                        </h5>
+
+                                        <p>
+                                            This user blocks <strong>{{.AdminBlockCount}}</strong> out of {{.AdminBlockTotal}} admin{{Pluralize64 .AdminBlockTotal}} of this website.
+                                        </p>
+
+                                        <p>
+                                            If this number is unusually high, it can indicate this user may be proactively blocking all the admins in order to be
+                                            sneaky or evade moderation.
+                                        </p>
+                                    {{end}}
+
+                                    <div class="columns">
+                                        <div class="column">
+                                            <h5 class="has-text-warning">Forward List <span class="tag is-warning">{{len .BlocklistInsights.Blocks}}</span></h5>
+
+                                            <p>
+                                                (Users who {{.User.Username}} is blocking)
+                                            </p>
+
+                                            <p>
+                                                <a href="/admin/changelog?table_name=blocks&about_user_id={{.User.ID}}" class="button is-small">
+                                                    <span class="icon"><i class="fa fa-clipboard-list"></i></span>
+                                                    <span>Change Log</span>
+                                                </a>
+                                            </p>
+
+                                            <ul>
+                                            {{range .BlocklistInsights.Blocks}}
+                                                <li>
+                                                    <a href="/u/{{.Username}}">{{.Username}}</a>
+                                                    {{if .IsAdmin}}
+                                                        <sup class="has-text-warning fa fa-peace" title="Admin user"></sup>
+                                                    {{end}}
+                                                    <small class="has-text-grey" title="{{.Date}}">{{.Date.Format "2006-01-02"}}</small>
+                                                </li>
+                                            {{end}}
+                                            </ul>
+                                        </div>
+                                        <div class="column">
+                                            <h5 class="has-text-warning">Reverse List <span class="tag is-danger">{{len .BlocklistInsights.BlockedBy}}</span></h5>
+
+                                            <p>
+                                                (Users who block {{.User.Username}})
+                                            </p>
+
+                                            <p>
+                                                <a href="/admin/changelog?table_name=blocks&table_id={{.User.ID}}" class="button is-small">
+                                                    <span class="icon"><i class="fa fa-clipboard-list"></i></span>
+                                                    <span>Change Log</span>
+                                                </a>
+                                            </p>
+
+                                            <ul>
+                                            {{range .BlocklistInsights.BlockedBy}}
+                                                <li>
+                                                    <a href="/u/{{.Username}}">{{.Username}}</a>
+                                                    {{if .IsAdmin}}
+                                                        <sup class="has-text-warning fa fa-peace" title="Admin user"></sup>
+                                                    {{end}}
+                                                    <small class="has-text-grey" title="{{.Date}}">{{.Date.Format "2006-01-02"}}</small>
+                                                </li>
+                                            {{end}}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            {{else if eq .Intent "reset.2fa"}}
+                                <div class="content">
+                                    <h4>
+                                        <i class="fa fa-exclamation-triangle has-text-danger mr-1"></i>
+                                        Reset Two-Factor Auth
+                                    </h4>
+
+                                    <p>
+                                        If the user e-mails in that they lost their 2FA authenticator and need
+                                        to unlock their account, you can reset it for them here.
+                                    </p>
+
+                                    <div class="field">
+                                        <label class="checkbox">
+                                            <input type="checkbox"
+                                                name="confirm"
+                                                value="true">
+                                            Disable Two-Factor Auth for @{{.User.Username}}
+                                        </label>
+                                    </div>
+
+                                    <div class="field mb-2">
+                                        <label class="label">Type "confirm" to confirm:</label>
+                                    </div>
+                                    <div class="field has-addons">
+                                        <div class="control">
+                                            <input type="text" class="input"
+                                                name="confirm2"
+                                                placeholder="confirm">
+                                        </div>
+                                        <div class="control">
+                                            <button type="submit" class="button is-danger">
+                                                Confirm
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {{else if eq .Intent "impersonate"}}
+                                <div class="block content">
+                                    <h3>With great power...</h3>
+                                    <p>
+                                        By <strong>impersonating</strong> this user, you will be considered as "logged in"
+                                        to their account and have access to their messages, profile, photos and settings.
+                                    </p>
+                                    <p>
+                                        Please respect user privacy and only impersonate an account as needed to diagnose
+                                        a customer support issue or similar.
+                                    </p>
+                                    <p>
+                                        <strong class="has-text-danger">
+                                        This event is logged and will be noticed.
+                                        </strong>
+                                        Write an explanation below why you are impersonating this user. It will
+                                        be e-mailed to the admin mailing list and trigger an admin notification
+                                        and be logged as a <a href="/admin/feedback?intent=report">Report</a> to
+                                        the admin dashboard. Reports can be acknowledged, but not deleted.
+                                    </p>
+                                    <p>
+                                        Good reasons may include:
+                                        <ul>
+                                            <li>
+                                                I need to diagnose a bug report given by one of our users
+                                                (briefly describe what the bug is; e.g. user saw a database error
+                                                at the top of a page).
+                                            </li>
+                                            <li>
+                                                A user has reported a Direct Message conversation and I need to
+                                                take a look at the context. (There is no other way to read user DMs)
+                                            </li>
+                                        </ul>
+                                    </p>
+                                </div>
+
+                                <textarea class="textarea mb-4"
+                                    cols="80" rows="4"
+                                    name="reason"
+                                    placeholder="Reason"
+                                    required></textarea>
+
+                                <div class="field has-text-centered">
+                                    <button type="submit" class="button is-success">
+                                        Log in as {{.User.Username}}
+                                    </button>
+                                </div>
+                            {{else if eq .Intent "ban"}}
+                                <div class="block content">
+                                    <p>
+                                        This user is currently:
+                                        {{if eq .User.Status "active"}}
+                                            <strong class="has-text-success">Active (not banned)</strong>
+                                        {{else if eq .User.Status "disabled"}}
+                                            <strong class="has-text-warning">Disabled</strong>
+                                        {{else if eq .User.Status "banned"}}
+                                            <strong class="has-text-danger">Banned</strong>
+                                        {{end}}
+                                    </p>
+
+                                    <p>
+                                        Select a new status for them below:
+                                    </p>
+                                </div>
+
+                                <div class="field">
+                                    <div class="mb-2">
+                                        <label class="radio">
+                                            <input type="radio"
+                                                name="status"
+                                                value="active"
+                                                {{if eq .User.Status "active"}}checked{{end}}>
+                                            <strong class="has-text-success">
+                                                <i class="fa fa-check ml-2 mr-1"></i>
+                                                Active
+                                            </strong>
+                                        </label>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label class="radio">
+                                            <input type="radio"
+                                                name="status"
+                                                value="banned"
+                                                {{if eq .User.Status "banned"}}checked{{end}}>
+                                            <strong class="has-text-danger">
+                                                <i class="fa fa-ban ml-2 mr-1"></i>
+                                                Banned
+                                            </strong>
+                                        </label>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label class="radio">
+                                            <input type="radio"
+                                                name="status"
+                                                value="disabled"
+                                                {{if eq .User.Status "disabled"}}checked{{end}}>
+                                            <strong class="has-text-warning">
+                                                <i class="fa fa-exclamation-triangle ml-2 mr-1"></i>
+                                                Disabled
+                                            </strong>
+                                            <p class="help">
+                                                Equivalent to the user Deactivating their own account.
+                                                They may reactivate when they next log in.
+                                            </p>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="field has-text-centered">
+                                    <button type="submit" class="button is-warning">
+                                        Save Changes
+                                    </button>
+                                    <a href="/u/{{.User.Username}}" class="button is-success is-outlined">Cancel</a>
+                                </div>
+                            {{else if eq .Intent "promote"}}
+                                <div class="block content">
+                                    <p>
+                                        This user is currently:
+                                        {{if .User.IsAdmin}}
+                                            <strong class="has-text-danger">Admin</strong>
+                                        {{else}}
+                                            <strong class="has-text-success">NOT Admin</strong>
+                                        {{end}}
+                                    </p>
+
+                                    <p>
+                                        Select a new status for them below:
+                                    </p>
+                                </div>
+
+                                <div class="field has-text-centered">
+                                    <button type="submit" name="action" value="promote" class="button is-success">
+                                        Make Admin
+                                    </button>
+                                    <button type="submit" name="action" value="demote" class="button is-danger">
+                                        Remove Admin
+                                    </button>
+                                </div>
+                            {{else if eq .Intent "password"}}
+                                <p class="block">
+                                    This page allows you to reset a user's password on their behalf. For example, if
+                                    they have forgotten their password and aren't receiving the e-mail reset link and
+                                    they reached out for manual assistance.
+                                </p>
+
+                                <div class="field">
+                                    <label class="label" for="password">New password:</label>
+                                    <input type="text" class="input" name="password" id="password" placeholder="Password">
+                                    <a href="#" id="random-password" class="has-text-warning is-size-7">
+                                        <i class="fa fa-refresh mr-2"></i> Random password
+                                    </a>
+                                </div>
+
+                                <div class="field has-text-centered">
+                                    <button type="submit" name="action" value="password" class="button is-danger">
+                                        Update Password
+                                    </button>
+                                    <a href="/u/{{.User.Username}}" class="button is-success">Cancel</a>
+                                </div>
+
+                                <script>
+                                    window.addEventListener("DOMContentLoaded", (event) => {
+                                        // Password randomization.
+                                        const $password = document.querySelector("#password"),
+                                            $randomize = document.querySelector("#random-password");
+                                            alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789";
+                                        $randomize.addEventListener("click", (e) => {
+                                            e.preventDefault();
+                                            let password = "";
+                                            for (let i = 0; i < 16; i++) {
+                                                password += alphabet[parseInt(Math.random() * alphabet.length)];
+                                            }
+                                            $password.value = password;
+                                        });
+                                    });
+                                </script>
+                            {{else if eq .Intent "delete"}}
+                                <div class="block content">
+                                    <p>
+                                        Click the button below to <strong>deep delete</strong> this user account.
+                                    </p>
+                                </div>
+
+                                <div class="field has-text-centered">
+                                    <button type="submit" class="button is-danger">
+                                        Delete User Account
+                                    </button>
+                                </div>
+                            {{end}}
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

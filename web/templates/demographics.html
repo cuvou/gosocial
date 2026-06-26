@@ -1,0 +1,197 @@
+{{define "title"}}A peek inside the {{.Title}} website{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-light is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">A peek inside the {{PrettyTitle}} website</h1>
+                <h2 class="subtitle">Some statistics &amp; demographics of our members &amp; content</h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="content">
+            <p>
+                This page provides some insights into the distribution of content and member demographics
+                in the {{PrettyTitle}} community.
+            </p>
+
+            <p>
+                <strong><em>Last Updated:</em></strong> these website statistics were last collected
+                on {{.Demographic.LastUpdated.Format "Jan _2, 2006 @ 15:04:05 MST"}}
+
+                <!-- Admin: force refresh -->
+                {{if and .LoggedIn .CurrentUser.IsAdmin}}
+                <a href="{{.Request.URL.Path}}?refresh=true" class="has-text-danger ml-2">
+                    <i class="fa fa-peace"></i> Refresh now
+                </a>
+                {{end}}
+            </p>
+        </div>
+
+        <!--
+            Photo Gallery Statistics
+        -->
+
+        <hr>
+
+        <div class="content">
+            <h2>
+                <i class="fa fa-image mr-2"></i>
+                Photo Gallery
+            </h2>
+
+            <p>
+                Our members have shared <strong>{{FormatNumberCommas .Demographic.Photo.Total}}</strong> photos on
+                "public" for the whole {{PrettyTitle}} community to see.
+            </p>
+        </div>
+
+        <div class="columns">
+            <div class="column is-2">
+                <strong>Non-Explicit</strong>
+                <small class="has-text-grey">({{FormatNumberCommas .Demographic.Photo.NonExplicit}})</small>
+            </div>
+            <div class="column pt-4">
+                <progress class="progress is-link"
+                    value="{{.Demographic.Photo.PercentNonExplicit}}"
+                    max="100"
+                    title="{{.Demographic.Photo.PercentNonExplicit}}%">
+                    {{.Demographic.Photo.PercentNonExplicit}}%
+                </progress>
+            </div>
+            <div class="column is-narrow gosocial-percent-alignment">
+                {{.Demographic.Photo.PercentNonExplicit}}%
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column is-2">
+                <strong>Explicit</strong>
+                <small class="has-text-grey">({{FormatNumberCommas .Demographic.Photo.Explicit}})</small>
+            </div>
+            <div class="column pt-4">
+                <progress class="progress is-danger"
+                    value="{{.Demographic.Photo.PercentExplicit}}"
+                    max="100"
+                    title="{{.Demographic.Photo.PercentExplicit}}%">
+                    {{.Demographic.Photo.PercentExplicit}}%
+                </progress>
+            </div>
+            <div class="column is-narrow gosocial-percent-alignment">
+                {{.Demographic.Photo.PercentExplicit}}%
+            </div>
+        </div>
+
+        <!--
+            People statistics
+        -->
+
+        <hr>
+
+        <div class="content">
+            <h2>
+                <i class="fa fa-people-group mr-2"></i>
+                People
+            </h2>
+
+            <p>
+                We currently have <strong>{{FormatNumberCommas .Demographic.People.Total}}</strong> members who have
+                verified their <a href="/faq#certification-faqs">certification photo</a> with the site admin.
+            </p>
+
+            <p>
+                Below are some high-level demographics of who you may expect to find on this website.
+            </p>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <h4 class="is-size-5 mb-4">By Age Range</h4>
+
+                {{range .Demographic.People.IterAgeRanges}}
+                <div class="columns">
+                    <div class="column is-3">
+                        <strong>{{or .Label "(No answer)"}}</strong>
+                        <small class="has-text-grey">({{FormatNumberCommas .Count}})</small>
+                    </div>
+                    <div class="column pt-4">
+                        <progress class="progress is-success"
+                            value="{{.Percent}}"
+                            max="100"
+                            title="{{.Percent}}%">
+                            {{.Percent}}%
+                        </progress>
+                    </div>
+                    <div class="column is-narrow gosocial-percent-alignment">
+                        {{.Percent}}%
+                    </div>
+                </div>
+                {{end}}
+            </div>
+
+            <div class="column">
+                <h4 class="is-size-5 mb-4">By Gender</h4>
+
+                {{range .Demographic.People.IterGenders}}
+                <div class="columns">
+                    <div class="column is-3">
+                        <strong>{{or .Label "No answer"}}</strong>
+                        <small class="has-text-grey">({{FormatNumberCommas .Count}})</small>
+                    </div>
+                    <div class="column pt-4">
+                        <progress class="progress is-link"
+                            value="{{.Percent}}"
+                            max="100"
+                            title="{{.Percent}}%">
+                            {{.Percent}}%
+                        </progress>
+                    </div>
+                    <div class="column is-narrow gosocial-percent-alignment">
+                        {{.Percent}}%
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column is-half">
+                <h4 class="is-size-5 mb-4">By Orientation</h4>
+
+                {{range .Demographic.People.IterOrientations}}
+                <div class="columns">
+                    <div class="column is-3">
+                        <strong>{{or .Label "No answer"}}</strong>
+                        <small class="has-text-grey">({{FormatNumberCommas .Count}})</small>
+                    </div>
+                    <div class="column pt-4">
+                        <progress class="progress is-danger"
+                            value="{{.Percent}}"
+                            max="100"
+                            title="{{.Percent}}%">
+                            {{.Percent}}%
+                        </progress>
+                    </div>
+                    <div class="column is-narrow gosocial-percent-alignment">
+                        {{.Percent}}%
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Mobile CSS tweaks for this page -->
+<style type="text/css">
+.gosocial-percent-alignment {
+    min-width: 4.5rem;
+}
+@media screen and (min-width: 769px) {
+    .gosocial-percent-alignment {
+        text-align: right;
+    }
+}
+</style>
+{{end}}

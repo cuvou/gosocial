@@ -1,0 +1,15 @@
+/*
+ * Forum Color overrides for dark theme.
+ */
+ .gosocial-forum-box-1 {
+    /* Outermost box: Forum or Thread top-level wrappers */
+    background-color: #3b3516;
+}
+.gosocial-forum-box-2 {
+    /* Nested box: "Latest Post" on Forum-level views */
+    background-color: #423714;
+}
+.gosocial-forum-box-3 {
+    /* Nested box: Topics/Posts/Users/View counters */
+    background-color: #2c2c12;
+}

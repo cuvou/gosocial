@@ -1,0 +1,495 @@
+/* Custom CSS styles */
+
+html {
+    /* With the fixed top nav bar, this works around anchor-links to make them appear
+       correctly BELOW the nav bar instead of overlapped underneath it. */
+    scroll-padding-top: 52px;
+
+    /* Bottom padding in case of mobile bottom panel */
+    padding-bottom: 52px;
+}
+
+abbr {
+    cursor: help;
+}
+
+.cursor-not-allowed {
+    cursor: not-allowed;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
+}
+
+.has-text-smaller {
+    font-size: smaller;
+}
+
+.line-through {
+    text-decoration: line-through;
+}
+
+/* Word wrapping in <pre> for Markdown workaround when people like to indent their paragraphs */
+pre {
+    white-space: pre-wrap !important;
+}
+
+.address {
+  white-space: pre-line;
+  font-style: normal;
+  padding-left: 2.5rem;
+}
+
+/* Force wrap text in Markdown segments, e.g. long hyperlinks so they don't break the page layout */
+.content {
+    overflow-wrap: anywhere;
+}
+
+img {
+    /* https://stackoverflow.com/questions/12906789/preventing-an-image-from-being-draggable-or-selectable-without-using-js */
+    user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Add padding to an image that has align attribute set */
+img[align="left"] {
+    padding-right: 1rem;
+}
+img[align="right"] {
+    padding-left: 1rem;
+}
+
+/* Bulma tweak: apply object-fit:cover to photos in fixed ratio containers */
+.image.is-square img,
+.image.is-1by1 img,
+.image.is-4by3 img,
+.image.is-16by9 img {
+    object-fit: cover;
+}
+
+/* Small image, like on forum search result pages */
+.forum-thumbnail-img {
+    max-width: 140px;
+}
+
+/* Container for large profile pic on user pages */
+.profile-photo {
+    width: 150px;
+    height: 150px;
+    display: block;
+    border: 1px solid #000;
+    background-color: #fff;
+    padding: 4px;
+    position: relative;
+}
+
+.profile-photo img {
+    max-width: 100%;
+    height: auto;
+}
+
+.profile-photo .corner {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+/* Photo modals in addition to Bulma .modal-content */
+.photo-modal {
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 40px);
+    width: auto;
+}
+.photo-modal #detailImg {
+    position: relative;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+.photo-modal img, .photo-modal video {
+    max-height: calc(100vh - 50px);
+}
+.photo-modal .bottom-left {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+}
+.photo-modal .bottom-right {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+}
+.line-breakable {
+    white-space: pre-line;
+}
+.gosocial-modal-left-arrow {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+
+    & button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        -ms-transform: translateY(-50%);
+    }
+}
+.gosocial-modal-right-arrow {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+
+    & button {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        -ms-transform: translateY(-50%);
+    }
+}
+
+/* Gallery pages: ALT text indicator small in the corner */
+.card-image .alt-text {
+    position: absolute;
+    right: 4px;
+    bottom: 8px;
+    font-size: 7.5px;
+    letter-spacing: 0px;
+    background-color: #333;
+    color: rgb(241, 243, 245);
+    padding: 1px 4px;
+    font-weight: 800;
+    border-radius: 4px;
+    cursor: help;
+}
+
+/* Video playback icon for card images */
+.card-image .video-play-icon {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    translate: 0 -50%;
+    text-align: center;
+    font-size: 64pt;
+    pointer-events: none;
+    opacity: 0.80;
+}
+
+/* Custom bulma tag colors */
+.tag:not(body).is-private.is-light {
+    color: #CC00CC;
+    background-color: #FFEEFF;
+}
+.tag.is-private {
+    background-color: #CC00CC;
+    color: #FFEEFF;
+}
+
+/* Custom bulma button colors */
+.button.is-private.is-outlined {
+    border-color: #FF77FF;
+    color: #CC00CC;
+}
+
+.has-text-private {
+    color: #CC00CC !important;
+}
+
+.has-text-private-light {
+    color: #FF99FF;
+}
+
+.has-text-rainbow {
+    background: linear-gradient(to right, #09f, #f9f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+}
+
+.hero.is-private {
+    background-color: #b748c7;
+}
+
+.hero.is-private.is-bold {
+    background-image: linear-gradient(141deg, #b329b1 0, #9948c7 71%, #7156d2 100%);
+}
+
+/* Top nav bar dropdown menu tweaks: in case the user's screen is wide enough for the desktop
+   layout, but not tall enough to contain the dropdown menu, make the menus scrollable. */
+@media screen and (min-width: 1024px) {
+    .navbar-item.has-dropdown .navbar-dropdown {
+        max-height: calc(100vh - 52px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .navbar-dropdown {
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+    }
+}
+
+/* Mobile: notification badge near the hamburger menu */
+.gosocial-mobile-notification {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 29;
+    border-top: 1px solid #CCC;
+    padding: 0 8px;
+
+    & .button {
+        background-color: transparent;
+        height: 58px;
+        border: 0px;
+        box-shadow: unset;
+    }
+
+    & .has-text-warning {
+        color: rgb(207, 128, 37) !important;
+    }
+    & .has-text-success {
+        color: rgb(4, 136, 77) !important;
+    }
+}
+
+/* glassy background for fixed nav bar when you scroll other elements under it */
+nav.navbar, .gosocial-mobile-notification {
+    background-color: rgba(255, 255, 255, .75);
+    backdrop-filter: blur(5px);
+}
+
+/* PWA: loading indicator in the corner of the page */
+#gosocial-pwa-loader {
+    display: none;
+    position: fixed;
+    z-index: 31;
+    top: 10px;
+    right: 12px;
+}
+
+@media screen and (min-width: 1024px) {
+    .gosocial-mobile-notification {
+        display: none;
+    }
+}
+
+/* Bulma hack: full-width columns in photo card headers */
+.gosocial-fullwidth {
+    width: 100%;
+}
+
+/* Bulma supplement: full height cards e.g. for grid layout on home page */
+.is-fullheight {
+    height: 100%;
+}
+
+/* Collapsible cards for mobile (e.g. filter cards) */
+.card.gosocial-collapsible-mobile {
+    cursor: pointer;
+}
+
+/* Hide an element */
+.gosocial-hidden {
+    display: none;
+}
+
+/* Blurred explicit photo */
+.blurred-explicit, .blurred-always {
+    filter: blur(36px);
+}
+.blurred-explicit.blurred-slightly {
+    /* Less strong blur, e.g. for tiny 24x24 sized avatars */
+    filter: blur(8px) !important;
+}
+
+/* Bulma hack: smaller tag size inside of tab buttons. The default tag height
+   is set to 2em which makes the boxed tabs too tall and the bottom line doesn't
+   draw correctly. Seen on e.g. Profile Pages for the tag # of photos. */
+.tabs.is-boxed>ul>li>a .tag {
+    height: 1.5em !important;
+}
+
+/* Bulma breadcrumbs don't word-wrap which can cause horizontal scrolling on mobile,
+   especially on forum thread pages with a long thread title. */
+.breadcrumb {
+    white-space: inherit;
+}
+
+/***
+ * Mobile navbar notification count badge no.
+ */
+
+/* mobile view: just superset text */
+.gosocial-navbar-notification-count {
+    font-size: x-small;
+    margin-right: -4px;
+    margin-left: -4px;
+    margin-top: -12px;
+}
+
+/* desktop view: colored badge similar to bulma `tag is-warning ml-1`*/
+.gosocial-navbar-notification-tag {
+    align-items: center;
+    border-radius: 4px;
+    display: inline-flex;
+    font-size: xx-small;
+    height: 1em;
+    justify-content: center;
+    vertical-align: top;
+    line-height: 1.5;
+    padding: .75em;
+    white-space: nowrap;
+    margin-bottom: auto;
+}
+
+.gosocial-navbar-notification-tag.is-warning {
+    background-color: #ffd324;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.gosocial-navbar-notification-tag.is-info {
+    background-color: #0f81cc;
+    color: #fff;
+}
+
+.gosocial-navbar-notification-tag.is-link {
+    background-color: rgb(66, 88, 255);
+    color: #fff;
+}
+
+.gosocial-navbar-notification-tag.is-danger {
+    background-color: #ff0537;
+    color: #fff;
+}
+
+.gosocial-navbar-notification-tag.is-success {
+    background-color: #3ec487;
+    color: #fff;
+}
+
+.gosocial-navbar-notification-tag.is-dark {
+    background-color: #ddd;
+    color: #000;
+}
+
+.gosocial-navbar-notification-tag.is-mixed,
+.tag.is-mixed,
+.button.is-mixed {
+    background: linear-gradient(141deg, #ff0537 0, #3ec487 100%);
+    color: #fff;
+}
+
+/* Home page marketing styles */
+.gosocial-home-card .card-header {
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-color: #400040;
+    height: 64px;
+}
+
+.gosocial-htsignup {
+    display: none;
+}
+
+/* Dashboard notification page styles */
+.gosocial-notification-row {
+    position: relative;
+}
+.gosocial-notif-delete-button {
+    z-index: 28; /* just below bulma .navbar and mobile bottom nav */
+    position: absolute;
+    top: 4px;
+    right: 4px;
+}
+
+/*
+ * Forum Colors: with all the nested boxes, Bulma's default color scheme is
+ * too limited for a good experience.
+ */
+.gosocial-forum-box-1 {
+    /* Outermost box: Forum or Thread top-level wrappers */
+    background-color: #d1fff8;
+}
+.gosocial-forum-box-2 {
+    /* Nested box: "Latest Post" on Forum-level views */
+    background-color: #d0f1e2;
+}
+.gosocial-forum-box-3 {
+    /* Nested box: Topics/Posts/Users/View counters */
+    background-color: #ffedc2;
+}
+
+/* Bulma extension: allow a .card-image to round the edges of a video child as well */
+.card-image:first-child video {
+    border-start-start-radius: var(--bulma-card-radius);
+    border-start-end-radius: var(--bulma-card-radius);
+}
+
+/*
+ * Pricing Page Styles
+ */
+.gosocial-pricing-table-header {
+    border-top-width: 1px !important;
+}
+.gosocial-pricing-table-header h3 {
+    font-weight: bold;
+}
+.gosocial-pricing-table-feature {
+    background-color: #ebebeb;
+    border: 1px solid #aaaaaa;
+    border-top-width: 0;
+}
+.gosocial-pricing-table-free {
+    background-color: #fff1ff;
+    border-top: 0px solid rgb(255, 188, 255);
+    border-bottom: 1px solid rgb(255, 188, 255);
+}
+.gosocial-pricing-table-paid {
+    background-color: #f1fcff;
+    border: 1px solid rgb(136, 208, 255);
+    border-top-width: 0;
+}
+@media screen and (max-width: 768px) {
+    .gosocial-pricing-table-free {
+        border-left: 1px solid rgb(255, 188, 255);
+    }
+}
+
+/*
+ * Fancy mobile UI styles
+ */
+@media screen and (max-width: 1023px) {
+    .navbar.is-fixed-top {
+
+        /* Animations for the show/hide top nav on mobile */
+        transition: top 0.3s ease;
+
+        & .navbar-brand {
+            flex-direction: row-reverse;
+        }
+
+        & .navbar-burger {
+            margin-left: 0;
+            margin-right: auto;
+        }
+
+        & .navbar-brand .navbar-item {
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    }
+}

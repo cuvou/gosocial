@@ -1,0 +1,161 @@
+{{define "title"}}Account Settings{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-user mr-2"></i>
+                    Account Settings
+                </h1>
+                <h2 class="subtitle">
+                    Username, email &amp; password, and Two Factor Auth (2FA)
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "account")}}
+            </div>
+    
+            <div class="column">
+    
+                <!-- Account Settings -->
+                <div id="account">
+                    <div class="card mb-5">
+                        <header class="card-header has-background-link">
+                            <p class="card-header-title has-text-light">
+                                <i class="fa fa-lock pr-2"></i>
+                                Two-Factor Authentication
+                            </p>
+                        </header>
+    
+                        <div class="card-content content">
+                            <p>
+                                To help protect your {{PrettyTitle}} account, you may opt-in to add a
+                                second factor to your login ("Two-Factor Authentication", or 2FA). This
+                                means that in addition to needing "something you know" (your password) to
+                                log in to your account, you can also require "something you have" (an
+                                authenticator device which generates random time-dependent codes).
+                            </p>
+    
+                            <p>
+                                {{PrettyTitle}} offers Two-Factor Authentication using the industry
+                                standard "Time-based One-Time Password" (TOTP) system that is compatible
+                                with Google Authenticator and Authy.
+                            </p>
+    
+                            <p>
+                                Your Two-Factor is currently:
+                                {{if .TwoFactorEnabled}}
+                                    <i class="fa fa-check mr-1 has-text-success"></i>
+                                    <strong class="has-text-success">Enabled</strong>
+                                {{else}}
+                                    <i class="fa fa-xmark mr-1 has-text-danger"></i>
+                                    <strong class="has-text-danger">Not Enabled</strong>
+                                {{end}}
+                            </p>
+    
+                            <p>
+                                <a href="/account/two-factor/setup" class="button is-primary">
+                                    Manage Two-Factor Authentication
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+    
+                    <div class="card mb-5">
+                        <header class="card-header has-background-link">
+                            <p class="card-header-title has-text-light">
+                                <i class="fa fa-lock pr-2"></i>
+                                Update E-mail, Username or Password
+                            </p>
+                        </header>
+    
+                        <div class="card-content">
+                            <form method="POST" action="{{.Request.URL.Path}}">
+                                {{InputCSRF}}
+    
+                                <div class="block">
+                                    You may use the fields below to change the e-mail address you log in with,
+                                    change your username on the site, or set a new password. You will need to
+                                    confirm your current password first before making these changes to your
+                                    account.
+                                </div>
+    
+                                <div class="field">
+                                    <label class="label" for="old_password">
+                                        Current Password
+                                    </label>
+                                    <input type="password" class="input"
+                                        name="old_password"
+                                        id="old_password"
+                                        placeholder="Current password"
+                                        required>
+                                    <p class="help">
+                                        Enter your current password before making any changes to your
+                                        email address or setting a new password.
+                                    </p>
+                                </div>
+                                <div class="field">
+                                    <label class="label" for="change_email">Change Email</label>
+                                    <input type="email" class="input"
+                                        id="change_email"
+                                        name="change_email"
+                                        placeholder="name@domain.com"
+                                        value="{{.CurrentUser.Email}}">
+                                </div>
+    
+                                <div class="field">
+                                    <label class="label" for="change_username">Change Username</label>
+                                    <input type="text" class="input"
+                                        id="change_username"
+                                        name="change_username"
+                                        placeholder="{{.CurrentUser.Username}}"
+                                        value="{{.CurrentUser.Username}}"
+                                        {{if .OnChat}}readonly{{end}}>
+                                    <p class="help">
+                                        {{if .OnChat}}
+                                        <span class="has-text-danger">
+                                            <i class="fa fa-exclamation-triangle mr-1"></i>
+                                            You are currently logged into the chat room, so your username may not be
+                                            updated at this time. To change your username, please log out of the chat
+                                            room and wait a minute before reloading this page.
+                                        </span>
+                                        {{else}}
+                                            Usernames are 3 to 32 characters a-z 0-9 . -
+                                        {{end}}
+                                    </p>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="label">Change Password</label>
+                                    <input type="password" class="input mb-2"
+                                        name="new_password"
+                                        placeholder="New password">
+                                    <input type="password" class="input mb-2"
+                                        name="new_password2"
+                                        placeholder="Confirm new password">
+                                </div>
+    
+                                <div class="field">
+                                    <button type="submit" class="button is-primary">
+                                        <i class="fa fa-save mr-2"></i> Save Account Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+    
+            </div>
+    
+        </div>
+    </div>
+</div>
+{{end}}

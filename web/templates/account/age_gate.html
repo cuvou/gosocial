@@ -1,0 +1,105 @@
+{{define "title"}}Please complete your profile{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-light is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-address-card mr-2"></i>
+                    Please complete your profile
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon"><i class="fa-regular fa-calendar mr-2"></i></span>
+                            Your birthdate is requested
+                        </p>
+                    </header>
+                    <div class="card-content content">
+
+                        <form action="/settings/age-gate" method="POST">
+                            {{InputCSRF}}
+
+                            <p>
+                                To continue using {{PrettyTitle}}, please enter your date of birth below so we can
+                                store it in your profile settings. Going forward, we are asking for this on all new
+                                account signups but your account was created before we began doing so, and it is
+                                needed now.
+                            </p>
+
+                            <p>
+                                Your birthdate is <strong>not</strong> displayed to other members on this site, and
+                                is used only to show your current age on your profile page.
+                                <strong>Please enter your correct birthdate.</strong>
+                            </p>
+
+                            <div class="field block">
+                                <label class="label" for="dob">Date of birth:</label>
+                                <input type="date" class="input"
+                                    name="dob"
+                                    id="dob"
+                                    required>
+                                <p class="help">
+                                    On mobile and scrolling for your year is tedious?
+                                    <a href="#" id="manualEntry">Click to type your birthdate instead.</a>
+                                </p>
+                            </div>
+
+                            <div class="field block">
+                                <label class="checkbox">
+                                    <input type="checkbox"
+                                        name="hide_age"
+                                        value="true"
+                                        {{if eq (.CurrentUser.GetProfileField "hide_age") "true"}}checked{{end}}>
+                                    Don't display my age on my profile
+                                </label>
+                            </div>
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success">
+                                    Save and continue
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    window.addEventListener("DOMContentLoaded", (event) => {
+        let $manualEntry = document.querySelector("#manualEntry"),
+            $dob = document.querySelector("#dob");
+
+        $manualEntry.addEventListener("click", function(e) {
+            $manualEntry.blur();
+            e.preventDefault();
+
+            let answer = window.prompt("Enter your birthdate in 'YYYY-MM-DD' format").trim().replace(/\//g, '-');
+            if (answer.match(/^(\d{2})-(\d{2})-(\d{4})/)) {
+                let group = answer.match(/^(\d{2})-(\d{2})-(\d{4})/);
+                answer = `${group[3]}-${group[1]}-${group[2]}`;
+                modalAlert({message: `NOTE: Your input was interpreted to be in MM/DD/YYYY order and has been read as: ${answer}`});
+            } else if (!answer.match(/^\d{4}-\d{2}-\d{2}/)) {
+                modalAlert({message: `Please enter the date in YYYY-MM-DD format.`});
+                return;
+            }
+
+            $dob.value = answer;
+        });
+    });
+</script>
+{{end}}

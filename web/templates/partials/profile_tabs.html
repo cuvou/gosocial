@@ -1,0 +1,55 @@
+<!--
+User Profile Tabs
+
+Usage is like:
+
+    {{template "profile-tabs" .}}
+
+Parameters used:
+
+    .ActiveProfileTab
+    .CurrentUser
+    .User
+    .ProfileTabCount (.Photos, .Videos, .Blogs, .Friends)
+    .NoteCount
+    .AdminNoteCount
+-->
+{{define "profile-tabs"}}
+{{$IsSelf := eq .CurrentUser.ID .User.ID}}
+<div class="tabs is-boxed">
+    <ul>
+        <li {{if eq .ActiveProfileTab "profile"}}class="is-active"{{end}}>
+            <a href="/u/{{.User.Username}}">
+                <span class="icon is-small">
+                    <i class="fa fa-user"></i>
+                </span>
+                <span>Profile</span>
+            </a>
+        </li>
+
+        <li {{if eq .ActiveProfileTab "photos"}}class="is-active"{{end}}>
+            <a href="/u/{{.User.Username}}/photos">
+                <span class="icon is-small">
+                    <i class="fa fa-image"></i>
+                </span>
+                <span>
+                    Photos
+                    {{if .ProfileTabCount.Photos}}<span class="tag is-link is-light ml-1">{{.ProfileTabCount.Photos}}</span>{{end}}
+                </span>
+            </a>
+        </li>
+
+        <li {{if eq .ActiveProfileTab "friends"}}class="is-active"{{end}}>
+            <a href="/u/{{.User.Username}}/friends">
+                <span class="icon is-small">
+                    <i class="fa fa-user-group"></i>
+                </span>
+                <span>
+                    Friends
+                    {{if .ProfileTabCount.Friends}}<span class="tag is-link is-light ml-1">{{FormatNumberCommas .ProfileTabCount.Friends}}</span>{{end}}
+                </span>
+            </a>
+        </li>
+    </ul>
+</div>
+{{end}}

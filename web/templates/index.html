@@ -1,0 +1,157 @@
+{{define "title"}}{{.Subtitle}}{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-light is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">{{ PrettyTitleBranding }}</h1>
+                <h2 class="subtitle">{{ .Subtitle }}</h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column content is-three-quarters p-4">
+                <p>
+                    Welcome to <strong>{{PrettyTitle}}</strong>, a social networking website written in Go!
+                </p>
+
+                <p>
+                    GoSocial is a Free &amp; Open Source Project based on a successful production website
+                    which was launched in August 2022 and had accumulated over 12,000 members by June 2026.
+                </p>
+
+                {{$GoSocial := ToHTML `<strong style="color: #FF7700">Go</strong><strong style="color: #0077FF">Social</strong>`}}
+
+                <p>
+                    In June, 2026 that upstream website's source code was branched and 'white labeled' to
+                    become the {{$GoSocial}} codebase. If you're reading this, you are probably looking at
+                    <em>either</em> the "Live Demo Website" for {{$GoSocial}} or else it is a brand new app
+                    based on the {{$GoSocial}} codebase which hasn't yet been customized.
+                </p>
+
+                <p>
+                    You can find the Open Source Project at
+                    <a href="https://github.com/cuvou/gosocial">github.com/cuvou/gosocial</a>. It is released
+                    as Free Software under the GNU General Public License.
+                </p>
+
+                <p>
+                    <strong>If this is your website:</strong> you can customize the landing page by editing
+                    the <code>web/templates/index.html</code> file.
+                </p>
+
+            </div>
+
+            <div class="column is-one-quarter">
+
+                {{if .LoggedIn}}
+                <div class="card">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">Welcome back, {{.CurrentUser.Username}}!</p>
+                    </header>
+
+                    <div class="card-content p-2">
+                        <aside class="menu">
+                            <ul class="menu-list">
+                                <li>
+                                    <a href="/messages"{{if .NavUnreadMessages}} class="has-text-warning"{{end}}>
+                                        <span class="icon"><i class="fa fa-envelope"></i></span>
+                                        {{if .NavUnreadMessages}}
+                                            <span>{{.NavUnreadMessages}} New Message{{Pluralize64 .NavUnreadMessages}}!</span>
+                                        {{else}}
+                                            <span>Messages</span>
+                                        {{end}}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/friends{{if .NavFriendRequests}}?view=requests{{end}}"{{if .NavFriendRequests}} class="has-text-warning"{{end}}>
+                                        <span class="icon"><i class="fa fa-user-group"></i></span>
+                                        {{if .NavFriendRequests}}
+                                            <span>{{.NavFriendRequests}} Friend Request{{Pluralize64 .NavFriendRequests}}!</span>
+                                        {{else}}
+                                            <span>Friends</span>
+                                        {{end}}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/me{{if .NavUnreadNotifications}}?view=requests{{end}}"{{if .NavUnreadNotifications}} class="has-text-warning"{{end}}>
+                                        <span class="icon"><i class="fa {{if .NavUnreadNotifications}}fa-bell{{else}}fa-home-user{{end}}"></i></span>
+                                        {{if .NavUnreadNotifications}}
+                                            <span>{{.NavUnreadNotifications}} New Notification{{Pluralize64 .NavUnreadNotifications}}!</span>
+                                        {{else}}
+                                            <span>Dashboard</span>
+                                        {{end}}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/u/{{.CurrentUser.Username}}">
+                                        <span class="icon"><i class="fa fa-user"></i></span>
+                                        My Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/u/{{.CurrentUser.Username}}/photos">
+                                        <span class="icon"><i class="fa fa-image"></i></span>
+                                        My Photos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/photo/upload">
+                                        <span class="icon"><i class="fa fa-upload"></i></span>
+                                        Upload Photos
+                                    </a>
+                                </li>
+                            </ul>
+                        </aside>
+                    </div>
+                </div>
+                {{else}}
+                <div class="card">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">Log In</p>
+                    </header>
+
+                    <div class="card-content">
+                        <form action="/login" method="POST">
+                            {{ InputCSRF }}
+                            <div class="field">
+                                <label class="label" for="idx_username">Username</label>
+                                <input type="text" class="input"
+                                    name="username"
+                                    placeholder="username"
+                                    id="idx_username"
+                                    autocomplete="off">
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="idx_password">Password</label>
+                                <input type="password" class="input"
+                                    name="password"
+                                    placeholder="password"
+                                    id="idx_password"
+                                    autocomplete="off">
+                                <p class="help">
+                                    <a href="/forgot-password">Forgot?</a>
+                                </p>
+                            </div>
+
+                            <div class="columns">
+                                <div class="column">
+                                    <button type="submit" class="button is-info is-fullwidth">Log in</button>
+                                </div>
+                                <div class="column">
+                                    <a href="/signup" class="button is-primary is-fullwidth">Sign up</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+    </div>
+</div>
+{{end}}

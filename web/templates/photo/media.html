@@ -1,0 +1,286 @@
+{{define "title"}}My Media{{end}}
+{{define "content"}}
+<div class="container">
+    {{$Root := .}}
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title has-text-light">
+                    <i class="fa fa-hard-drive mr-2"></i>
+                    My Media
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="p-4 mt-4">
+        <div class="block columns">
+            <div class="column content mb-0">
+                <h4>About This Page</h4>
+
+                <p>
+                    This page shows you all of the media (images) that you have uploaded to {{PrettyTitle}},
+                    including your Gallery photos and any content that you have shared on the forums.
+                </p>
+
+                <p>
+                    All members are given a limited quota of disk space allowed for their media on this
+                    website. You can see your current used storage on this page. If you have run out of
+                    storage space, you can use this page to delete older files to free up room for new ones.
+                </p>
+
+                <h5>How many photos can I upload?</h5>
+
+                <p>
+                    Currently, you are allowed to store <strong>{{FormatFilesize .Quota.MaxSize}}</strong> worth
+                    of media.
+                </p>
+
+                <p>
+                    To set some context, <strong>100 photos</strong> on your Gallery will typically use up
+                    <strong>about 11 MiB</strong> of storage. So, you should be able to share at least 200
+                    photos across your Gallery and forum posts before you run low on space. The exact
+                    count may vary depending on the size of each photo.
+                </p>
+
+                <p>
+                    <strong class="has-text-success">
+                        <i class="fa fa-info-circle mr-1"></i> Note:
+                    </strong>
+                    The right-click blocker is disabled on this page, so you may download your own pictures
+                    from this page by right-clicking on them (or long pressing on mobile).
+                </p>
+            </div>
+
+            <div class="column is-one-quarter mb-5">
+                <div class="card">
+                    <header class="card-header has-background-info">
+                        <p class="card-header-title">
+                            <i class="fa fa-hard-drive mr-2"></i>
+                            Used Storage
+                        </p>
+                    </header>
+                    <div class="card-content">
+                        <progress class="progress {{.Quota.ProgressBarClass}}"
+                            value="{{.Quota.PercentUsage}}"
+                            max="100"
+                            title="{{.Quota.PercentUsage}}%">
+                            {{.Quota.PercentUsage}}%
+                        </progress>
+                    </div>
+                    <footer class="card-footer">
+                        <span class="card-footer-item">
+                            {{FormatFilesize .Quota.TotalSize}} / {{FormatFilesize .Quota.MaxSize}}
+                            ({{.Quota.PercentUsage}}%)
+                        </span>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs is-boxed">
+            <ul>
+                <li{{if eq .View "gallery"}} class="is-active"{{end}}>
+                    <a href="/photo/media">
+                        <i class="fa fa-image mr-2"></i>
+                        My Gallery
+                        {{if .Quota.GalleryPhotoCount}}
+                        <span class="tag is-link is-light ml-1">
+                            {{.Quota.GalleryPhotoCount}}
+                        </span>
+                        {{end}}
+                    </a>
+                </li>
+                <li{{if eq .View "forum"}} class="is-active"{{end}}>
+                    <a href="/photo/media?view=forum">
+                        <i class="fa fa-comments mr-2"></i>
+                        Forum Photos
+                        {{if .Quota.CommentPhotoCount}}
+                        <span class="tag is-link is-light ml-1">
+                            {{.Quota.CommentPhotoCount}}
+                        </span>
+                        {{end}}
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="p-4">
+
+        <div class="block content">
+            <p>
+                Your <strong>{{if eq .View "videos"}}Videos{{else}}{{.View}} photos{{end}}</strong> currently use
+                {{if eq .View "forum"}}
+                    <strong>{{FormatFilesize .Quota.CommentPhotoSize}}</strong>
+                {{else if eq .View "videos"}}
+                    <strong>{{FormatFilesize .Quota.VideoSize}}</strong>
+                {{else}}
+                    <strong>{{FormatFilesize .Quota.GalleryPhotoSize}}</strong>
+                {{end}} of space.
+            </p>
+
+            <p>
+                To <strong>delete</strong> some {{if eq .View "videos"}}videos{{else}}photos{{end}} and reclaim some space:
+            </p>
+
+            <ol>
+                <li>
+                    Click on the checkboxes labeled "Select" to select the items to remove.
+                </li>
+                <li>
+                    <p>
+                        At the bottom of the page, click on the button to "Delete" the selected items.
+                    </p>
+                    <p>
+                        Note: you can also <i class="fa fa-square-check"></i> "Select All" at the bottom of the page.
+                    </p>
+                </li>
+            </ol>
+        </div>
+
+        <hr>
+
+        <!-- Form to submit batch delete actions -->
+        <form action="{{if eq .View "forum"}}/comments/batch-edit{{else if eq .View "videos"}}/video/batch-edit{{else}}/photo/batch-edit{{end}}" method="GET">
+
+            <div class="block">
+                Found {{.Pager.Total}} items on your
+                {{if eq .View "forum"}}
+                    forum comments
+                {{else}}
+                    gallery
+                {{end}}
+
+                (page {{.Pager.Page}} of {{.Pager.Pages}}).
+            </div>
+
+            <!-- Sort widget -->
+            <div class="columns is-mobile" id="pager">
+                <div class="column is-narrow">
+                    Sort by:
+                </div>
+                <div class="column is-narrow">
+                    <div class="tabs is-toggle is-small">
+                        <ul>
+                            <li {{if eq .Sort "filesize desc"}}class="is-active"{{end}}>
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" "filesize desc"}}">Largest size</a>
+                            </li>
+                            <li {{if eq .Sort "updated_at asc"}}class="is-active"{{end}}>
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" "updated_at asc"}}">Oldest</a>
+                            </li>
+                            <li {{if eq .Sort "updated_at desc"}}class="is-active"{{end}}>
+                                <a href="{{.Request.URL.Path}}?{{QueryPlus "sort" "updated_at desc"}}">Newest</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="block">
+                {{SimplePager .Pager}}
+            </div>
+
+            <div class="columns is-mobile is-multiline">
+
+                {{range .Photos}}
+                <div class="column px-1 py-2 is-2-fullhd is-2-desktop is-3-tablet is-6-mobile">
+
+                    <div class="card">
+                        <div class="card-image">
+                            <label for="photo-{{.ID}}">
+                                <!-- GIF video? -->
+                                {{if HasSuffix .Filename ".mp4"}}
+                                <figure class="image is-4by3">
+                                    <video loop controls controlsList="nodownload" playsinline
+                                        {{if not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false")}}autoplay{{end}}
+                                        style="object-fit: cover"
+                                        class="has-ratio"
+                                        >
+                                        <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                                    </video>
+                                </figure>
+                                {{else}}
+                                <figure class="image is-4by3">
+                                    <img src="{{PhotoURL .Filename}}">
+                                </figure>
+                                {{end}}
+                            </label>
+                        </div>
+
+                        <footer class="card-footer">
+                            <label class="card-footer-item p-1 checkbox">
+                                <input type="checkbox" class="gosocial-edit-photo-id"
+                                    name="id" id="photo-{{.ID}}"
+                                    value="{{.ID}}">
+                                <!-- Select -->
+                            </label>
+
+                            <span class="card-footer-item px-1" style="white-space: nowrap;">
+                                <small>{{FormatFilesize .Filesize}}</small>
+                            </span>
+
+                            {{if eq $Root.View "gallery"}}
+                            <a class="card-footer-item px-1" href="/photo/view?id={{.ID}}" target="_blank">
+                                <sup class="fa fa-external-link ml-2"></sup>
+                            </a>
+                            {{else if eq $Root.View "videos"}}
+                            <a class="card-footer-item px-1" href="/video/view?id={{.ID}}" target="_blank">
+                                <sup class="fa fa-external-link ml-2"></sup>
+                            </a>
+                            {{else if eq $Root.View "forum"}}
+                            <a class="card-footer-item px-1" href="/go/comment-photo?id={{.ID}}" target="_blank">
+                                <sup class="fa fa-external-link"></sup>
+                            </a>
+                            {{end}}
+                        </footer>
+                    </div>
+
+                </div>
+                {{end}}<!-- range .Photos -->
+            </div>
+
+            <div class="block">
+                {{SimplePager .Pager}}
+            </div>
+
+            <!-- Select All + Batch Delete buttons -->
+            <div class="columns is-multiline is-mobile my-4">
+                <div class="column is-narrow">
+                    <div class="buttons has-addons">
+                        <button type="button" class="button" id="gosocial-select-all">
+                            <i class="fa fa-square-check"></i>
+                        </button>
+                        <button type="button" class="button" id="gosocial-select-none">
+                            <i class="fa fa-square"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="column" id="gosocial-edit-buttons">
+                    <button type="submit" class="button is-small is-danger is-outlined"
+                        name="intent"
+                        value="delete">
+                        <i class="fa fa-trash mr-2"></i>
+                        Delete
+                    </button>
+
+                    <span id="gosocial-count-selected" class="is-size-7 ml-2"></span>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+{{end}}
+{{define "scripts"}}
+<script type="text/javascript" src="/static/js/photo-batch-select.js?build={{.BuildHash}}"></script>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', (e) => {
+        // This is a long page, so if the user is paginating (especially on mobile), jump down to the goods.
+        if (window.location.search.length > 0) {
+            location.hash = '#pager';
+        }
+    });
+</script>
+{{end}}

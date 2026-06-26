@@ -1,0 +1,749 @@
+{{define "title"}}Look &amp; Feel{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-palette mr-2"></i>
+                    Look &amp; Feel
+                </h1>
+                <h2 class="subtitle">
+                    Customize your profile with a color scheme.
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    {{ $User := .CurrentUser }}
+
+    <!-- Drag/Drop Modal -->
+    <div class="modal" id="drop-modal">
+        <div class="modal-background"></div>
+        <div class="modal-content">
+            <div class="box content has-text-centered">
+                <h1><i class="fa fa-ban mr-2"></i> Drag and drop not supported!</h1>
+                <h4>Please use the "Choose a file..." buttons instead.</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                {{template "settings-menu" (NewHashMap "Active" "look")}}
+            </div>
+    
+            <div class="column">
+    
+                <!-- Look & Feel -->
+                <div id="look">
+                    <form method="POST" action="{{.Request.URL.Path}}" enctype="multipart/form-data">
+                        {{InputCSRF}}
+    
+                        <div class="card mb-5">
+                            <header class="card-header has-background-link">
+                                <p class="card-header-title has-text-light">
+                                    <i class="fa fa-palette pr-2"></i>
+                                    Website Theme
+                                </p>
+                            </header>
+    
+                            <div class="card-content">
+                                <!--
+                                -- Website Theme Section
+                                -->
+                                <p class="block">
+                                    You may set a custom theme to change the way the {{PrettyTitle}} website looks to you.
+                                    Choose between a Light and Dark variant, and set an optional accent color to apply a
+                                    new style to the entire website.
+                                </p>
+    
+                                <h2 class="subtitle">Light or Dark Mode</h2>
+    
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="radio"
+                                            name="website-theme"
+                                            value=""
+                                            {{if eq (.CurrentUser.GetProfileField "website-theme") ""}}checked{{end}}>
+                                        Automatically match my device's theme
+                                    </label>
+                                </div>
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="radio"
+                                            name="website-theme"
+                                            value="light"
+                                            {{if eq (.CurrentUser.GetProfileField "website-theme") "light"}}checked{{end}}>
+                                        Always use the light theme
+                                    </label>
+                                </div>
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="radio"
+                                            name="website-theme"
+                                            value="dark"
+                                            {{if eq (.CurrentUser.GetProfileField "website-theme") "dark"}}checked{{end}}>
+                                        Always use the dark theme
+                                    </label>
+                                    <p class="help">
+                                        This setting controls how the website theme will appear to you while logged in.
+                                        By default, the dark theme is used if your device prefers dark, but you can
+                                        manually override it to the Light or Dark themes above.
+                                    </p>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="label" for="website-theme-hue">
+                                        Accent color
+                                    </label>
+                                    <div class="select is-fullwidth">
+                                        <select name="website-theme-hue">
+                                            {{$CurrentHueSelection := GetWebsiteThemeForUser .Request}}
+                                            {{range .WebsiteThemeHueChoices}}
+                                            <optgroup label="{{.Header}}">
+                                                {{range .Options}}
+                                                <option value="{{.Value}}"
+                                                    {{if eq $CurrentHueSelection .Value}}selected{{end}}>
+                                                    {{.Label}}
+                                                </option>
+                                                {{end}}
+                                            </optgroup>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                    <p class="help">
+                                        Select an "accent color" for the website theme. Mix and match these with
+                                        the Light and Dark themes! Some accent colors really pop on the dark theme.
+                                    </p>
+                                </div>
+    
+                                <div class="field">
+                                    <button type="submit" class="button is-primary">
+                                        <i class="fa fa-save mr-2"></i> Apply Website Theme
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class="card mb-5" id="profile">
+                            <header class="card-header has-background-link">
+                                <p class="card-header-title has-text-light">
+                                    <i class="fa fa-palette pr-2"></i>
+                                    My Profile Page Look &amp; Feel
+                                </p>
+                            </header>
+    
+                            <div class="card-content">
+    
+                                <p class="block">
+                                    On this screen, you may customize the visual appearance of your profile
+                                    page. You may set a custom color gradient for your header bar and personalize
+                                    the colors of your profile cards.
+                                </p>
+
+                                <p class="block">
+                                    <strong class="has-text-success">
+                                        <i class="fa fa-gift mr-1"></i>
+                                        New Features!
+                                    </strong>
+                                    You may now stylize your profile with a custom Header Image and Background Wallpaper!<br>
+                                    You may also set the "Lightness" setting to "Custom" and fully decide the background
+                                    &amp; font colors for your profile body!
+                                </p>
+
+                                <!--
+                                -- Profile Header Section
+                                -->
+                                <h2 class="subtitle">Profile Header</h2>
+    
+                                <div class="field">
+                                    <label class="label">Preview</label>
+                                </div>
+    
+                                <!-- Header preview hero, should be similar to profile page. -->
+                                <div class="hero is-link is-bold mb-4" id="header-hero-preview">
+                                    <div class="hero-body p-4">
+                                        <div class="container">
+                                            <div class="columns is-mobile is-gapless mt-1 mb-6">
+                                                <div class="column is-narrow has-text-centered">
+                                                    <figure class="profile-photo is-inline-block" style="width: auto; height: auto">
+                                                        {{template "avatar-48x48" .CurrentUser}}
+                                                    </figure>
+                                                </div>
+    
+                                                <div class="column mx-2">
+                                                    <strong>{{.CurrentUser.NameOrUsername}}</strong>
+                                                </div>
+    
+                                                {{if and .LoggedIn (not .IsPrivate)}}
+                                                <div class="column is-narrow">
+                                                    <div class="box">
+                                                        <div style="width: 16px;"></div>
+                                                    </div>
+                                                </div>
+                                                {{end}}<!-- if .LoggedIn -->
+                                            </div>
+    
+                                        </div>
+                                    </div>
+                                </div>
+    
+                                <div class="field">
+                                    <label class="label">Header Gradient</label>
+                                    <div class="columns is-mobile">
+                                        <div class="column is-narrow">
+                                            <input type="color" class="color"
+                                                id="hero-color-start"
+                                                name="hero-color-start"
+                                                {{if .ProfileTheme.HeroColorStart}}
+                                                    value="{{.ProfileTheme.HeroColorStart}}"
+                                                {{else}}
+                                                    value="{{template "--prof-colorA"}}"
+                                                {{end}}
+                                                >
+                                        </div>
+                                        <div class="column is-narrow">
+                                            <input type="color" class="color"
+                                                id="hero-color-end"
+                                                name="hero-color-end"
+                                                {{if .ProfileTheme.HeroColorEnd}}
+                                                    value="{{.ProfileTheme.HeroColorEnd}}"
+                                                {{else}}
+                                                    value="{{template "--prof-colorB"}}"
+                                                {{end}}
+                                                >
+                                        </div>
+                                        <div class="column">
+                                            <label class="checkbox">
+                                                <input type="checkbox"
+                                                    id="hero-text-dark"
+                                                    name="hero-text-dark"
+                                                    value="true"
+                                                    {{if .ProfileTheme.HeroTextDark}}checked{{end}}
+                                                    >
+                                                Dark text
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="field mt-4">
+                                    <label class="label mb-0">Header Background Image <span class="tag is-success ml-2">New!</span></label>
+                                    <p class="help mb-2">
+                                        <i class="fa fa-ban has-text-danger mr-1"></i> Please <span class="has-text-danger">DO NOT use an 'Explicit' Photo</span> here!
+                                    </p>
+                                    <div class="file has-name is-fullwidth">
+                                        <label class="file-label">
+                                            <input class="file-input" type="file"
+                                                name="hero_file"
+                                                id="hero_file"
+                                                accept=".jpg,.jpeg,.jpe,.png,.webp">
+                                            <span class="file-cta">
+                                                <span class="file-icon">
+                                                    <i class="fas fa-upload"></i>
+                                                </span>
+                                                <span class="file-label">
+                                                    Choose a file…
+                                                </span>
+                                            </span>
+                                            <span class="file-name" id="hero_filename">
+                                                Select a file
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <p class="help">
+                                        Acceptable formats include: JPG, PNG, and WebP.
+                                        <a href="/faq#photo-types" target="_blank">More info <i class="fa fa-external-link"></i></a>
+                                    </p>
+                                    <p class="help">
+                                        The image will be centered (vertically) and scaled to cover the header.
+                                    </p>
+                                    <p class="help">
+                                        <a href="#" class="gosocial-infoalert-image-size">
+                                            <i class="fa fa-info-circle mr-1"></i>
+                                            What size image should I select? <sup class="fa fa-external-link"></sup>
+                                        </a>
+                                    </p>
+                                </div>
+
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="delete_hero"
+                                            value="true">
+                                        Delete my header background image
+                                    </label>
+                                    <p class="help">
+                                        Check this box and click 'Save' for your header background image to be removed.
+                                    </p>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label">
+                                        Background Image Transparency
+                                    </label>
+                                    <input type="number" class="input"
+                                        id="hero_transparency"
+                                        name="hero_transparency"
+                                        style="max-width: 8em"
+                                        min="0.0"
+                                        max="1.0"
+                                        step="0.05"
+                                        value="{{if .ProfileTheme.HeroFilename}}{{.ProfileTheme.HeroTransparency}}{{else}}0.75{{end}}">
+                                    <p class="help">
+                                        A value between 0.0 and 1.0 (0% to 100%).<br>
+                                        At 100%, the background image will be displayed fully.<br>
+                                        With transparency, your Gradient Colors can mix with the Background Image!
+                                    </p>
+                                </div>
+
+                                <hr>
+    
+                                <!--
+                                -- Profile Page Section
+                                -->
+                                <h2 class="subtitle">Profile Page</h2>
+    
+                                <div class="card block" id="profile-card-preview">
+                                    <div class="card-header">
+                                        <p class="card-header-title">Card Colors</p>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table is-fullwidth">
+                                            <tr>
+                                                <td>
+                                                    <strong>Lightness</strong>
+                                                </td>
+                                                <td>
+                                                    <div class="select is-fullwidth">
+                                                        <select id="card-lightness" name="card-lightness">
+                                                            <option value="">Automatic</option>
+                                                            <option value="light"{{if eq .ProfileTheme.CardLightness "light"}} selected{{end}}>Light theme (black on white)</option>
+                                                            <option value="dark"{{if eq .ProfileTheme.CardLightness "dark"}} selected{{end}}>Dark theme (white on black)</option>
+                                                            <option value="custom"{{if eq .ProfileTheme.CardLightness "custom"}} selected{{end}}>Custom colors (new!)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div id="custom-lightness">
+                                                        <table class="table" style="background-color: transparent">
+                                                            <tr>
+                                                                <td>
+                                                                    <strong>Background:</strong>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="color" class="color"
+                                                                        id="card-custom-bg"
+                                                                        name="card-custom-bg"
+                                                                        {{if .ProfileTheme.CardCustomBG}}
+                                                                            value="{{.ProfileTheme.CardCustomBG}}"
+                                                                        {{else}}
+                                                                            value="{{template "--prof-custom-bg"}}"
+                                                                        {{end}}
+                                                                        >
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>
+                                                                    <strong>Text color:</strong>
+                                                                </td>
+                                                                <td>
+                                                                    <input type="color" class="color"
+                                                                        id="card-custom-fg"
+                                                                        name="card-custom-fg"
+                                                                        {{if .ProfileTheme.CardCustomFG}}
+                                                                            value="{{.ProfileTheme.CardCustomFG}}"
+                                                                        {{else}}
+                                                                            value="{{template "--prof-custom-fg"}}"
+                                                                        {{end}}
+                                                                        >
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="is-narrow">
+                                                    <strong>Card Title BG</strong>
+                                                </td>
+                                                <td>
+                                                    <input type="color"
+                                                        id="card-title-bg"
+                                                        name="card-title-bg"
+                                                        {{if .ProfileTheme.CardTitleBG}}
+                                                            value="{{.ProfileTheme.CardTitleBG}}"
+                                                        {{else}}
+                                                            value="{{template "--prof-card-bg"}}"
+                                                        {{end}}
+                                                        >
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>Card Title FG</strong>
+                                                </td>
+                                                <td>
+                                                    <input type="color"
+                                                        id="card-title-fg"
+                                                        name="card-title-fg"
+                                                        {{if .ProfileTheme.CardTitleFG}}
+                                                            value="{{.ProfileTheme.CardTitleFG}}"
+                                                        {{else}}
+                                                            value="{{template "--prof-card-fg"}}"
+                                                        {{end}}
+                                                        >
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>Link Color</strong>
+                                                </td>
+                                                <td>
+                                                    <input type="color"
+                                                        id="card-link-color"
+                                                        name="card-link-color"
+                                                        {{if .ProfileField.CardLinkColor}}
+                                                            value="{{.ProfileField.CardLinkColor}}"
+                                                        {{else}}
+                                                            value="{{template "--prof-link-fg"}}"
+                                                        {{end}}
+                                                        >
+                                                    <a href="#" onclick="return false" class="ml-2">
+                                                        Example
+                                                        <i class="fa fa-link"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="field mt-4">
+                                    <label class="label mb-0">Profile Wallpaper Image <span class="tag is-success ml-2">New!</span></label>
+                                    <p class="help mb-2">
+                                        <i class="fa fa-ban has-text-danger mr-1"></i> Please <span class="has-text-danger">DO NOT use an 'Explicit' Photo</span> here!
+                                    </p>
+                                    <div class="file has-name is-fullwidth">
+                                        <label class="file-label">
+                                            <input class="file-input" type="file"
+                                                name="wallpaper_file"
+                                                id="wallpaper_file"
+                                                accept=".jpg,.jpeg,.jpe,.png,.webp">
+                                            <span class="file-cta">
+                                                <span class="file-icon">
+                                                    <i class="fas fa-upload"></i>
+                                                </span>
+                                                <span class="file-label">
+                                                    Choose a file…
+                                                </span>
+                                            </span>
+                                            <span class="file-name" id="wallpaper_filename">
+                                                Select a file
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <p class="help">
+                                        Acceptable formats include: JPG, PNG, and WebP.
+                                        <a href="/faq#photo-types" target="_blank">More info <i class="fa fa-external-link"></i></a>
+                                    </p>
+                                    <p class="help">
+                                        <strong class="has-text-warning">
+                                            <i class="fa fa-info-circle mr-1"></i> Important:
+                                        </strong>
+                                        The "right-click blocker" does not protect your wallpaper image from being easily downloaded!
+                                        Choose an image that you don't care if people can download it easily!
+                                    </p>
+                                    <p class="help">
+                                        <a href="#" class="gosocial-infoalert-image-size">
+                                            <i class="fa fa-info-circle mr-1"></i>
+                                            What size image should I select? <sup class="fa fa-external-link"></sup>
+                                        </a>
+                                    </p>
+                                </div>
+
+                                <div class="field">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="delete_wallpaper"
+                                            value="true">
+                                        Delete my profile wallpaper image
+                                    </label>
+                                    <p class="help">
+                                        Check this box and click 'Save' for your profile wallpaper image to be removed.
+                                    </p>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label">
+                                        Reset Styles
+                                    </label>
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                            name="reset"
+                                            value="true">
+                                        Reset to default style
+                                    </label>
+                                    <p class="help">
+                                        If you'd like to reset all your page styles to their default, check
+                                        this box and click Save below.
+                                    </p>
+                                </div>
+    
+                                <div class="field">
+                                    <button type="submit" class="button is-primary">
+                                        <i class="fa fa-save mr-2"></i> Save Look &amp; Feel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+    
+            </div>
+    
+        </div>
+    </div>
+</div>
+{{end}}
+{{define "scripts"}}
+<!-- Compress images before uploading -->
+<script src="/static/js/resize-image.js?build={{.BuildHash}}"></script>
+
+<!-- CSS custom styles for the hero header preview to work well w/ bg image and transparency -->
+<style id="preview-dynamic-style"></style>
+<style>
+#header-hero-preview {
+    position: relative;
+    & strong {
+        color: inherit;
+    }
+}
+#header-hero-preview::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+#header-hero-preview > * {
+    position: relative;
+    z-index: 1;
+}
+</style>
+
+<script>
+// Look & Feel tab scripts.
+window.addEventListener("DOMContentLoaded", (event) => {
+    let $headerPreview = document.querySelector("#header-hero-preview"),
+        $colorA = document.querySelector("#hero-color-start"),
+        $colorB = document.querySelector("#hero-color-end"),
+        $darkText = document.querySelector("#hero-text-dark"),
+        $heroTransparency = document.querySelector("#hero_transparency"),
+        $cardPreview = document.querySelector("#profile-card-preview"),
+        $cardLightness = document.querySelector("#card-lightness"),
+        $customLightness = document.querySelector("#custom-lightness"),
+        $customBG = document.querySelector("#card-custom-bg"),
+        $customFG = document.querySelector("#card-custom-fg"),
+        $cardTitleBG = document.querySelector("#card-title-bg"),
+        $cardTitleFG = document.querySelector("#card-title-fg"),
+        $cardLinkColor = document.querySelector("#card-link-color"),
+        $dynamicCSS = document.querySelector("#preview-dynamic-style"),
+        $body = document.body,
+        $dropArea = document.querySelector("#drop-modal");
+
+    // File upload fields for background images.
+    let $heroFileUpload = document.querySelector("#hero_file"),
+        $heroFilename = document.querySelector("#hero_filename"),
+        heroNewImage = null,
+        heroCurrentFilename = "{{PhotoURL .ProfileTheme.HeroFilename}}",
+        $wallpaperFileUpload = document.querySelector("#wallpaper_file"),
+        $wallpaperFilename = document.querySelector("#wallpaper_filename"),
+        wallpaperNewImage = null,
+        wallpaperCurrentFilename = "{{PhotoURL .ProfileTheme.WallpaperFilename}}";
+
+    function updatePreview() {
+        /* Hero banner preview */
+        let css = `linear-gradient(141deg, ${$colorA.value}, ${$colorB.value})`;
+        $headerPreview.style.backgroundImage = css;
+
+        if ($darkText.checked) {
+            $headerPreview.classList.remove("has-text-light");
+            $headerPreview.classList.add("has-text-dark-dark");
+        } else {
+            $headerPreview.classList.remove("has-text-dark-dark");
+            $headerPreview.classList.add("has-text-light");
+        }
+
+        // Hero background image.
+        let heroImage = heroNewImage || heroCurrentFilename;
+        if (heroImage) {
+            $dynamicCSS.textContent = `
+                #header-hero-preview::before {
+                    background-image: url("${heroImage}") !important;
+                    opacity: ${$heroTransparency.value};
+                }
+            `;
+        }
+
+        // Wallpaper background image.
+        let wallpaperImage = wallpaperNewImage || wallpaperCurrentFilename;
+        if (wallpaperImage) {
+            $body.style.backgroundImage = `url("${wallpaperImage}")`;
+            $body.style.backgroundAttachment = "fixed";
+            $body.style.backgroundPosition = "center";
+            $body.style.backgroundRepeat = "no-repeat";
+            $body.style.backgroundSize = "cover";
+        }
+
+        /* Card style preview */
+        let $table = $cardPreview.querySelector("table"),
+            $header = $cardPreview.querySelector("div.card-header"),
+            $title = $cardPreview.querySelector("p.card-header-title"),
+            $link = $cardPreview.querySelector("a");
+        $header.style.backgroundColor = $cardTitleBG.value;
+        $title.style.color = $cardTitleFG.value;
+        $table.style.backgroundColor = "transparent";
+        $link.style.color = $cardLinkColor.value;
+        switch ($cardLightness.value) {
+            case "light":
+                $table.style.backgroundColor = "#fff";
+                $table.style.color = "#4a4a4a";
+                break;
+            case "dark":
+                $table.style.backgroundColor = "#4a4a4a";
+                $table.style.color = "#f5f5f5";
+                break;
+            case "custom":
+                $table.style.backgroundColor = $customBG.value;
+                $table.style.color = $customFG.value;
+                break;
+            default:
+                $table.style.backgroundColor = 'inherit';
+                $table.style.color = 'inherit';
+        }
+        $customLightness.style.display = $cardLightness.value === 'custom' ? '' : 'none';
+
+        /* Update <strong> tags in card style table */
+        ($table.querySelectorAll("strong") || []).forEach(node => {
+            node.style.color = $table.style.color;
+        });
+    }
+
+    updatePreview();
+
+    // Event listeners to update previews when most fields are changed.
+    ([$colorA, $colorB, $darkText, $heroTransparency, $cardLightness, $customBG, $customFG, $cardTitleBG, $cardTitleFG, $cardLinkColor]).forEach(node => {
+        node.addEventListener("change", (e) => {
+            updatePreview();
+        });
+    });
+
+    // Add an alert modal popup to explain 'what size image should I select?'
+    (document.querySelectorAll(".gosocial-infoalert-image-size") || []).forEach(node => {
+        node.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            modalAlert({
+                title: 'What size image should I select?',
+                message: 'Both your Header and Wallpaper image will be centered (vertically) and will scale so that it fully covers its respective area of your profile page.\n\n' +
+                    'Selecting a standard 4:3 (landscape) orientation image is a safe bet for both your Header and Wallpaper. For example, one ' +
+                    'with a resolution like 1920x1080 or 1280x900.\n\n' +
+                    'Note: the Header area of profile pages can vary widely in shape between different device types. For example, the Header ' +
+                    'is often very wide & short on desktop sized screens but on mobile devices it will display as very tall & skinny instead ' +
+                    '(as all of the columns and buttons will be arranged vertically on mobile).',
+            })
+        });
+    });
+
+    // Common file selection handler.
+    let onFile = async (file) => {
+        if (!file) return;
+
+        // Still images: compress them now.
+        const compressionResult = await CompressImageFile(file);
+        const compressedFileList = compressionResult.fileList;
+        const compressedFile = compressionResult.file;
+
+        // Too large of an upload?
+        if (compressedFile.size >= {{.MaxBodyBytes}}) {
+            modalAlert({message: "That file is too large! Choose something less than {{.MaxBodyMegaBytes}} MB."});
+            return;
+        }
+
+        // Read the file for on-page immediate preview.
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+                const imgResult = reader.result;
+                resolve({
+                    file: compressedFile,
+                    fileList: compressedFileList,
+                    image: imgResult,
+                });
+            });
+            reader.readAsDataURL(compressedFile);
+        });
+    };
+
+    // Connect the file handlers.
+    $heroFileUpload.addEventListener("change", function(e) {
+        let file = this.files[0];
+        onFile(file).then(res => {
+            $heroFileUpload.files = res.fileList;
+            $heroFilename.innerHTML = file.name;
+            heroNewImage = res.image;
+            updatePreview();
+        });
+    });
+    $wallpaperFileUpload.addEventListener("change", function(e) {
+        let file = this.files[0];
+        onFile(file).then(res => {
+            $wallpaperFileUpload.files = res.fileList;
+            $wallpaperFilename.innerHTML = file.name;
+            wallpaperNewImage = res.image;
+            updatePreview();
+        });
+    });
+
+    // Set up drag/drop events: we don't accept dropped files on this page.
+    $body.addEventListener("dragenter", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Chrome bug: do not manipulate the DOM on drag start or it'll fire dragleave right away.
+        window.requestAnimationFrame(() => {
+            $dropArea.classList.add("is-active");
+        });
+    });
+    $body.addEventListener("dragover", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $dropArea.classList.add("is-active");
+    });
+    $body.addEventListener("dragleave", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $dropArea.classList.remove("is-active");
+    });
+    $body.addEventListener("drop", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $dropArea.classList.remove("is-active");
+    });
+});
+</script>
+
+<style type="text/css">
+    /* Ugly hack */
+    div.hero-body figure.profile-photo {
+        padding: 2px !important;
+    }
+    div.hero-body figure.is-inline-block {
+        margin-bottom: -6px !important;
+    }
+</style>
+{{end}}

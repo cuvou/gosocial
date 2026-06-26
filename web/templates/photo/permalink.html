@@ -1,0 +1,268 @@
+{{define "title"}}Photo: {{or .Photo.Caption "No caption"}}{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <span class="icon mr-4">
+                        <i class="fa fa-image"></i>
+                    </span>
+                    <span>{{or .Photo.Caption "Photo"}}</span>
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{ $Root := . }}
+    {{ $User := .CurrentUser }}
+    {{ $Comments := .CommentMap.Get .Photo.ID }}
+
+    <div class="block p-4">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="/u/{{.User.Username}}">
+                    <span class="icon"><i class="fa fa-user"></i></span>
+                    <span>{{.User.Username}}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/u/{{.User.Username}}/photos">Photos</a>
+                </li>
+                <li class="is-active">
+                    <a href="{{.Request.URL.Path}}" aria-current="page">Comments</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="block p-4">
+
+        <!-- Photo Card -->
+        <div class="card block">
+            <header class="card-header {{if .Photo.Explicit}}has-background-danger{{else}}has-background-link{{end}}">
+                <div class="card-header-title has-text-light">
+                    <div class="columns is-mobile is-gapless gosocial-fullwidth">
+                        <div class="column is-narrow mr-2">
+                            {{template "avatar-24x24" .User}}
+                        </div>
+                        <div class="column">
+                            <a href="/u/{{.User.Username}}" class="has-text-light">
+                                {{.User.Username}}
+                                <i class="fa fa-external-link ml-2"></i>
+                            </a>
+                        </div>
+                        <div class="column is-narrow">
+                            <span class="icon">
+                                {{if eq .Photo.Visibility "friends"}}
+                                    <i class="fa fa-user-group has-text-warning" title="Friends"></i>
+                                {{else if eq .Photo.Visibility "private"}}
+                                    <i class="fa fa-lock has-text-private-light" title="Private"></i>
+                                {{else}}
+                                    <i class="fa fa-eye has-text-link-light" title="Public"></i>
+                                {{end}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="card-image has-text-centered is-clipped">
+                <!-- GIF video? -->
+                {{if HasSuffix .Photo.Filename ".mp4"}}
+                <video loop controls controlsList="nodownload" playsinline
+                    {{if .Photo.AltText}}title="{{.Photo.AltText}}"{{end}}
+                    {{if BlurExplicit .Photo}}class="blurred-explicit"
+                    {{else if (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay
+                    {{end}}>
+                    <source src="{{PhotoURL .Photo.Filename}}" type="video/mp4">
+                </video>
+                {{else}}
+                <img src="{{PhotoURL .Photo.Filename}}"
+                    {{if BlurExplicit .Photo}} class="blurred-explicit"{{end}}
+                    {{if .Photo.AltText}}alt="{{.Photo.AltText}}" title="{{.Photo.AltText}}"{{end}}>
+                {{end}}
+            </div>
+
+            <div class="card-content">
+
+                {{if .Photo.Caption}}
+                    {{.Photo.Caption}}
+                {{else}}<em>No caption</em>{{end}}
+
+                <!-- Tagged Users List -->
+                {{if .TaggedUsers}}
+                <div class="block mt-2">
+                    <div class="columns is-mobile is-gapless is-multiline">
+                        <div class="column is-narrow mr-4">
+                            <strong>
+                                <i class="fa fa-tag mr-1"></i> Tagged:
+                            </strong>
+                        </div>
+                        {{range .TaggedUsers}}
+                        <div class="column is-narrow mr-4">
+                            {{template "avatar-16x16" .}}
+                            <a href="/u/{{.Username}}">{{.Username}}</a>
+                        </div>
+                        {{end}}
+
+                        {{if or .IsOwnPhoto (.CurrentUser.HasAdminScope "social.moderator.photo")}}
+                        <div class="column is-narrow">
+                            <a href="/users/tag?table=photos&id={{.Photo.ID}}" class="has-text-success">
+                                <i class="fa-regular fa-plus-square"></i>
+                            </a>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+                {{end}}
+                {{if .IAmTagged}}
+                    <div class="block">
+                        <form action="/users/tag" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="intent" value="untag-me">
+                            <input type="hidden" name="table" value="photos">
+                            <input type="hidden" name="id" value="{{.Photo.ID}}">
+                            <button type="submit" class="button is-small is-outlined is-danger gosocial-confirm-submit"
+                                data-confirm="Do you want to remove yourself from the tagged people list?">
+                                <i class="fa fa-tag mr-2"></i>
+                                Untag Me
+                            </button>
+                        </form>
+                    </div>
+                {{end}}
+
+                <!-- Alt Text -->
+                {{if .Photo.AltText}}
+                <div class="box mt-4 py-3 px-4 is-size-7">
+                    <strong class="tag is-grey mr-2 cursor-default">Alt Text</strong>
+                    <span class="line-breakable">{{.Photo.AltText}}</span>
+                </div>
+                {{end}}
+
+                <!-- Timestamp -->
+                <div class="mt-2">
+                    <span class="tag is-grey is-light has-text-dark mr-2">
+                        <span class="icon">
+                            <i class="fa fa-eye"></i>
+                        </span>
+                        <span>{{.Photo.Views}} view{{PluralizeU64 .Photo.Views}}</span>
+                    </span>
+                    <small class="has-text-grey">Uploaded {{.Photo.CreatedAt.Format "Jan _2 2006 15:04:05"}}</small>
+                </div>
+
+                <!-- Who likes this photo? -->
+                {{template "like-example" .}}
+
+                <!-- Like & Comments buttons -->
+                <div class="mt-4 mb-0 columns is-centered is-mobile is-gapless">
+                    <div class="column is-narrow mr-2">
+                        {{$Like := .LikeMap.Get .Photo.ID}}
+                        <button type="button" class="button is-small gosocial-like-button"
+                            data-table-name="photos" data-table-id="{{.Photo.ID}}"
+                            title="Like">
+                            <span class="icon{{if $Like.UserLikes}} has-text-danger{{end}}"><i class="fa fa-heart"></i></span>
+                            <span class="gosocial-likes">
+                                Like
+                                {{if gt $Like.Count 0}}
+                                    ({{$Like.Count}})
+                                {{end}}
+                            </span>
+                        </button>
+                    </div>
+                    <div class="column is-narrow">
+                        <a href="/photo/view?id={{.Photo.ID}}#comments" class="button is-small">
+                            <span class="icon"><i class="fa fa-comment"></i></span>
+                            <span>{{$Comments}} Comment{{Pluralize64 $Comments}}</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Photo controls buttons (edit/delete/report) -->
+                <div class="my-2 columns is-centered is-mobile is-gapless">
+                    <!-- Owned photo: have edit/delete buttons too -->
+                    {{if or .IsOwnPhoto (.CurrentUser.HasAdminScope "social.moderator.photo")}}
+                    <div class="column is-narrow">
+                        <a href="/photo/edit?id={{.Photo.ID}}" class="button is-small">
+                            <span class="icon"><i class="fa fa-edit"></i></span>
+                            <span>Edit</span>
+                        </a>
+                    </div>
+                    <div class="column is-narrow mx-2">
+                        <a href="/users/tag?table=photos&id={{.Photo.ID}}" class="button is-small">
+                            <span class="icon"><i class="fa fa-tag"></i></span>
+                            <span>Tag People</span>
+                        </a>
+                    </div>
+                    <div class="column is-narrow">
+                        <a href="/photo/delete?id={{.Photo.ID}}" class="button is-small has-text-danger">
+                            <span class="icon"><i class="fa fa-trash"></i></span>
+                            <span>Delete</span>
+                        </a>
+                    </div>
+                    {{end}}
+
+                    <!-- Report button except on your own pic -->
+                    {{if not .IsOwnPhoto}}
+                    <div class="column is-narrow ml-2">
+                        <a href="/contact?intent=report&subject=report.photo&id={{.Photo.ID}}" class="button is-small has-text-danger">
+                            <span class="icon"><i class="fa fa-flag"></i></span>
+                            <span>Report</span>
+                        </a>
+                    </div>
+                    {{end}}
+                </div>
+
+                <!-- Admin links -->
+                {{if or (.CurrentUser.HasAdminScope "admin.changelog") (.CurrentUser.HasAdminScope "content.approval")}}
+                <div class="columns is-centered is-mobile is-gapless">
+                    <!-- Content Approval button -->
+                    {{if .CurrentUser.HasAdminScope "content.approval"}}
+                    <div class="column is-narrow mx-1">
+                        <a href="/photo/batch-edit?id={{.Photo.ID}}&intent=approval" class="button is-small has-text-danger">
+                            <span class="icon"><i class="fa fa-peace"></i></span>
+                            <span>Approval</span>
+                        </a>
+                    </div>
+                    {{end}}
+
+                    {{if .CurrentUser.HasAdminScope "admin.changelog"}}
+                    <div class="column is-narrow mx-1">
+                        <a href="/admin/changelog?table_name=photos&table_id={{.Photo.ID}}" class="button is-small has-text-warning">
+                            <span class="icon"><i class="fa fa-peace"></i></span>
+                            <span>Change Log</span>
+                        </a>
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+
+        </div><!-- /photo card -->
+
+        <!-- Comments Card -->
+        <div class="card" id="comments">
+            <header class="card-header has-background-success">
+                <p class="card-header-title has-text-light">
+                    <span class="icon mr-2"><i class="fa fa-comment"></i></span>
+                    <span>{{$Comments}} Comment{{Pluralize64 $Comments}}</span>
+                </p>
+            </header>
+
+            <div class="card-content px-4">
+
+                <!-- Lazy load the statistics card-->
+                <div hx-get="/htmx/comments?table_name=photos&table_id={{.Photo.ID}}&next={{.CommentNextURL}}{{if not .CanComment}}&disabled=true{{end}}{{if .AdminCommentWarning}}&admin_warning=true{{end}}" hx-trigger="revealed">
+                    <i class="fa fa-spinner fa-spin mr-1"></i> Loading...
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Enhance inline Quote and Reply buttons to activate the on-page comment textarea. -->
+<script src="/static/js/inline-replies.js?build={{.BuildHash}}"></script>
+{{end}}

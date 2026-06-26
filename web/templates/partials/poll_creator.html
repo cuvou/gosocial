@@ -1,0 +1,156 @@
+<!--
+Poll Creator UI
+
+Usage is like:
+
+    {{template "poll-creator" .}}
+
+Parameters that this component needs:
+
+    .PollExpiresOptions (config.PollExpires enum)
+    .PollOptions        []string
+    .PollExpires        int
+    .PollMultipleChoice bool
+-->
+{{define "poll-creator"}}
+<div class="field block" id="gosocial-poll-creator">
+    <label for="message" class="label">
+        <i class="fa fa-poll mr-1"></i>
+        Poll
+    </label>
+    <div v-if="pollVisible">
+
+        <p class="help mb-2">
+            <strong class="has-text-success">
+                <i class="fa fa-info-circle mr-1"></i> Note:
+            </strong>
+            Poll settings can not be changed after this post is created!
+        </p>
+
+        <!-- MultipleChoice option -->
+        <div class="mb-2">
+            <label class="checkbox">
+                <input type="checkbox"
+                    name="poll_multiple_choice"
+                    value="true"
+                    {{if .PollMultipleChoice}}checked{{end}}>
+                <small class="ml-2">Allow multiple selections per vote</small>
+            </label>
+        </div>
+
+        <!-- Answer rows -->
+        <div v-for="(answer, i) in answers"
+            v-bind:key="i"
+            class="field has-addons">
+            <div class="control is-expanded">
+                <input type="text"
+                    class="input"
+                    v-model="answer.value"
+                    :name="'answer'+i"
+                    :placeholder="`Option ${i+1}`">
+            </div>
+            <div class="control">
+                <button type="button"
+                    class="button is-danger"
+                    @click="removeOption(i)">
+                    &nbsp;<i class="fa fa-trash"></i>&nbsp;
+                </button>
+            </div>
+        </div>
+
+        <!-- Add option -->
+        <div v-if="answers.length < answersLimit">
+            <button type="button"
+                class="button is-small is-success is-outlined"
+                @click="addOption()">
+                <i class="fa fa-plus mr-3"></i>
+                Add another option
+            </button>
+        </div>
+
+        <!-- Settings -->
+        <div class="columns mt-2 mb-0 is-mobile">
+            <div class="column is-narrow">
+                <small>Poll expires:</small>
+            </div>
+            <div class="column">
+                <div class="select is-small is-fullwidth">
+                    <select v-model="expires"
+                        name="poll_expires">
+                        {{range .PollExpiresOptions}}
+                        <option :value="{{.Value}}">{{.Label}}</option>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-else>
+        <button type="button"
+            class="button is-success is-small"
+            @click="pollVisible = true">Make this a poll</button>
+    </div>
+</div>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        const { createApp } = Vue;
+        
+        // Some help from backend..
+        const pollOptions = {{ ToJSON .PollOptions }};
+        
+        const app = createApp({
+            delimiters: ['[[', ']]'],
+            data() {
+                return {
+                    pollVisible: pollOptions.length > 0,
+                    answers: [
+                        {value: ""},
+                        {value: ""},
+                    ],
+                    expires: parseInt({{.PollExpires}}), // days
+                    answersLimit: 100,
+                }
+            },
+            mounted() {
+                // Set the posted poll options.
+                if (pollOptions.length > 0) {
+                    this.answers = [];
+                    for (let row of pollOptions) {
+                        this.answers.push({value: row});
+                    }
+                }
+            },
+            methods: {
+                addOption() {
+                    console.log(this.answers);
+                    if (this.answers.length < this.answersLimit) {
+                        this.answers.push({value: ""});
+                    }
+                },
+        
+                removeOption(idx) {
+                    if (this.answers.length <= 2) {
+                        modalConfirm({
+                            message: "A poll needs at least two options. Remove the poll?",
+                        }).then(() => {
+                            this.removePoll();
+                        })
+                        return;
+                    }
+                    this.answers.splice(idx, 1);
+                },
+        
+                removePoll() {
+                    this.answers = [
+                        {value: ""},
+                        {value: ""},
+                    ],
+                    this.pollVisible = false;
+                }
+            },
+        });
+        app.mount("#gosocial-poll-creator");
+    });
+</script>
+{{end}}

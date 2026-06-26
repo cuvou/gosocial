@@ -1,0 +1,450 @@
+{{define "title"}}Message Inbox{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-envelope mr-2"></i>
+                    Messages
+                </h1>
+                <h2 class="subtitle">
+                    {{if eq .Box "threads"}}
+                        Conversation Threads
+                    {{else if eq .Box "sent"}}
+                        Sent
+                    {{else}}
+                        Inbox
+                    {{end}}</h2>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+    {{$UserMap := .UserMap}}
+    {{$Request := .Request}}
+
+    <div class="block content p-4 mb-0">
+        <p>
+            You have <strong>{{.Unread}}</strong> unread message{{Pluralize64 .Unread}}.
+        </p>
+
+        <!-- Push Notifications banner -->
+        <div class="notification is-success is-light" id="push-notification-tip" style="display: none">
+            <i class="fa fa-gift mr-1"></i>
+            <strong>New Feature:</strong> You can now enable <a href="/settings/notifications">Web Push Notifications</a>
+            so you can be notified that a new message was received on {{PrettyTitle}}, even if your web browser is not running.
+        </div>
+
+        <p>
+            <i class="fa fa-info-circle has-text-success"></i>
+            <strong class="has-text-success">Pro Tip:</strong>
+            Do you get a lot of thirsty, unsolicited messages from strangers and wish you could do something
+            about that? In your <a href="/settings/privacy">Privacy Settings</a> there is an option to limit who
+            can slide into your DMs. You can always reach out first and start a chat with someone regardless of
+            this setting.
+        </p>
+    </div>
+
+    <div class="block p-4">
+        <div class="columns">
+
+            <!-- Main Column: The current chat thread if viewing one, with the other messages in the side column. -->
+            {{if .ViewThread}}
+            <div class="column">
+                <div class="card">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            {{if .ViewThread}}Conversation with {{.ReplyTo.Username}}{{else}}Inbox{{end}}
+                        </p>
+                    </header>
+
+                    <div class="card-content">
+                        <div class="block">
+                            <div class="columns is-mobile is-gapless">
+                                <div class="column is-narrow">
+                                    <strong>To:</strong>
+                                </div>
+                                <div class="column is-narrow mx-2">
+                                    {{template "avatar-24x24" .ReplyTo}}
+                                </div>
+                                <div class="column">
+                                    <a href="/u/{{.ReplyTo.Username}}">{{.ReplyTo.Username}}</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="block">
+                            <form action="/messages/compose" method="POST">
+                                {{InputCSRF}}
+                                <input type="hidden" name="to" value="{{.ReplyTo.Username}}">
+                                <input type="hidden" name="from" value="inbox">
+                                {{template "markdown-editor" (
+                                    NewHashMap "Name" "message"
+                                    "Placeholder" "Write a response"
+                                    "GalleryLinks" "footer"
+                                )}}
+                                <p class="help mb-3">
+                                    <a href="/markdown" target="_blank">Markdown formatting</a> supported with
+                                    <a href="/faq#embed-photos" target="_blank">attachable gallery photos</a>.
+                                </p>
+
+                                <div class="notification is-warning is-light p-3 is-size-7">
+                                    <i class="fa fa-info-circle mr-1"></i>
+                                    <strong>Reminder:</strong> don't share sensitive information over Direct Messages.
+                                    Please review the <a href="/privacy#direct-messages" target="_blank">Privacy Policy</a> and
+                                    <a href="/tos#direct-messages" target="_blank">Terms of Service</a> as it pertains to DMs on
+                                    the main website and the chat room.
+                                </div>
+
+                                <button type="submit" class="button is-success">Send Reply</button>
+
+                            </form>
+
+                            <hr>
+                        </div>
+                        {{range .ViewThread}}
+                        <div class="media block">
+                            {{$SourceUser := $UserMap.Get .SourceUserID}}
+                            <div class="media-left">
+                                {{template "avatar-64x64" $SourceUser}}
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-4">
+                                    {{$SourceUser.NameOrUsername}}
+
+                                    {{if $SourceUser.IsAdmin}}
+                                    <span class="tag is-danger is-light ml-2 p-1" style="font-size: x-small">
+                                        <i class="fa fa-peace mr-1"></i>
+                                        Admin
+                                    </span>
+                                    {{end}}
+                                </p>
+                                <p class="subtitle is-6">
+                                    <span class="icon"><i class="fa fa-user"></i></span>
+                                    <a href="/u/{{$SourceUser.Username}}">{{$SourceUser.Username}}</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="block content">
+                            {{ToMarkdown .Message}}
+
+                            <div class="my-4">
+                                <!-- Google Translate link -->
+                                <a href="https://translate.google.com/?sl=auto&tl=en&text={{.Message}}&op=translate"
+                                    target="_blank" class="is-small is-size-7 has-text-success">
+                                    <i class="fab fa-google mr-1"></i> Open in Google Translate <i class="fa fa-external-link ml-1"></i>
+                                </a>
+                            </div>
+
+                            <!-- Attached Gallery photo previews -->
+                            {{LazyLoadGalleryLinksFooter .Message}}
+
+                            <!-- Warn the recipient (only) if this message looks like spam. -->
+                            {{if and (ne .SourceUserID $Root.CurrentUser.ID) .IsLikelySpam}}
+                            <div class="notification is-warning is-light p-3 content">
+                                <p class="has-text-danger">
+                                    <i class="fa fa-exclamation-triangle mr-1"></i>
+                                    <strong>Be careful about possible scams!</strong>
+                                </p>
+
+                                <p>
+                                    If <strong>@{{$Root.ReplyTo.Username}}</strong> is asking to take you to a messenger
+                                    app within the first couple of messages, be wary!
+                                    It is a well-known tactic for con artists to move your conversation away to another
+                                    platform as soon as possible, in order to evade detection from the website.
+                                </p>
+
+                                <p>
+                                    Please
+                                    <a href="/contact?intent=report&subject=report.message&id={{$Root.MessageID}}">report this message</a>
+                                    if you think it may be a scam. The certification requirement for {{PrettyTitle}} cannot guarantee
+                                    protection against malicious intent.
+                                </p>
+
+                                <p>
+                                    <strong>Be especially skeptical of <i class="fab fa-whatsapp"></i> WhatsApp</strong> or trading phone numbers.
+                                    Scammers can do <strong>a lot</strong> of harm with just your phone number, e.g. by plugging it into a people search
+                                    website and bringing up lots of personal information about you (potentially for blackmail material).
+                                </p>
+
+                                <p>
+                                    If you don't know <strong>@{{$Root.ReplyTo.Username}}</strong>
+                                    and they are asking you to exchange phone numbers (including WhatsApp!), please be careful!
+                                </p>
+                            </div>
+                            {{end}}
+                        </div>
+                        <div class="block">
+                            <em>Sent <abbr title="{{.CreatedAt.Format "2006-01-02 15:04:05"}}">
+                                {{SincePrettyCoarse .CreatedAt}} ago</abbr>
+                            </em>
+                            {{if not .Read}}<span class="tag is-success ml-2">UNREAD</span>{{end}}
+
+                            <!-- Our message? We can delete it. -->
+                            {{if eq $Root.CurrentUser.ID $SourceUser.ID}}
+                            <form action="/messages/delete" method="POST" class="is-inline">
+                                {{InputCSRF}}
+                                <input type="hidden" name="id" value="{{.ID}}">
+                                <input type="hidden" name="next" value="{{$Root.Request.URL.Path}}">
+                                <button class="button is-outline has-text-grey is-small ml-4 gosocial-confirm-submit"
+                                    data-confirm="Do you want to DELETE this message?">
+                                    <i class="fa fa-trash mr-2"></i>
+                                    Delete
+                                </button>
+                            </form>
+                            {{else}}
+                            <a href="/contact?intent=report&subject=report.message&id={{.ID}}"
+                                class="button is-outline is-small has-text-danger ml-4">
+                                <span class="icon"><i class="fa fa-flag"></i></span>
+                                <span>Report a Problem</span>
+                            </a>
+                            {{end}}
+                        </div>
+
+                        <hr class="block">
+                        {{end}}
+
+                        <!-- Pager footer -->
+                        <div class="block">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        Found <strong>{{.ThreadPager.Total}}</strong> message{{Pluralize64 .ThreadPager.Total}} in this thread
+                                        (page {{.ThreadPager.Page}} of {{.ThreadPager.Pages}}).
+                                    </div>
+
+                                    <!-- "Delete ALL" Form -->
+                                    <form action="/messages/delete" method="POST" class="is-inline">
+                                        {{InputCSRF}}
+                                        <input type="hidden" name="intent" value="delete-thread">
+                                        <input type="hidden" name="id" value="{{$Root.MessageID}}">
+                                        <input type="hidden" name="next" value="/messages">
+                                        <button class="button has-text-danger is-outline is-small p-1 ml-4 gosocial-confirm-submit"
+                                            data-confirm="Are you sure you want to delete this whole entire thread for both of you? It will be like you two had never chatted before at all.">
+                                            <i class="fa fa-trash mr-2"></i>
+                                            Delete whole thread
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="level-right">
+                                    {{if .ThreadPager.HasPrevious}}
+                                    <a href="{{$Request.URL.Path}}?{{QueryPlus "page" .ThreadPager.Previous}}" class="button">Previous</a>
+                                    {{end}}
+                                    {{if .ThreadPager.HasNext}}
+                                    <a href="{{$Request.URL.Path}}?{{QueryPlus "page" .ThreadPager.Next}}" class="button">Next Page</a>
+                                    {{end}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{end}}<!-- if .ViewThread, main column -->
+
+            <!-- Side Column: if a thread is not open, this takes the full width, otherwise is 1/3 on the right. -->
+            <div class="column{{if len .ViewThread}} is-one-third{{end}}">
+                <div class="card block">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            {{if eq .Box "threads"}}
+                                Conversations
+                            {{else if eq .Box "inbox"}}
+                                All Inbox Messages
+                            {{else}}
+                                Sent Messages
+                            {{end}}
+                        </p>
+                    </header>
+
+                    <div class="card-content">
+                        <div class="tabs is-boxed is-fullwidth">
+                            <ul>
+                                <li{{if eq .Box "threads"}} class="is-active"{{end}}>
+                                    <a href="/messages">Threads</a>
+                                </li>
+                                <li{{if eq .Box "inbox"}} class="is-active"{{end}}>
+                                    <a href="/messages?box=inbox">Inbox</a>
+                                </li>
+                                <li{{if eq .Box "sent"}} class="is-active"{{end}}>
+                                    <a href="/messages?box=sent&unread=false">Sent</a>
+                                </li>
+                                <li{{if eq .Box "all"}} class="is-active"{{end}}>
+                                    <a href="/messages?box=all&unread=false">All</a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {{if eq .Box "threads"}}
+                        <div class="block is-size-7">
+                            Showing {{FormatNumberCommas .Pager.Total}} conversation threads with others (ordered by most
+                            recent, grouped by sender name). <strong>Note:</strong> messages you
+                            have Sent but which have not been replied to will only appear on the
+                            <a href="/messages?box=sent">"Sent"</a> tab.
+                        </div>
+                        {{else if eq .Box "inbox"}}
+                        <div class="block is-size-7">
+                            Showing <strong>all</strong> {{FormatNumberCommas .Pager.Total}} inbound messages to you, ordered
+                            by most recent.
+                        </div>
+                        {{else if eq .Box "sent"}}
+                        <div class="block is-size-7">
+                            Showing {{FormatNumberCommas .Pager.Total}} messages sent by you to other people.
+                        </div>
+                        {{else if eq .Box "all"}}
+                        <div class="block is-size-7">
+                            Showing <strong>all</strong> {{FormatNumberCommas .Pager.Total}} messages sent or received between
+                            you and others, sorted purely chronologically.
+                        </div>
+                        {{end}}
+
+                        <div class="block">
+                            <label class="label">Quick Filters</label>
+                            {{if .IsSortUnread}}
+                            <a href="{{.Request.URL.Path}}?{{QueryPlus "unread" "false"}}"
+                                class="tag is-success">
+                                <i class="fa fa-square-check mr-2"></i>
+                                {{if or (eq .Box "sent") (eq .Box "all")}}Unread{{else}}New{{end}} Messages First
+                            </a>
+                            {{else}}
+                            <a href="{{.Request.URL.Path}}?{{QueryPlus "unread" ""}}"
+                                class="tag">
+                                <i class="fa-regular fa-square mr-2"></i>
+                                {{if or (eq .Box "sent") (eq .Box "all")}}Unread{{else}}New{{end}} Messages First
+                            </a>
+                            {{end}}
+                        </div>
+
+                        <form method="GET" action="{{.Request.URL.Path}}" class="block">
+                            <input type="hidden" name="box" value="{{.Box}}">
+                            <input type="hidden" name="unread" value="{{.IsSortUnread}}">
+                            <div class="field has-addons">
+                                <div class="control">
+                                    <input type="text" class="input"
+                                        name="search"
+                                        autocomplete="off"
+                                        placeholder="Message contains"
+                                        value="{{.SearchString}}">
+                                </div>
+                                <div class="control">
+                                    <button type="submit" class="button is-primary">
+                                        Search
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <table class="table is-striped is-fullwidth is-hoverable">
+                            <tbody>
+                                {{range .Messages}}
+                                <tr>
+                                    <td class="cursor-pointer" onclick="window.location='/messages/read/{{.ID}}'">
+                                        <div class="columns is-mobile is-gapless mb-0">
+                                            {{if eq $Root.Box "sent"}}
+                                                {{$User := $UserMap.Get .TargetUserID}}
+                                                <div class="column is-narrow">
+                                                    <strong class="has-text-success">Sent To</strong>
+                                                </div>
+                                                <div class="column is-narrow mx-2">
+                                                    {{template "avatar-24x24" $User}}
+                                                </div>
+                                                <div class="column has-text-success">{{$User.Username}}</div>
+                                            {{else if eq $Root.Box "all"}}
+                                                <!-- Show either "Sent To" or "From" depending on direction. -->
+                                                {{if eq .SourceUserID $Root.CurrentUser.ID}}
+                                                    {{$User := $UserMap.Get .TargetUserID}}
+                                                    <div class="column is-narrow">
+                                                        <strong class="has-text-success">Sent To</strong>
+                                                    </div>
+                                                    <div class="column is-narrow mx-2">
+                                                        {{template "avatar-24x24" $User}}
+                                                    </div>
+                                                    <div class="column has-text-success">{{$User.Username}}</div>
+                                                {{else}}
+                                                    {{$User := $UserMap.Get .SourceUserID}}
+                                                    <div class="column is-narrow">
+                                                        <strong class="has-text-info">From</strong>
+                                                    </div>
+                                                    <div class="column is-narrow mx-2">
+                                                        {{template "avatar-24x24" $User}}
+                                                    </div>
+                                                    <div class="column has-text-info">{{$User.Username}}</div>
+                                                {{end}}
+                                            {{else}}
+                                                {{$User := $UserMap.Get .SourceUserID}}
+                                                <div class="column is-narrow">
+                                                    <strong class="has-text-info">From</strong>
+                                                </div>
+                                                <div class="column is-narrow mx-2">
+                                                    {{template "avatar-24x24" $User}}
+                                                </div>
+                                                <div class="column has-text-info">{{$User.Username}}</div>
+                                            {{end}}
+                                        </div>
+                                        <div class="my-1">
+
+                                            <!-- Automatic CSS ellipses showing the first line of text only. -->
+                                            <div style="display: table; table-layout: fixed; width: 100%">
+                                                <div style="display: table-cell; white-space: nowrap; text-overflow: ellipsis; overflow: hidden">
+                                                    <a href="/messages/read/{{.ID}}" class="has-text-text">
+                                                        <em>
+                                                            {{DeMarkify .Message}}
+                                                        </em>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <a href="/messages/read/{{.ID}}" class="has-text-text">
+                                                <span class="mr-2">Sent {{.CreatedAt.Format "2006-01-02 15:04:05"}}</span>
+                                                {{if not .Read}}
+                                                    <span class="tag is-success mr-2">{{if eq $Root.Box "sent"}}UNREAD{{else}}NEW{{end}}</span>
+                                                {{end}}
+                                            </a>
+
+                                            <!-- Have Replied? -->
+                                            {{if .HaveReplied}}
+                                                <span class="tag is-grey">
+                                                    <i class="fa fa-check mr-2"></i>
+                                                    Replied
+                                                </span>
+                                            {{end}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+
+                        <!-- Pager footer -->
+                        <div class="block">
+                            <div class="mb-4">
+                                Found <strong>{{.Pager.Total}}</strong> {{if eq .Box "threads"}}conversation{{else}}message{{end}}{{Pluralize64 .Pager.Total}}
+                                (page {{.Pager.Page}} of {{.Pager.Pages}}).
+                            </div>
+
+                            {{if .Pager.HasPrevious}}
+                            <a href="/messages?{{QueryPlus "page" .Pager.Previous}}" class="button">Previous</a>
+                            {{end}}
+                            {{if .Pager.HasNext}}
+                            <a href="/messages?{{QueryPlus "page" .Pager.Next}}" class="button">Next Page</a>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+{{define "scripts"}}
+<script type="text/javascript">
+// Push Notification tip.
+document.addEventListener("DOMContentLoaded", (e) => {
+    const permission = Notification.permission;
+    if (permission !== "granted") {
+        document.querySelector("#push-notification-tip").style.display = "";
+    }
+});
+</script>
+{{end}}

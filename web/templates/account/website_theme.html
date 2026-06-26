@@ -1,0 +1,121 @@
+{{define "title"}}Website Appearance{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-palette mr-1"></i>
+                    Website Appearance
+                </h1>
+                <h2 class="subtitle">Light mode, dark mode, &amp; accent colors</h2>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+    {{$User := .CurrentUser}}
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="mr-2 fa fa-palette"></i>
+                            Set Website Appearance
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <form action="{{.Request.URL.Path}}" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="intent" value="save">
+                            <input type="hidden" name="next" value="{{.NextURL}}">
+
+                            <!--
+                            -- Website Theme Section
+                            -->
+                            <p class="block">
+                                You may set a custom theme to change the way the {{PrettyTitle}} website looks to you.
+                                Choose between a Light and Dark variant, and set an optional accent color to apply a
+                                new style to the entire website.
+                            </p>
+
+                            <h2 class="subtitle">Light or Dark Mode</h2>
+
+                            <div class="field">
+                                <label class="checkbox">
+                                    <input type="radio"
+                                        name="website-theme"
+                                        value=""
+                                        {{if eq (.CurrentUser.GetProfileField "website-theme") ""}}checked{{end}}>
+                                    Automatically match my device's theme
+                                </label>
+                            </div>
+                            <div class="field">
+                                <label class="checkbox">
+                                    <input type="radio"
+                                        name="website-theme"
+                                        value="light"
+                                        {{if eq (.CurrentUser.GetProfileField "website-theme") "light"}}checked{{end}}>
+                                    Always use the light theme
+                                </label>
+                            </div>
+                            <div class="field">
+                                <label class="checkbox">
+                                    <input type="radio"
+                                        name="website-theme"
+                                        value="dark"
+                                        {{if eq (.CurrentUser.GetProfileField "website-theme") "dark"}}checked{{end}}>
+                                    Always use the dark theme
+                                </label>
+                                <p class="help">
+                                    This setting controls how the website theme will appear to you while logged in.
+                                    By default, the dark theme is used if your device prefers dark, but you can
+                                    manually override it to the Light or Dark themes above.
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="website-theme-hue">
+                                    Accent color
+                                </label>
+                                <div class="select is-fullwidth">
+                                    <select name="website-theme-hue">
+                                        {{$CurrentHueSelection := GetWebsiteThemeForUser .Request}}
+                                        {{range .WebsiteThemeHueChoices}}
+                                        <optgroup label="{{.Header}}">
+                                            {{range .Options}}
+                                            <option value="{{.Value}}"
+                                                {{if eq $CurrentHueSelection .Value}}selected{{end}}>
+                                                {{.Label}}
+                                            </option>
+                                            {{end}}
+                                        </optgroup>
+                                        {{end}}
+                                    </select>
+                                </div>
+                                <p class="help">
+                                    Select an "accent color" for the website theme. Mix and match these with
+                                    the Light and Dark themes! Some accent colors really pop on the dark theme.
+                                </p>
+                            </div>
+
+                            <div class="field has-text-centered">
+                                <button type="submit" class="button is-success">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

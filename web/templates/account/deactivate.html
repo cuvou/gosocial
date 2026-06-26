@@ -1,0 +1,88 @@
+{{define "title"}}Deactivate My Account{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-warning is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    Deactivate My Account
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <div class="card">
+                    <header class="card-header has-background-warning">
+                        <p class="card-header-title">
+                            <i class="fa fa-exclamation-triangle mr-2"></i>
+                            Deactivate My Account
+                        </p>
+                    </header>
+                    <div class="card-content">
+                        <form method="POST" action="/account/deactivate">
+                            {{InputCSRF}}
+                            <div class="block content">
+                                <p>
+                                    On this page you may <strong>temporarily deactivate your account</strong>, which
+                                    will hide your profile from everywhere on the website (as if your account were
+                                    deleted), but in a recoverable way where you may log in and re-activate your
+                                    account in the future, should you decide to come back.
+                                </p>
+
+                                <p>
+                                    When you deactivate your account:
+                                </p>
+
+                                <ul>
+                                    <li>
+                                        Your profile will be hidden from everywhere on the website: for example
+                                        you will not be listed on the Member Directory and people will not see you
+                                        on their Friends list.
+                                    </li>
+                                    <li>
+                                        People you had exchanged Messages with will no longer see your conversations
+                                        in their inbox or outbox page.
+                                    </li>
+                                    <li>
+                                        All comments and forum posts you wrote will be hidden from everybody on
+                                        the website.
+                                    </li>
+                                    <li>
+                                        You will be signed out of your {{PrettyTitle}} account. If you wish to
+                                        re-activate your account in the future, you may sign back in and the only
+                                        options you will be given will be to re-activate your account, delete it
+                                        permanently, or log out.
+                                    </li>
+                                </ul>
+
+                                <p>
+                                    To confirm deactivation of your account, please enter your current account
+                                    password into the box below.
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="password">Your current password:</label>
+                                <input type="password" class="input"
+                                    name="password"
+                                    id="password"
+                                    placeholder="Password">
+                            </div>
+
+                            <div class="block has-text-center">
+                                <button type="submit" class="button is-danger">Deactivate My Account</button>
+                                <a href="/me" class="button is-success">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{{end}}

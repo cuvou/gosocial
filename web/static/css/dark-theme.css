@@ -1,0 +1,153 @@
+/* Custom gosocial color overrides for Bulma's dark theme */
+
+/* gosocial custom overrides */
+.has-background-primary-light {
+    background-color: rgba(28, 166, 76, 0.25) !important;
+}
+
+.has-background-info-light, .has-background-info {
+    background-color: rgb(26, 79, 95) !important
+}
+
+.has-background-success-light, .has-background-success {
+    background-color: rgba(19, 71, 37, 0.685) !important
+}
+
+.has-background-warning-light, .has-background-warning {
+    background-color: rgb(44, 40, 18) !important;
+}
+
+.has-background-danger-light, .has-background-danger {
+    background-color: rgb(31, 13, 13) !important;
+}
+
+.has-background-link-light {
+    background-color: rgba(15, 129, 204, 0.25) !important;
+}
+
+/* notification is-info is-light: <label> text needs to be made dark too, default would be light */
+.notification.is-light label,
+.notification.is-light .file-name {
+    color: currentColor !important;
+}
+
+.gosocial-navbar-notification-tag.is-warning {
+    background-color: rgb(248, 223, 98) !important;
+    color: rgb(26, 0, 5) !important;
+}
+
+.gosocial-navbar-notification-tag.is-dark {
+    background-color: #333;
+    color: #fff;
+}
+
+/* hero.is-light.is-bold still is white on Bulma's dark theme */
+.hero.is-light.is-bold {
+    background-image: linear-gradient(141deg, #333 0, #181818 100%);
+    * {
+        color: #fff;
+    }
+}
+
+/* force lit-up notification buttons (on the mobile top nav, e.g. new Messages/Friends)
+   to show as a bright bulma is-warning style (.tag.is-warning) */
+.gosocial-navbar-notification {
+    background-color: rgb(248, 223, 98) !important;
+    color: rgb(26, 0, 5) !important;
+}
+
+/* glassy background for fixed nav bar when you scroll other elements under it */
+nav.navbar, .gosocial-mobile-notification {
+    background-color: rgba(20, 22, 26, .75) !important;
+    backdrop-filter: blur(5px);
+}
+
+.gosocial-mobile-notification {
+    border-top: 1px solid #444 !important;
+
+    & .has-text-warning {
+        color: rgb(255, 183, 15) !important;
+    }
+    & .has-text-success {
+        color: rgb(72, 199, 142) !important;
+    }
+}
+
+.has-text-dark {
+    /* note: this css file otherwise didn't override this, dark's always dark, brighten it! */
+    color: #b5b5b5 !important;
+}
+
+a.has-text-dark:focus,
+a.has-text-dark:hover {
+    color: #d5d5d5 !important;
+}
+
+.modal-background {
+    background-color: rgba(0, 0, 0, 0.86) !important;
+}
+
+/* Tag color overrides */
+.tag.is-grey {
+    background-color: #3f3f3f;
+    color: #eee;
+}
+.tag.is-danger.is-light {
+    background-color: #500;
+    color: #FCC;
+}
+.tag.is-warning {
+    background-color: #550;
+    color: #FFC;
+}
+
+/* Custom bulma button colors */
+.button.is-private.is-outlined {
+    border-color: #FF77FF;
+    color: #FF77FF;
+}
+
+/* Bulma Markdown content overrides */
+.content hr {
+    background-color: #69748c;
+}
+
+/*
+ * Forum Color overrides for dark theme.
+ */
+ .gosocial-forum-box-1 {
+    /* Outermost box: Forum or Thread top-level wrappers */
+    background-color: #163b27;
+}
+.gosocial-forum-box-2 {
+    /* Nested box: "Latest Post" on Forum-level views */
+    background-color: #144225;
+}
+.gosocial-forum-box-3 {
+    /* Nested box: Topics/Posts/Users/View counters */
+    background-color: #2c2812;
+}
+
+/*
+ * Pricing Page Style overrides for dark theme.
+ */
+.gosocial-pricing-table-feature {
+    background-color: #1b1b1b;
+    border: 1px solid #464646;
+    border-top-width: 0;
+}
+.gosocial-pricing-table-free {
+    background-color: #200020;
+    border-top: 0px solid rgb(100, 55, 100);
+    border-bottom: 1px solid rgb(100, 55, 100);
+}
+.gosocial-pricing-table-paid {
+    background-color: #001a22;
+    border: 1px solid rgb(0, 90, 150);
+    border-top-width: 0;
+}
+@media screen and (max-width: 768px) {
+    .gosocial-pricing-table-free {
+        border-left: 1px solid rgb(100, 55, 100);
+    }
+}

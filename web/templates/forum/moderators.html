@@ -1,0 +1,138 @@
+{{define "title"}}Manage Forum Moderators{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-warning is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Manage Forum Moderators
+                </h1>
+                <h2 class="subtitle">
+                    For {{.Forum.Title}} <small class="ml-2">/f/{{.Forum.Fragment}}</small>
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <div class="card" style="width: 100%; max-width: 640px">
+                    <header class="card-header {{if .IsRemoving}}has-background-danger{{else}}has-background-link{{end}}">
+                        <p class="card-header-title has-text-light">
+                            <span class="icon mr-2"><i class="fa fa-user-tie"></i></span>
+                            <span>
+                                {{if .IsRemoving}}
+                                    Remove a Moderator
+                                {{else}}
+                                    Appoint a Moderator
+                                {{end}}
+                            </span>
+                        </p>
+                    </header>
+                    <div class="card-content">
+
+                        <!-- Show the introduction or selected user profile -->
+                        {{if not .User}}
+                            <div class="block">
+                                You may use this page to <strong>appoint a moderator</strong> to help you
+                                manage your forum. This can be <em>anybody</em> from the {{PrettyTitle}} community.
+                            </div>
+
+                            <div class="block">
+                                Moderators will be able to delete threads and replies on your forum.
+                            </div>
+
+                            <div class="block">
+                                As the owner of the forum, you retain full control over its settings and you alone
+                                can add or remove its moderators.
+                            </div>
+                        {{else}}
+                            <div class="block">
+                                {{if .IsRemoving}}
+                                    Confirm that you wish to <strong>remove</strong> moderator rights for
+                                    {{.User.Username}} on your forum.
+                                {{else}}
+                                    Confirm that you wish to grant <strong>{{.User.Username}}</strong>
+                                    access to moderate your forum by clicking the button below.
+                                {{end}}
+                            </div>
+                            <div class="media block">
+                                <div class="media-left">
+                                    {{template "avatar-64x64" .User}}
+                                </div>
+                                <div class="media-content">
+                                    <p class="title is-4">{{.User.NameOrUsername}}</p>
+                                    <p class="subtitle is-6">
+                                        <span class="icon"><i class="fa fa-user"></i></span>
+                                        <a href="/u/{{.User.Username}}" target="_blank">{{.User.Username}}</a>
+                                    </p>
+                                </div>
+                            </div>
+                        {{end}}
+
+                        <!-- Show the relevant form -->
+                        <form action="/forum/admin/moderator" method="POST">
+                            {{InputCSRF}}
+                            <input type="hidden" name="forum_id" value="{{.Forum.ID}}">
+
+                            {{if .User}}
+                            <input type="hidden" name="to" value="{{.User.Username}}">
+                            {{else}}
+                            <div class="field block">
+                                <label for="to" class="label">Add a moderator by their username:</label>
+                                <input type="text" class="input"
+                                    name="to" id="to"
+                                    placeholder="username">
+                            </div>
+                            {{end}}
+
+                            <div class="field has-text-centered">
+                                {{if .IsRemoving}}
+                                    <button type="submit" class="button is-danger"
+                                        name="intent"
+                                        value="{{if .User}}confirm-remove{{else}}preview{{end}}">
+                                        {{if .User}}
+                                            <span class="icon"><i class="fa fa-user-xmark"></i></span>
+                                            <span>Remove from moderators</span>
+                                        {{else}}
+                                            Continue
+                                        {{end}}
+                                    </button>
+                                {{else}}
+                                    <button type="submit" class="button is-success"
+                                        name="intent"
+                                        value="{{if .User}}submit{{else}}preview{{end}}">
+                                        {{if .User}}
+                                            <span class="icon"><i class="fa fa-user-tie"></i></span>
+                                            <span>Add to moderators</span>
+                                        {{else}}
+                                            Continue
+                                        {{end}}
+                                    </button>
+                                {{end}}
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    window.addEventListener("DOMContentLoaded", (event) => {
+        let $file = document.querySelector("#file"),
+            $fileName = document.querySelector("#fileName");
+
+        $file.addEventListener("change", function() {
+            let file = this.files[0];
+            $fileName.innerHTML = file.name;
+        });
+    });
+</script>
+{{end}}

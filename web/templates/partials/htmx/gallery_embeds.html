@@ -1,0 +1,97 @@
+<!--
+Gallery photo embedding support for Markdown messages
+
+This HTMX template handles the footer attached gallery images, e.g. on forums and DMs.
+-->
+
+<!-- Parameter: .User -->
+{{define "avatar-24x24"}}
+<figure class="image is-24x24 is-inline-block">
+    <a href="/u/{{.Username}}" class="has-text-dark">
+        {{if .ProfilePhoto.ID}}
+            {{if and (eq .ProfilePhoto.Visibility "private") (not .UserRelationship.IsPrivateGranted)}}
+                <img src="/static/img/shy-private.png" class="is-rounded">
+            {{else if and (eq .ProfilePhoto.Visibility "friends") (not .UserRelationship.IsFriend)}}
+                <img src="/static/img/shy-friends.png" class="is-rounded">
+            {{else if and .ProfilePhoto.Explicit (not .UserRelationship.IsExplicitSeen)}}
+                <img class="is-rounded" src="/static/img/shy-explicit.png">
+            {{else}}
+                <img src="{{PhotoURL .ProfilePhoto.CroppedFilename}}" class="is-rounded">
+            {{end}}
+        {{else}}
+        <img src="/static/img/shy.png" class="is-rounded">
+        {{end}}
+    </a>
+</figure>
+{{end}}
+
+{{define "base"}}
+    {{$Root := .}}
+
+    <div class="mt-2 columns is-multiline">
+        {{range .Photos}}
+        <div class="column is-half-tablet is-one-third-desktop">
+            <div class="card">
+                <div class="card-header {{if .Explicit}}has-background-danger{{else}}has-background-link{{end}}">
+                    <div class="card-header-title has-text-light">
+                        {{if $Root.UserMap.Has .UserID}}
+                            {{$Owner := $Root.UserMap.Get .UserID}}
+                            <div class="columns is-mobile is-gapless gosocial-fullwidth">
+                                <div class="column is-narrow mr-2">
+                                    {{template "avatar-24x24" $Owner}}
+                                </div>
+                                <div class="column">
+                                    <a href="/u/{{$Owner.Username}}" class="has-text-light">
+                                        {{$Owner.Username}}
+                                        <sup class="fa fa-external-link is-size-7"></sup>
+                                    </a>
+                                </div>
+                                <div class="column is-narrow">
+                                    <span class="icon">
+                                        {{if eq .Visibility "friends"}}
+                                            <i class="fa fa-user-group has-text-warning" title="Friends"></i>
+                                        {{else if eq .Visibility "private"}}
+                                            <i class="fa fa-lock has-text-private-light" title="Private"></i>
+                                        {{else}}
+                                            <i class="fa fa-eye has-text-link-light" title="Public"></i>
+                                        {{end}}
+                                    </span>
+                                </div>
+                            </div>
+                        {{else}}
+                            <span class="fa fa-user mr-2"></span>
+                            <span>[deleted]</span>
+                        {{end}}
+                    </div>
+                </div>
+
+                <div class="card-image has-text-centered is-clipped">
+                    <!-- GIF video? -->
+                    {{if HasSuffix .Filename ".mp4"}}
+                    <video loop controls controlsList="nodownload" playsinline
+                        class="js-modal-trigger{{if BlurExplicit .}} blurred-explicit{{end}}"
+                        data-url="{{PhotoURL .Filename}}" data-photo-id="{{.ID}}"
+                        {{if .AltText}}title="{{.AltText}}"{{end}}
+                        {{if and (not (BlurExplicit .)) (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay{{end}}
+                        >
+                        <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                    </video>
+                    {{else}}
+                    <a href="/photo/view?id={{.ID}}" data-url="{{PhotoURL .Filename}}" data-photo-id="{{.ID}}">
+                        <img src="{{PhotoURL .Filename}}" loading="lazy"
+                            {{if BlurExplicit .}}class="blurred-explicit"{{end}}
+                            {{if .AltText}}alt="{{.AltText}}" title="{{.AltText}}"{{end}}>
+                    </a>
+                    {{end}}
+                </div>
+
+                <div class="card-content">
+                    {{if .Caption}}
+                        {{.Caption}}
+                    {{else}}<em>No caption</em>{{end}}
+                </div>
+            </div>
+        </div>
+        {{end}}
+    </div>
+{{end}}

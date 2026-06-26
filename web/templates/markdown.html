@@ -1,0 +1,461 @@
+{{ define "title" }}Markdown Cheatsheet{{ end }}
+{{ define "content" }}
+<div class="block">
+    <section class="hero is-light is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <i class="fa-brands fa-markdown mr-2"></i>
+                    Markdown Cheatsheet
+                </h1>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="block p-4 content">
+
+<p>
+    <strong>Markdown</strong> syntax can enable you to be more expressive with your text posts on this
+    website, with the ability to write <strong>**bold**</strong> text, add <a href="#">hyperlinks</a> or
+    embed images onto your profile page, Direct Messages, forum posts and elsewhere - any place on
+    {{PrettyTitle}} that says "Markdown formatting supported."
+</p>
+
+<p>
+    This is a simple reference sheet for Markdown syntax. Markdown was pioneered by John Gruber and the
+    de facto place to find in-depth documentation is at
+    <a href="https://daringfireball.net/projects/markdown/syntax">https://daringfireball.net/projects/markdown/syntax</a>
+    where it was originally described.
+</p>
+
+<p>
+    Markdown is now a widely supported format across a variety of apps and websites, and there are a
+    few different "flavors" of Markdown with slightly varied behaviors.  This website uses
+    <a href="https://github.github.com/gfm/">GitHub Flavored Markdown</a>, an extension of Markdown
+    that supports fenced code blocks, tables, and other useful features - many of which you can learn
+    about on this page.
+</p>
+
+<p>
+	<span class="tag is-success">New (July 22, 2025):</span> We now also support BBCode in addition to
+	Markdown, so you can write colorful messages!
+</p>
+
+<ul>
+	<li>
+		<a href="#bbcode">Forward: BBCode and HTML</a> <span class="tag is-success ml-2">New! (July 22, 2025)</span>
+	</li>
+	<li>
+		<a href="#block">Block Elements</a>
+		<ul>
+			<li><a href="#pbr">Paragraphs and Line Breaks</a></li>
+			<li><a href="#h1">Headers</a></li>
+			<li><a href="#bq">Blockquotes</a></li>
+			<li><a href="#ul">Lists</a></li>
+			<li><a href="#pre">Code Blocks</a></li>
+			<li><a href="#hr">Horizontal Rules</a></li>
+		</ul>
+	</li>
+
+	<li>
+		<a href="#span">Span Elements</a>
+		<ul>
+			<li><a href="#a">Links</a></li>
+			<li><a href="#em">Emphasis</a></li>
+			<li><a href="#code">Code</a></li>
+			<li><a href="#img">Images</a></li>
+		</ul>
+	</li>
+
+	<li>
+		<a href="#misc">Miscellaneous</a>
+		<ul>
+			<li><a href="#autolink">Automatic Links</a></li>
+			<li><a href="#escape">Backslash Escapes</a></li>
+			<li><a href="#html">Literal HTML Tags</a></li>
+		</ul>
+	</li>
+</ul>
+
+<h1 id="bbcode">Forward: BBCode and HTML</h1>
+
+<p>
+	<span class="tag is-success">New! July 22, 2025</span>
+</p>
+
+<p>
+	We now also support <a href="https://www.phpbb.com/community/help/bbcode" target="_blank">BBCode</a>,
+	the simple markup language popularized by the old school phpBB forum, which can be used in addition
+	to Markdown. The most notable feature that this provides is to set colors for your text, which standard
+	Markdown doesn't have support for.
+</p>
+
+<p>
+	The supported BBCode tags are:
+</p>
+
+<ul>
+	<li>
+		[b]bold text[/b]
+		<i class="fa fa-arrow-right mx-2"></i>
+		<strong>bold text</strong>
+		(and [i], [u], [s] work as well)
+	</li>
+	<li>
+		[url]{{.WebsiteURL}}[/url]
+		<i class="fa fa-arrow-right mx-2"></i>
+		<a href="{{.WebsiteURL}}">{{.WebsiteURL}}</a>
+		<p class="help">
+			Note: the naked link by itself <a href="#autolink">would also work</a>.
+		</p>
+	</li>
+	<li>
+		[url={{.WebsiteURL}}]home[/url]
+		<i class="fa fa-arrow-right mx-2"></i>
+		<a href="{{.WebsiteURL}}">home</a>
+	</li>
+	<li>
+		[img]/static/img/favicon-16.png[/img]
+		<i class="fa fa-arrow-right mx-2"></i>
+		<img src="/static/img/favicon-16.png">
+	</li>
+	<li>
+		[color=red]text[/color]
+		<i class="fa fa-arrow-right mx-2"></i>
+		<span style="color: red">text</span>
+		<p class="help">
+			Hex codes, like [color=#FF99FF] also work, as does [color=rgba(255,153,255,1)].
+		</p>
+	</li>
+	<li>
+		[quote]text[/quote], [quote=Somebody]text[/quote] and [quote name=Somebody]text[/quote] work too.
+	</li>
+	<li>
+		[center]text[/center]
+		<i class="fa fa-arrow-right mx-2"></i>
+		centered text
+	</li>
+	<li>
+		[gosocial]
+		<i class="fa fa-arrow-right mx-2"></i>
+		{{PrettyTitle}}
+	</li>
+</ul>
+
+<p>
+	The [size] tag is not currently supported. For larger text, try the <a href="#h1">Markdown headers</a> syntax.
+</p>
+
+<p>
+	If you know HTML, some <a href="#html">literal HTML tags</a> may also be used as well.
+</p>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 11 "Value" `We support [b]BBCode[/b] tags in addition to **Markdown.**
+
+The usual [b]bold[/b], [i]italic[/i], [u]underlined[/u] and [s]stricken[/s] tags work.
+
+Markdown can do **bold**, *italic* and ~~strike-thru~~ but has no syntax to underline.
+
+The [color=orange]most remarkable[/color] thing is that BBCode enables colors!
+
+You can use [color=#0099ff]hex codes[/color] or [color=rgba(255,153,255,1)]RGBA codes[/color] to set the color.
+
+As a fun bonus, the [gosocial] tag will insert the pretty colored website logo.`
+)}}
+
+<h1 id="block">Block Elements</h1>
+
+<a name="pbr"></a>
+<h2>Paragraphs and Line Breaks</h2>
+
+<p>A paragraph is defined as a group of lines of text separated from other groups
+by at least one blank line. A hard return inside a paragraph doesn't get rendered
+in the output.</p>
+
+<h2 id="h1">Headers</h2>
+
+<p>There are two methods to declare a header in Markdown: "underline" it by
+writing <code>===</code> or <code>---</code> on the line directly below the
+heading (for <code>&lt;h1&gt;</code> and <code>&lt;h2&gt;</code>, respectively),
+or by prefixing the heading with <code>#</code> symbols. Usually the latter
+option is the easiest, and you can get more levels of headers this way.</p>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `This is an H1
+==========
+
+This is an H2
+-----------------
+
+# This is also an H1
+
+## And H2
+
+### And H3`
+)}}
+
+<h3 id="bq">Blockquotes</h3>
+
+<p>Prefix a line of text with <code>&gt;</code> to "quote" it -- like in
+"e-mail syntax."</p>
+
+<p>You may have multiple layers of quotes by using multiple <code>&gt;</code>
+symbols.</p>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `Example:
+
+> This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,
+consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.
+Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus.
+
+> Donec sit amet nisl. Aliquam semper ipsum sit amet velit. Suspendisse
+id sem consectetuer libero luctus adipiscing.
+
+Nested quote levels:
+
+> This is the first level of quoting.
+>
+>> This is nested blockquote.
+>>> A third level.
+>
+> Back to the first level.
+
+Quotes with other Markdown formatting:
+
+> ## This is a header.
+>
+> 1. This is the first list item.
+> 2. This is the second list item.
+>
+>Here's some example code:
+>
+>     return shell_exec("echo $input | $markdown_script"); `
+)}}
+
+<a name="ul"></a>
+<h2>Lists</h2>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `Lists with asterisks:
+
+* Red
+* Green
+* Blue
+
+Pluses or dashes will work too:
+
++ Red
++ Green
+- Blue
+- Yellow
+
+Numbered lists:
+
+1. Bird
+2. McHale
+3. Parish
+
+To include paragraphs in your list items, indent any subsequent lines:
+
+1. This is a list item with two paragraphs. Lorem ipsum dolor
+    sit amet, consectetuer adipiscing elit. Aliquam hendrerit
+    mi posuere lectus.
+
+    Vestibulum enim wisi, viverra nec, fringilla in, laoreet
+    vitae, risus. Donec sit amet nisl. Aliquam semper ipsum
+    sit amet velit.
+2.  Suspendisse id sem consectetuer libero luctus adipiscing.`
+)}}
+
+<a name="pre"></a>
+<h2>Code Blocks</h2>
+
+The typical Markdown way to write a code block is to indent each line of a paragraph with at
+least 4 spaces or 1 tab character.<p>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `This is a normal paragraph.
+
+    This is a code block, indented with 4 spaces.`
+)}}
+
+<br>
+GitHub-style "fenced code blocks" are also supported. Copy the following example into the
+above Markdown editor to see how it looks!<p>
+
+<pre>```
+This is a GitHub-style "fenced code block", denoted by having three
+backticks/grave symbols above and below the code.
+```
+</pre>
+
+<a name="hr"></a>
+<h2>Horizontal Rules</h2>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `A line made up of asterisks or dashes in between paragraphs will show up as a horizontal rule.
+
+Here are some examples:
+
+* * *
+
+***
+
+*****
+
+- - -
+
+------------------
+
+The lines should have at least three asterisks or dashes, but they can be as long as you want: it will turn out all the same in Markdown!`
+)}}
+
+<a name="span"></a>
+<h1>Span Elements</h1>
+
+<a name="a"></a>
+<h2>Links</h2>
+
+<p>
+	The basic syntax for a hyperlink looks like <code>[Text](https://example.com)</code>. You can also
+	write your links "footnote style", where the link text goes like <code>[Text][1]</code> and then you
+	provide the URL at the bottom of your post. See the examples below:
+</p>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `This is [an example](http://example.com/ "Title") inline link.
+
+[This link](http://example.net/) has no title attribute.
+
+See my [About](/about) page for details.
+
+-------
+
+This is [an example][id] reference-style link.
+
+[id]: http://example.com/ "Optional Title Here"
+
+-------
+
+This is an example of an implicit reference-style link: search [Google][] for more.
+
+[Google]: http://google.com/
+
+-------
+
+I get 10 times more traffic from [Google][1] than from [Yahoo][2] or [Bing][3].
+
+[1]: http://google.com/ "Google"
+[2]: http://search.yahoo.com/ "Yahoo Search"
+[3]: http://bing.com/ "Bing" `
+)}}
+
+<a name="em"></a>
+<h2>Emphasis</h2>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `*single asterisks* make text italic. _single underscores_ do as well.
+
+But **double asterisks** make text bold, as do __double underscores.__
+
+For bold _and_ italic text, ***use three asterisks*** or ___underscores.___
+
+You can emphasize the middle of a word like: un*frigging*believable.
+
+If you want literal asterisks, put a backslash in front, \* like this\*.`
+)}}
+
+<a name="code"></a>
+<h2>Code</h2>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" "Use the `printf()` function.\n\n``There is a literal backtick (`) here.``\n\nA single backtick in a code span: `` ` ``\n\nA backtick-delimited string in a code span: `` `foo` ``\n\nPlease don't use any `<blink>` tags.\n\n`&#8212;` is the decimal-encoded equivalent of `&mdash;`."
+)}}
+
+<a name="img"></a>
+<h2>Images</h2>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `Basic image with alt text:
+
+![Alt text](/static/img/shy.png)
+
+With a mouse-over title attribute:
+
+![Alt text](/static/img/shy.png "Optional title")
+
+---
+
+An image with a footnote-style link:
+
+![Alt text][id]
+
+[id]: /static/img/shy.png "Optional title attribute"`
+)}}
+
+<a name="misc"></a>
+<h1>Miscellaneous</h1>
+
+<a name="autolink"></a>
+<h2>Automatic Links</h2>
+
+Some naked links are automatically clickable, but to be sure you can wrap them in <code>&lt;angle brackets&gt;</code>:<p>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 5 "Value" `A naked link should work: https://www.gosocial.com
+
+The Markdown standard way: <https://www.gosocial.com>
+
+An e-mail address like support@gosocial.com is not clickable except when written as <support@gosocial.com>`
+)}}
+
+<a name="escape"></a>
+<h2>Backslash Escapes</h2>
+
+Use backslash characters to escape any other special characters in the Markdown syntax. For example,
+<code>\*</code> to insert a literal asterisk so that it doesn't get mistaken for e.g. emphasized text,
+a list item, etc.<p>
+
+Markdown provides backslash escapes for the following characters:<p>
+
+<pre>\   backslash
+`   backtick
+*   asterisk
+_   underscore
+{}  curly braces
+[]  square brackets
+()  parenthesis
+#   hash mark
++   plus sign
+-   minus sign (hyphen)
+.   dot
+!   exclamation mark</pre>
+
+<a name="html"></a>
+<h2>Literal HTML Tags</h2>
+
+<p>
+	All Markdown syntax has a corresponding primitive HTML tag, and you may prefer to just write
+	the HTML directly. This is supported too!
+</p>
+
+<p>
+	Note: non-trivial tags will be automatically blocked and hidden from the Markdown output. You can't
+	use CSS classes or styles, <code>&lt;script&gt;</code> tags, or other dangerous HTML.
+</p>
+
+{{template "markdown-editor" (
+	NewHashMap "Rows" 10 "Value" `In Markdown, **bold** text can also be written as <strong>bold text</strong>.
+
+Similarly, [hyperlinks](/markdown) can be written <a href="/about">like this.</a>
+
+Some HTML tags can supplement features missing in Markdown, for example, <abbr title="abbreviations">ABBR</abbr> can highlight an abbreviation with a mouse-over title tooltip.
+
+The Markdown renderer does not allow <strong style="font-size: 72px">CSS styles</strong> or <script>window.alert(1)</script> tags. Not in [url=javascript:alert(1)]BBCode either[/url].`
+)}}
+
+</div><!-- /div class="content" -->
+{{ end }}

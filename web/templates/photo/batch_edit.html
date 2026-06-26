@@ -1,0 +1,268 @@
+{{define "title"}}Delete Photo{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    {{if eq .Intent "delete"}}
+                        <i class="fa fa-trash mr-2"></i>
+                        Delete {{len .Photos}} Photo{{Pluralize (len .Photos)}}
+                    {{else if eq .Intent "visibility"}}
+                        <i class="fa fa-eye mr-2"></i>
+                        Edit Visibility
+                    {{else if eq .Intent "album"}}
+                        <i class="fa fa-images mr-2"></i>
+                        Add to Photo Album
+                    {{else if eq .Intent "approval"}}
+                        <i class="fa fa-peace mr-2"></i>
+                        Content Approval
+                    {{else}}
+                        Batch Edit Photos
+                    {{end}}
+                </h1>
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="block p-4">
+        <div class="level">
+            <div class="level-item">
+                <div class="card" style="max-width: 800px">
+                    <header class="card-header {{if eq .Intent "delete"}}has-background-danger{{else}}has-background-link{{end}}">
+                        <p class="card-header-title has-text-light">
+                            {{if eq .Intent "delete"}}
+                                <span class="icon"><i class="fa fa-trash"></i></span>
+                                Delete {{len .Photos}} Photo{{Pluralize (len .Photos)}}
+                            {{else if eq .Intent "visibility"}}
+                                <span class="icon"><i class="fa fa-eye mr-2"></i></span>
+                                Edit Visibility
+                            {{else if eq .Intent "album"}}
+                                <i class="fa fa-images mr-2"></i>
+                                Add to Photo Album
+                            {{else if eq .Intent "approval"}}
+                                <i class="fa fa-peace mr-2"></i>
+                                Edit Approval Setting
+                            {{else}}
+                                Batch Edit Photos
+                            {{end}}
+                        </p>
+                    </header>
+                    <div class="card-content">
+                        <form method="POST" action="{{.Request.URL.Path}}">
+                            {{InputCSRF}}
+                            <input type="hidden" name="intent" value="{{.Intent}}">
+                            <input type="hidden" name="confirm" value="true">
+
+                            <!-- Bulk Visibility Settings -->
+                            {{if eq .Intent "visibility"}}
+                                <p>
+                                    You may use this page to set <strong>all ({{len .Photos}}) photo{{if ge (len .Photos) 2}}s'{{end}}</strong>
+                                    visibility setting.
+                                </p>
+                                <!-- TODO: copy/pasted block from the Upload page -->
+                                <div class="field">
+                                    <label class="label">Photo Visibility</label>
+                                    <div>
+                                        <label class="radio">
+                                            <input type="radio"
+                                                name="visibility"
+                                                value="public"
+                                                {{if or (not .EditPhoto) (eq .EditPhoto.Visibility "public")}}checked{{end}}>
+                                            <strong class="has-text-link ml-1">
+                                                <span>Public <small>(members only)</small></span>
+                                                <span class="icon"><i class="fa fa-eye"></i></span>
+                                            </strong>
+                                        </label>
+                                        <p class="help">
+                                            This photo will appear on your profile page and can be seen by any
+                                            logged-in user account. It may also appear on the site-wide Photo
+                                            Gallery if that option is enabled, below.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="radio">
+                                            <input type="radio"
+                                                name="visibility"
+                                                value="friends"
+                                                {{if eq .EditPhoto.Visibility "friends"}}checked{{end}}>
+                                            <strong class="has-text-warning ml-1">
+                                                <span>Friends only</span>
+                                                <span class="icon"><i class="fa fa-user-group"></i></span>
+                                            </strong>
+                                        </label>
+                                        <p class="help">
+                                            Only users you have accepted as a friend can see this photo on your
+                                            profile page and on the site-wide Photo Gallery if that option is
+                                            enabled, below.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label class="radio">
+                                            <input type="radio"
+                                                name="visibility"
+                                                value="private"
+                                                {{if eq .EditPhoto.Visibility "private"}}checked{{end}}>
+                                            <strong class="has-text-private ml-1">
+                                                <span>Private</span>
+                                                <span class="icon"><i class="fa fa-lock"></i></span>
+                                            </strong>
+                                        </label>
+                                        <p class="help">
+                                            This photo is visible only to you and to users for whom you have
+                                            granted access
+                                            (<a href="/photo/private" target="_blank" class="has-text-private">manage grants <i class="fa fa-external-link"></i></a>).
+                                        </p>
+                                    </div>
+
+                                    <div class="has-text-warning is-size-7 mt-4">
+                                        <i class="fa fa-info-circle mr-1"></i>
+                                        <strong class="has-text-warning">Reminder:</strong> There are risks inherent with sharing
+                                        pictures on the Internet, and {{PrettyTitle}} can't guarantee that another member of the site
+                                        won't download and possibly redistribute your photos. You may mark your picture as "Friends only"
+                                        or "Private" to limit who on the website will see it, but anybody who <em>can</em> see it could potentially
+                                        save it to their computer. <a href="/faq#downloading" target="_blank">Learn more <i class="fa fa-external-link"></i></a>
+                                    </div>
+
+                                </div>
+                            {{end}}
+
+                            <!-- Show range of photos on all updates -->
+                            <div class="columns is-mobile is-multiline">
+                                {{range .Photos}}
+                                <div class="column is-half">
+                                    <input type="hidden" name="id" value="{{.ID}}">
+                                    <div class="image block">
+                                        <!-- GIF video? -->
+                                        {{if HasSuffix .Filename ".mp4"}}
+                                        <video autoplay loop controls controlsList="nodownload" playsinline>
+                                            <source src="{{PhotoURL .Filename}}" type="video/mp4">
+                                        </video>
+                                        {{else}}
+                                        <img src="{{PhotoURL .Filename}}">
+                                        {{end}}
+                                    </div>
+                                </div>
+                                {{end}}
+                            </div>
+
+                            <div class="block">
+                                Are you sure you want to
+                                {{if eq .Intent "delete"}}
+                                    <strong class="has-text-danger">delete</strong>
+                                {{else if eq .Intent "visibility"}}
+                                    <strong>update the visibility</strong> of
+                                {{else if eq .Intent "album"}}
+                                    <strong>assign a photo album</strong> for
+                                {{else if eq .Intent "approval"}}
+                                    <strong>change the approval status</strong> of
+                                {{else}}
+                                    update
+                                {{end}}
+
+                                {{if ge (len .Photos) 2 -}}
+                                    these <strong>{{len .Photos}} photos?</strong>
+                                {{- else -}}
+                                    this photo?
+                                {{- end}}
+                            </div>
+
+                            <!-- Assign to a photo album -->
+                            {{if eq .Intent "album"}}
+                                <div class="field mb-5">
+                                    <label class="label">
+                                        <i class="fa fa-images mr-2"></i>
+                                        Photo Album
+                                    </label>
+                                    <div class="select is-fullwidth">
+                                        <select name="photo_album_id" id="photo_album_id" required>
+                                            <option value=""></option>
+                                            <optgroup label="Add to an Existing Album">
+                                                {{if not .MyPhotoAlbums}}
+                                                    <option value="" disabled>(No albums available)</option>
+                                                {{end}}
+                                                {{range .MyPhotoAlbums}}
+                                                    <option value="{{.ID}}"{{if eq $Root.SelectedPhotoAlbumID .ID}} selected{{end}}>{{.Title}}</option>
+                                                {{end}}
+                                            </optgroup>
+                                            <optgroup label="Add to a New Album" id="photo_album_new_optgroup">
+                                                <option value="_new">Create a New Album</option>
+                                            </optgroup>
+                                        </select>
+                                        <input type="hidden" name="new_photo_album_name" id="new_photo_album_name">
+                                    </div>
+                                    <label class="checkbox mt-3">
+                                        <input type="checkbox"
+                                            name="remove_album"
+                                            value="true"
+                                            {{if .IsRemoveFromAlbum}}checked{{end}}>
+                                        <strong class="has-text-danger">Remove</strong> these photo(s) from the selected album?
+                                    </label>
+                                    <!-- If only one photo selected, offer to update the album Cover Photo. -->
+                                    {{if eq (len .Photos) 1}}
+                                        <div class="mt-1">
+                                            <label class="checkbox">
+                                                <input type="checkbox"
+                                                    name="set_cover_photo"
+                                                    value="true">
+                                                Set this as the Album Cover Photo.
+                                            </label>
+                                        </div>
+                                    {{end}}
+                                    <p class="help">
+                                        <a href="/faq#photo-albums" target="_blank">Learn more about Photo Albums <i class="fa fa-external-link"></i></a>
+                                    </p>
+                                </div>
+                            {{end}}
+
+                            <!-- Approval Status -->
+                            {{if eq .Intent "approval"}}
+                            <div class="field">
+                                <label class="label">Update Status:</label>
+                                <div class="control">
+                                    <label class="radio box gosocial-fullwidth p-3 mb-2">
+                                        <input type="radio" name="approval_status" value="approved">
+                                        <strong class="has-text-success">
+                                            <i class="fa fa-check mr-1 ml-2"></i>
+                                            Approved
+                                        </strong>
+                                    </label>
+                                </div>
+                                <div class="control">
+                                    <label class="radio box gosocial-fullwidth p-3 mb-2">
+                                        <input type="radio" name="approval_status" value="rejected">
+                                        <strong class="has-text-danger">
+                                            <i class="fa fa-xmark mr-1 ml-2"></i>
+                                            Rejected
+                                        </strong>
+                                    </label>
+                                </div>
+                            </div>
+                            {{end}}
+
+                            <div class="block has-text-center">
+                                {{if eq .Intent "delete"}}
+                                    <button type="submit" class="button is-danger gosocial-confirm-submit">
+                                        Delete Photo{{Pluralize (len .Photos)}}
+                                    </button>
+                                {{else}}
+                                    <button type="submit" class="button is-primary">Update Photo{{Pluralize (len .Photos)}}</button>
+                                {{end}}
+                                <button type="button" class="button" onclick="history.back()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional scripts -->
+    {{if eq .Intent "album"}}
+        <script type="text/javascript" src="/static/js/photo-album-selector.js?build={{.BuildHash}}"></script>
+    {{end}}
+
+</div>
+{{end}}

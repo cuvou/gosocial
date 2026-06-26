@@ -1,0 +1,388 @@
+{{define "title"}}
+    {{if .Place}}
+        {{.Place.Name}}
+    {{else}}
+        {{.Forum.Title}}
+    {{end}}
+{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <div class="level">
+                    <div class="level-left">
+                        <h1 class="title">
+                            {{if .Place}}
+                                <span class="icon mr-4"><i class="fa fa-map-location-dot"></i></span>
+                                <span>{{.Place.Name}}</span>
+                            {{else}}
+                                <span class="icon mr-4"><i class="fa fa-comments"></i></span>
+                                <span>{{.Forum.Title}}</span>
+                            {{end}}
+                        </h1>
+                    </div>
+
+                    <div class="level-right">
+                        <!-- Follow/Unfollow This Forum -->
+                        <form action="/forum/subscribe" method="POST" class="is-inline">
+                            {{InputCSRF}}
+                            <input type="hidden" name="fragment" value="{{.Forum.Fragment}}">
+
+                            {{if .IsForumSubscribed}}
+                                <button type="submit" class="button gosocial-confirm-submit"
+                                    name="intent" value="unfollow"
+                                    data-confirm="Do you want to remove this forum from your list?">
+                                    <span class="icon"><i class="fa fa-bookmark"></i></span>
+                                    <span>Followed</span>
+                                </button>
+                            {{else}}
+                                <button type="submit" class="button"
+                                    name="intent" value="follow">
+                                    <span class="icon"><i class="fa-regular fa-bookmark"></i></span>
+                                    <span>Follow</span>
+                                </button>
+                            {{end}}
+                        </form>
+                    </div>
+                </div>
+
+                {{if .Place}}
+                    {{$AvgRating := .Place.GetAverageReview}}
+                    <div class="columns">
+                        <div class="column is-narrow">
+                            <a href="{{.Place.URL}}/reviews" class="tag is-dark">
+                                {{$AvgRating.StarHTML}}
+                            </a>
+                        </div>
+                        <div class="column is-narrow">
+                            <a href="{{.Place.URL}}/reviews" class="has-text-light">
+                                {{$AvgRating.RatingPretty}} ({{$AvgRating.Total}} review{{Pluralize64 $AvgRating.Total}})
+                            </a>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    </section>
+
+    {{$Root := .}}
+
+    <div class="p-4">
+        <div class="columns">
+            <div class="column">
+                {{if .Place}}
+                    <nav class="breadcrumb" aria-label="breadcrumbs">
+                        <ul>
+                            <li><a href="/places">Places</a></li>
+                            <li><a href="{{.Place.URL}}">{{.Place.Name}}</a></li>
+                            <li class="is-active">
+                                <a href="{{.Place.URL}}/discussion" aria-current="page">Discussion</a>
+                            </li>
+                        </ul>
+                    </nav>
+                {{else}}
+                    <nav class="breadcrumb" aria-label="breadcrumbs">
+                        <ul>
+                            <li><a href="/forum">Forums</a></li>
+                            <li class="is-active">
+                                <a href="{{.Request.URL.Path}}" aria-current="page">{{.Forum.Title}}</a>
+                            </li>
+                        </ul>
+                    </nav>
+                {{end}}
+            </div>
+            <div class="column is-narrow">
+                <!-- Edit button for forum's settings -->
+                {{if not .Place}}
+                    {{if or (eq .Forum.OwnerID .CurrentUser.ID) (.CurrentUser.HasAdminScope "admin.forum.manage")}}
+                    <a href="/forum/admin/edit?id={{.Forum.ID}}" class="button mr-2">
+                        <span class="icon"><i class="fa fa-gear"></i></span>
+                    </a>
+                    {{end}}
+                {{end}}
+
+                {{if or .CurrentUser.IsAdmin (not .Forum.Privileged) (eq .Forum.OwnerID .CurrentUser.ID)}}
+                <a href="/forum/post?to={{.Forum.Fragment}}" class="button is-info">
+                    <span class="icon"><i class="fa fa-plus"></i></span>
+                    <span>New Thread</span>
+                </a>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <div class="block p-4">
+        <div class="columns block">
+            <div class="column py-2">
+                Found <strong>{{.Pager.Total}}</strong> post{{Pluralize64 .Pager.Total}} on this forum
+                (page {{.Pager.Page}} of {{.Pager.Pages}}).
+            </div>
+            <div class="column py-2 is-narrow">
+                <form method="GET" action="/forum/search">
+                    <input type="hidden" name="fragment" value="{{.Forum.Fragment}}">
+                    <div class="field has-addons">
+                        <div class="control">
+                            <input type="text" class="input is-small"
+                                name="q"
+                                autocomplete="off"
+                                placeholder="Search this forum">
+                        </div>
+                        <div class="control">
+                            <button type="submit" class="button is-success is-small">
+                                &nbsp;
+                                <i class="fa fa-search"></i>
+                                &nbsp;
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{if .Forum.Privileged}}
+    <div class="block p-2 notification is-warning is-light">
+        <i class="fa fa-peace mr-1"></i>
+        Only moderators may create new threads on this forum. You may be able to reply to threads here.
+    </div>
+    {{end}}
+
+    <div class="block p-2">
+        {{SimplePager .Pager}}
+    </div>
+
+    <!-- If no posts at all? -->
+    {{if not .Threads}}
+    <div class="block p-2">
+        <div class="notification is-info is-light content">
+            <p>
+                There are no posts yet on this forum.
+                {{if not .Forum.Privileged}}
+                    Why not <a href="/forum/post?to={{.Forum.Fragment}}">start the first thread?</a>
+                {{end}}
+            </p>
+        </div>
+    </div>
+    {{end}}
+
+    {{$Root := .}}
+    <div class="block p-2">
+    {{range .Threads}}
+        {{$Stats := $Root.ThreadMap.Get .ID}}
+        <div class="box gosocial-forum-box-1 has-text-dark">
+            <div class="columns">
+                <div class="column is-2 has-text-centered pt-0 pb-1">
+                    <!-- Thread starter is blocked? -->
+                    {{if .Comment.User.UserRelationship.IsBlocked}}
+                        <div>
+                            {{template "avatar-64x64"}}
+                        </div>
+                        [unavailable]
+                    {{else}}
+                        <div>
+                            <a href="/u/{{.Comment.User.Username}}">
+                                {{template "avatar-64x64" .Comment.User}}
+                            </a>
+                        </div>
+                        <a href="/u/{{.Comment.User.Username}}">{{.Comment.User.NameOrUsername}}</a>
+                    {{end}}
+                </div>
+                <div class="column content pt-1 pb-0">
+                    <a href="{{if $Root.Place}}{{$Root.Place.URL}}/thread/{{.ID}}{{else}}/forum/thread/{{.ID}}{{end}}">
+                        <h2 class="is-size-4 pt-0 has-text-dark">
+                            {{if .Pinned}}<sup class="fa fa-thumbtack has-text-success mr-2 is-size-6" title="Pinned"></sup>{{end}}
+                            {{or .Title "Untitled"}}
+                        </h2>
+                        {{TrimEllipses (DeMarkify .Comment.Message) 256}}
+                    </a>
+
+                    <hr class="has-background-success my-2">
+                    <div>
+                        {{if .Pinned}}
+                            <span class="tag is-success is-light mr-2">
+                                <span class="icon"><i class="fa fa-thumbtack"></i></span>
+                                <span>Pinned</span>
+                            </span>
+                        {{end}}
+
+                        {{if .PollID}}
+                            <span class="tag is-info is-light mr-2">
+                                <span class="icon"><i class="fa fa-poll"></i></span>
+                                <span>Poll</span>
+                            </span>
+                        {{end}}
+
+                        {{if .Explicit}}
+                            <span class="tag is-danger is-light mr-2">
+                                <span class="icon"><i class="fa fa-fire"></i></span>
+                                <span>NSFW</span>
+                            </span>
+                        {{end}}
+
+                        {{if .NoReply}}
+                            <span class="tag is-warning is-light mr-2" title="This thread can not be replied to.">
+                                <span class="icon"><i class="fa fa-ban"></i></span>
+                                <span>No Reply</span>
+                            </span>
+                        {{end}}
+
+                        <em title="{{.UpdatedAt.Format "2006-01-02 15:04:05"}}">Updated {{SincePrettyCoarse .UpdatedAt}} ago</em>
+                    </div>
+                </div>
+                <div class="column is-narrow pb-1 pt-0 px-1">
+                    <div class="columns is-mobile">
+                        <div class="column has-text-centered pr-1">
+                            <div class="box gosocial-forum-box-3 p-2">
+                                <p class="is-size-7">Replies</p>
+                                {{if $Stats}}
+                                    {{FormatNumberCommas $Stats.Replies}}
+                                {{else}}
+                                    err
+                                {{end}}
+                            </div>
+                        </div>
+                        <div class="column has-text-centered pl-1">
+                            <div class="box gosocial-forum-box-3 p-2">
+                                <p class="is-size-7">Views</p>
+                                {{if $Stats}}
+                                    {{FormatNumberCommas $Stats.Views}}
+                                {{else}}
+                                    err
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {{end}}
+    </div>
+
+    <div class="block p-2">
+        {{SimplePager .Pager}}
+    </div>
+
+    <!-- Info box: owner, moderators -->
+    <div class="block p-2">
+        <div class="box">
+
+            <label class="label"><i class="fa fa-info-circle"></i> Forum Info</label>
+            <div class="mb-4">
+                Created on: <span title="{{.Forum.CreatedAt}}">{{.Forum.CreatedAt.Format "Jan _2 2006"}}</span>
+
+                {{if .ForumSubscriberCount}}
+                <div class="has-text-info mt-2">
+                    <i class="fa fa-book-bookmark mr-1"></i>
+                    {{.ForumSubscriberCount}} {{if eq .ForumSubscriberCount 1}}person follows{{else}}people follow{{end}} this forum.
+
+                    <!-- Follow/Unfollow This Forum -->
+                    <form action="/forum/subscribe" method="POST" class="is-inline">
+                        {{InputCSRF}}
+                        <input type="hidden" name="fragment" value="{{.Forum.Fragment}}">
+
+                        {{if .IsForumSubscribed}}
+                            <button type="submit" class="button is-small ml-2 gosocial-confirm-submit"
+                                name="intent" value="unfollow"
+                                data-confirm="Do you want to remove this forum from your list?">
+                                <span class="icon"><i class="fa fa-bookmark"></i></span>
+                                <span>Unfollow</span>
+                            </button>
+                        {{else}}
+                            <button type="submit" class="button is-small ml-2"
+                                name="intent" value="follow">
+                                <span class="icon"><i class="fa-regular fa-bookmark has-text-success"></i></span>
+                                <span>Follow it too?</span>
+                            </button>
+                        {{end}}
+                    </form>
+                </div>
+                {{end}}
+
+                <div class="mt-2">
+                    {{if .Forum.Explicit}}
+                    <span class="tag is-danger is-light">
+                        <span class="icon"><i class="fa fa-fire"></i></span>
+                        <span>Explicit</span>
+                    </span>
+                    {{end}}
+
+                    {{if .Forum.Privileged}}
+                    <span class="tag is-warning is-light">
+                        <span class="icon"><i class="fa fa-peace"></i></span>
+                        <span>Privileged</span>
+                    </span>
+                    {{end}}
+
+                    {{if .Forum.PermitPhotos}}
+                    <span class="tag is-grey">
+                        <span class="icon"><i class="fa fa-camera"></i></span>
+                        <span>Photos</span>
+                    </span>
+                    {{end}}
+
+                    {{if .Forum.Private}}
+                    <span class="tag is-private is-light">
+                        <span class="icon"><i class="fa fa-lock"></i></span>
+                        <span>Private</span>
+                    </span>
+                    {{end}}
+                </div>
+            </div>
+
+            <label class="label"><i class="fa fa-user-tie"></i> Forum Moderators</label>
+
+            <!-- The owner first -->
+            {{if .ForumOwner}}
+                {{template "avatar-16x16" .ForumOwner}}
+                <a href="/u/{{.ForumOwner.Username}}">
+                    {{.ForumOwner.Username}}
+                </a>
+                <small class="has-text-grey pr-2">(owner)</small>
+            {{else if .Forum.OwnerID}}
+                <!-- Blocked owner. -->
+                [unavailable]
+                <small class="has-text-grey pr-2">(owner)</small>
+            {{end}}
+
+            <!-- Additional moderators -->
+            {{range .ForumModerators}}
+                <span class="pr-2">
+                    {{template "avatar-16x16" .}}
+                    <a href="/u/{{.Username}}">
+                        {{.Username}}
+                    </a>
+                </span>
+            {{end}}
+
+            <!-- If there is no owner, show a petition notice. -->
+            {{if not .Forum.OwnerID}}
+                <div class="mt-4 is-size-7">
+                    <i class="fa fa-info-circle has-text-success mr-1"></i>
+                    This forum's owner has deleted their account, and this forum is in need of a new owner.
+                    You may <a href="/contact?intent=contact&subject=forum.adopt&id={{.Forum.ID}}" class="has-text-success">petition to adopt</a>
+                    this forum.
+                </div>
+            {{end}}
+
+            <div class="columns is-multiline is-mobile mt-4 is-size-7">
+                <!-- Adoption link -->
+                {{if not .Forum.OwnerID}}
+                <div class="column is-narrow">
+                    <a href="/contact?intent=contact&subject=forum.adopt&id={{.Forum.ID}}" class="has-text-success">
+                        <i class="fa fa-info-circle"></i> Adopt this forum
+                    </a>
+                </div>
+                {{end}}
+
+                <div class="column is-narrow">
+                    <a href="/contact?intent=report&subject=report.forum&id={{.Forum.ID}}" class="has-text-danger">
+                        <i class="fa fa-flag"></i> Report this forum
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{end}}

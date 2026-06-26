@@ -1,0 +1,738 @@
+{{define "title"}}My Dashboard{{end}}
+{{define "content"}}
+<div class="container">
+    <section class="hero is-link is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    <span class="icon mr-4 pl-3">
+                        <i class="fa fa-house-user"></i>
+                    </span>
+                    <span>My Dashboard</span>
+                </h1>
+                <h2 class="subtitle">Settings &amp; Notifications</h2>
+            </div>
+        </div>
+    </section>
+
+    <div class="block p-4">
+        <div class="columns">
+            <div class="column">
+
+                <div class="card gosocial-collapsible-mobile block" id="status">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-microphone-lines mr-2"></i>
+                            Status Message
+                        </p>
+                        <button class="card-header-icon" type="button">
+                            <span class="icon">
+                                <i class="fa fa-angle-up"></i>
+                            </span>
+                        </button>
+                    </header>
+
+                    <div class="card-content">
+                        <form method="POST" action="/settings/status">
+                            {{InputCSRF}}
+
+                            <div class="field">
+                                <label class="label" for="headline">Status Message/Profile Headline</label>
+
+                                {{$Headline := .CurrentUser.GetProfileField "headline"}}
+                                {{if $Headline}}
+                                    <div id="old_headline" style="display: table; table-layout: fixed; width: 100%">
+                                        <div style="display: table-cell; white-space: nowrap; text-overflow: ellipsis; overflow: hidden">
+                                            <a href="#"
+                                                onclick="document.querySelector('#old_headline').style.display='none'; document.querySelector('#new_headline').style.display='block'">
+                                                {{$Headline}}
+                                                <i class="fa fa-pencil ml-2"></i>
+                                            </a>
+                                            {{$ExpiresAt := .CurrentUser.StatusMessageExpiresAt}}
+                                            {{if $ExpiresAt}}
+                                                <p class="help" id="headline_expires_subtitle">
+                                                    <i class="fa fa-stopwatch mr-1"></i>
+                                                    Expires in {{$ExpiresAt}}
+                                                </p>
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                {{end}}
+
+                                <div id="new_headline"{{if $Headline}} style="display: none" {{end}}>
+                                    <input type="text" class="input"
+                                        id="headline"
+                                        name="headline"
+                                        placeholder="Write a short status update or profile headline"
+                                        value="{{.CurrentUser.GetProfileField "headline"}}"
+                                        maxlength="60"
+                                        autocomplete="off">
+                                    <div class="columns my-0 is-mobile">
+                                        <!-- Get current expiration hours remaining on current status -->
+                                        {{$HeadlineExpiresHoursLeft := .CurrentUser.StatusMessageExpiresHours}}
+                                        <div class="column is-narrow">
+                                            <label class="label mt-1" for="status_expires">Expires:</label>
+                                        </div>
+                                        <div class="column is-narrow px-0">
+                                            <div class="field select is-small">
+                                                <select name="expires" id="status_expires">
+                                                    <option value="">Never</option>
+                                                    {{if $HeadlineExpiresHoursLeft}}
+                                                    <optgroup label="Current Selection">
+                                                        <option value="{{$HeadlineExpiresHoursLeft}}" selected>In {{$HeadlineExpiresHoursLeft}} hours</option>
+                                                    </optgroup>
+                                                    {{end}}
+                                                    <optgroup label="In a few hours">
+                                                        <option value="1">In 1 hour</option>
+                                                        <option value="2">In 2 hours</option>
+                                                        <option value="4">In 4 hours</option>
+                                                        <option value="8">In 8 hours</option>
+                                                        <option value="12">In 12 hours</option>
+                                                    </optgroup>
+                                                    <optgroup label="In a few days">
+                                                        <option value="24">In 24 hours</option>
+                                                        <option value="72">In 3 days</option>
+                                                        <option value="168">In 7 days</option>
+                                                        <option value="336">In 14 days</option>
+                                                        <option value="720">In 30 days</option>
+                                                    </optgroup>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="column is-narrow">
+                                            <button type="submit" name="intent" value="save" class="button is-small is-primary">
+                                                <i class="fa fa-save" style="line-height: 1.1rem"></i>
+                                                <span class="ml-1">Save</span>
+                                                {{if not $Headline}}
+                                                {{end}}
+                                            </button>
+                                            {{if $Headline}}
+                                            <button type="submit" name="intent" value="delete" class="button is-small is-danger gosocial-confirm-submit"
+                                                data-confirm="Do you want to delete your status message?">
+                                                <i class="fa fa-trash" style="line-height: 1.1rem"></i>
+                                            </button>
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="help">
+                                    Your status message will display as a headline on your profile page
+                                    and will appear on the Member Directory and Chat Room.
+                                    <a href="/faq#status" target="_blank">More info <i class="fa fa-external-link"></i></a>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card block gosocial-collapsible-mobile">
+                    <header class="card-header has-background-link">
+                        <p class="card-header-title has-text-light">
+                            <i class="fa fa-paperclip mr-2"></i>
+                            Quick Links
+                        </p>
+                        <button class="card-header-icon" type="button">
+                            <span class="icon">
+                                <i class="fa fa-angle-up"></i>
+                            </span>
+                        </button>
+                    </header>
+
+                    <div class="card-content">
+                        <aside class="menu">
+                            <ul class="menu-list">
+                                <li>
+                                    <a href="/u/{{.CurrentUser.Username}}">
+                                        <span class="icon"><i class="fa fa-user"></i></span>
+                                        My Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/u/{{.CurrentUser.Username}}/photos">
+                                        <span class="icon"><i class="fa fa-image"></i></span>
+                                        My Photos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/photo/upload">
+                                        <span class="icon"><i class="fa fa-upload"></i></span>
+                                        Upload Photo
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/photo/private">
+                                        <span class="icon"><i class="fa fa-eye"></i></span>
+                                        Manage Private Photos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/settings">
+                                        <span class="icon"><i class="fa fa-gear"></i></span>
+                                        Edit Profile &amp; Settings
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/photo/media">
+                                        <span class="icon"><i class="fa fa-hard-drive mr-1"></i></span>
+                                        My Media
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/users/blocked">
+                                        <span class="icon"><i class="fa fa-hand"></i></span>
+                                        Blocked Users
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/settings/deactivate">
+                                        <span class="icon"><i class="fa fa-exclamation-triangle"></i></span>
+                                        Deactivate Account
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/logout">
+                                        <span class="icon"><i class="fa fa-arrow-right-from-bracket"></i></span>
+                                        Log out
+                                    </a>
+                                </li>
+                                {{if .SessionImpersonated}}
+                                <li>
+                                    <a href="/admin/unimpersonate" class="has-text-danger">
+                                        <span class="icon"><i class="fa fa-ghost"></i></span>
+                                        <span>Unimpersonate</span>
+                                    </a>
+                                </li>
+                                {{end}}
+                            </ul>
+                        </aside>
+                    </div>
+                </div>
+
+                <p class="help">
+                    Tip: on mobile, tap on the card headers above to expand their contents.
+                </p>
+            </div>
+
+            {{$Root := .}}
+
+            <div class="column">
+                <div class="card" id="notifications">
+                    <header class="card-header has-background-warning">
+                        <p class="card-header-title">
+                            <i class="fa fa-bell mr-2"></i>
+                            Notifications
+                        </p>
+                    </header>
+
+                    <div class="card-content">
+                        <!-- Notifications header row: tablets on upwards -->
+                        <div class="is-hidden-mobile">
+                            <form method="POST" action="{{.Request.URL.Path}}">
+                                {{InputCSRF}}
+                                <div class="columns mb-2">
+                                    <div class="column">
+                                        {{if gt .NavUnreadNotifications 0}}
+                                            {{.NavUnreadNotifications}} unread notification{{Pluralize64 .NavUnreadNotifications}}.
+                                        {{else}}
+                                            No unread notifications.
+                                        {{end}}
+                                    </div>
+                                    <div class="column is-narrow has-text-right">
+                                        <button type="submit" name="intent" value="clear-all"
+                                            class="button is-danger is-light is-small gosocial-confirm-submit"
+                                            data-confirm="Are you sure you want to REMOVE all notifications?"
+                                            title="Remove all notifications from your feed">
+                                            <i class="fa fa-xmark mr-1"></i>
+                                            Clear all
+                                        </button>
+
+                                        <button type="submit" name="intent" value="read-notifications"
+                                            class="button is-link is-light is-small">
+                                            <i class="fa fa-check mr-1"></i>
+                                            Mark all as read
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Notifications header: for mobiles only version -->
+                        <div class="is-hidden-tablet">
+                            <p>
+                                {{if gt .NavUnreadNotifications 0}}
+                                    {{.NavUnreadNotifications}} unread notification{{Pluralize64 .NavUnreadNotifications}}.
+                                {{else}}
+                                    No unread notifications.
+                                {{end}}
+                            </p>
+                            <form method="POST" action="{{.Request.URL.Path}}">
+                                {{InputCSRF}}
+                                <div class="my-2 has-text-right">
+                                    <button type="submit" name="intent" value="clear-all"
+                                        class="button is-danger is-light is-small gosocial-confirm-submit"
+                                        data-confirm="Are you sure you want to REMOVE all notifications?">
+                                        <i class="fa fa-xmark mr-1"></i>
+                                        Clear all
+                                    </button>
+
+                                    <button type="submit" name="intent" value="read-notifications"
+                                        class="button is-link is-light is-small">
+                                        <i class="fa fa-check mr-1"></i>
+                                        Mark all as read
+                                    </button>
+                                </div>
+                            </form>
+                            <hr>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="block">
+                            <form action="{{.Request.URL.Path}}" method="GET">
+
+                            <div class="card gosocial-collapsible-mobile gosocial-collapsible-always mb-5">
+                                <header class="card-header has-background-link-light">
+                                    <p class="card-header-title has-text-dark">
+                                        <i class="fa fa-list mr-2"></i> Notification Types
+                                    </p>
+                                    <button class="card-header-icon" type="button">
+                                        <span class="icon">
+                                            <i class="fa fa-angle-up"></i>
+                                        </span>
+                                    </button>
+                                </header>
+                                <div class="card-content">
+
+                                    <p class="block">
+                                        <a href="/settings/notifications">
+                                            <i class="fa fa-gear mr-1"></i>
+                                            Manage notification settings
+                                        </a>
+                                    </p>
+
+                                    <div class="columns is-multiline mb-0">
+
+                                        <div class="column is-half">
+                                            <div class="field">
+                                                <label class="checkbox">
+                                                    <input type="checkbox"
+                                                        name="likes"
+                                                        value="true"
+                                                        {{if .Filters.Likes}}checked{{end}}
+                                                        >
+                                                    Likes
+                                                    <p class="help">
+                                                        on your photos, profile or comments
+                                                    </p>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <div class="field">
+                                                <label class="checkbox">
+                                                    <input type="checkbox"
+                                                        name="comments"
+                                                        value="true"
+                                                        {{if .Filters.Comments}}checked{{end}}
+                                                        >
+                                                    Comments
+                                                    <p class="help">
+                                                        on your photos
+                                                    </p>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <div class="field">
+                                                <label class="checkbox">
+                                                    <input type="checkbox"
+                                                        name="photos"
+                                                        value="true"
+                                                        {{if .Filters.NewPhotos}}checked{{end}}
+                                                        >
+                                                    New Photos
+                                                    <p class="help">
+                                                        posted by people you follow
+                                                    </p>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <div class="field">
+                                                <label class="checkbox">
+                                                    <input type="checkbox"
+                                                        name="replies"
+                                                        value="true"
+                                                        {{if .Filters.AlsoCommented}}checked{{end}}
+                                                        >
+                                                    Replies
+                                                    <p class="help">
+                                                        on comment threads you follow
+                                                    </p>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <div class="field">
+                                                <label class="checkbox">
+                                                    <input type="checkbox"
+                                                        name="friends"
+                                                        value="true"
+                                                        {{if .Filters.Friends}}checked{{end}}
+                                                        >
+                                                    Friends &amp; Follows
+                                                    <p class="help">
+                                                        new friends, follow backs, etc.
+                                                    </p>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <div class="field">
+                                                <label class="checkbox">
+                                                    <input type="checkbox"
+                                                        name="events"
+                                                        value="true"
+                                                        {{if .Filters.Events}}checked{{end}}
+                                                        >
+                                                    Events
+                                                    <p class="help">
+                                                        RSVPs, updates, etc.
+                                                    </p>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <div class="field">
+                                                <label class="checkbox">
+                                                    <input type="checkbox"
+                                                        name="private"
+                                                        value="true"
+                                                        {{if .Filters.PrivatePhoto}}checked{{end}}
+                                                        >
+                                                    Private photos
+                                                    <p class="help">
+                                                        unlock notifications
+                                                    </p>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <div class="field">
+                                                <label class="checkbox">
+                                                    <input type="checkbox"
+                                                        name="misc"
+                                                        value="true"
+                                                        {{if .Filters.Misc}}checked{{end}}
+                                                        >
+                                                    Miscellaneous
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="block has-text-centered">
+                                        <a href="{{.Request.URL.Path}}" class="button">
+                                            Reset
+                                        </a>
+                                        <button type="submit" class="button is-primary">
+                                            Apply Filters
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            </form>
+                        </div>
+
+                        <!-- Very visible Group/Ungroup Notifications toggle -->
+                        <div class="block">
+                            {{if .AreNotificationsGrouped}}
+                                <i class="fa fa-object-group has-text-success mr-1"></i> Similar notifications are grouped together. <a href="{{.Request.URL.Path}}?{{QueryPlus "group" "false"}}">Ungroup them?</a>
+                            {{else}}
+                                <i class="fa fa-object-ungroup has-text-warning mr-1"></i> Showing all notifications ungrouped. <a href="{{.Request.URL.Path}}?{{QueryPlus "group" "true"}}">Group similar notifications?</a>
+                            {{end}}
+                            <p class="help">
+                                Similar notifications, such as many people "liking" your new photo, can be grouped
+                                together into one item (by default). New and older notifications are grouped independently.
+                                You may toggle the grouping on or off by clicking the link above.
+                            </p>
+                        </div>
+
+                        <table class="table is-striped is-fullwidth is-hoverable">
+                            <tbody>
+                                {{range .Notifications}}
+                                <tr>
+                                    <td class="gosocial-notification-row" data-notification-id="{{.ID}}">
+                                        <!-- Delete button for just this notification -->
+                                        <button type="button"
+                                            class="button is-danger px-2 py-1 is-small gosocial-notif-delete-button"
+                                            data-notification-id="{{.ID}}"
+                                            title="Remove this notification from your feed">
+                                            <i class="fa fa-xmark mr"></i>
+                                        </button>
+
+                                        <div class="columns">
+                                            <div class="column is-narrow has-text-centered">
+                                                {{if not .Read}}
+                                                <div class="mb-2 gosocial-notification-new">
+                                                    <strong class="tag is-success">
+                                                        New!
+                                                    </strong>
+                                                </div>
+                                                {{end}}
+                                                {{template "avatar-48x48" .AboutUser}}
+
+                                                <!-- Friendship badge -->
+                                                {{if $Root.FriendMap.Get .AboutUser.ID}}
+                                                <div>
+                                                    <span class="is-size-7 has-text-warning">
+                                                        <i class="fa fa-user-group" title="Friends" style="font-size: smaller"></i>
+                                                        Friends
+                                                    </span>
+                                                </div>
+                                                {{end}}
+                                            </div>
+                                            <div class="column">
+                                                <div class="mb-1 pr-4">
+                                                    <span class="icon"><i class="{{.Icon}}"></i></span>
+                                                    <span>
+                                                        {{.SummaryLine}}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Attached message? -->
+                                                {{if and .Message (not .HideMessage)}}
+                                                <div class="block content my-4">
+                                                    <blockquote class="p-2 pl-4">
+                                                        <!-- Trim to 256 characters except when the full message is required -->
+                                                        {{if .FullMessage}}
+                                                            {{ToMarkdown .Message}}
+                                                        {{else}}
+                                                            {{ToMarkdown (TrimEllipses .Message 256)}}
+                                                        {{end}}
+                                                    </blockquote>
+                                                </div>
+                                                {{end}}
+
+                                                <!-- Footer line -->
+                                                {{.FooterLine}}
+
+                                                <hr class="has-background-light mb-1">
+                                                <small title="{{.Timestamp.Format "2006-01-02 15:04:05"}}">
+                                                    {{SincePrettyCoarse .Timestamp}} ago.
+                                                    {{.UnsubscribeLine}}
+                                                </small>
+                                            </div>
+
+                                            <!-- Attached photo? Certified users only. -->
+                                            {{if .Photo}}
+                                            <div class="column is-one-quarter">
+                                                <div class="is-clipped">
+                                                    <!-- GIF video? -->
+                                                    {{if HasSuffix .Photo.Filename ".mp4"}}
+                                                    <video loop controls controlsList="nodownload" playsinline
+                                                        {{if .Photo.AltText}}title="{{.Photo.AltText}}"{{end}}
+                                                        {{if BlurExplicit .Photo}}class="blurred-explicit"
+                                                        {{else if (not (eq ($Root.CurrentUser.GetProfileField "autoplay_gif") "false"))}}autoplay
+                                                        {{end}}>
+                                                        <source src="{{PhotoURL .Photo.Filename}}" type="video/mp4">
+                                                    </video>
+                                                    <div>
+                                                        <a href="/photo/view?id={{.Photo.ID}}" class="is-size-7">
+                                                            <i class="fa fa-arrow-right"></i> View GIF
+                                                        </a>
+                                                    </div>
+                                                    {{else}}
+                                                    <a href="/photo/view?id={{.Photo.ID}}">
+                                                        <img src="{{PhotoURL .Photo.Filename}}" loading="lazy"
+                                                            {{if BlurExplicit .Photo}} class="blurred-explicit"{{end}}
+                                                            {{if .Photo.AltText}}title="{{.Photo.AltText}}" alt="{{.Photo.AltText}}"{{end}}>
+                                                    </a>
+                                                    {{end}}
+                                                </div>
+
+                                                {{if .Photo.Caption}}
+                                                    <small>{{TrimEllipses .Photo.Caption 24}}</small>
+                                                {{else}}
+                                                    <small><em>No caption.</em></small>
+                                                {{end}}
+
+                                                <!-- Like button for the photo right here -->
+                                                {{if ne .Photo.UserID $Root.CurrentUser.ID}}
+                                                <div class="mt-1">
+                                                    {{$Like := $Root.PhotoLikeMap.Get .Photo.ID}}
+                                                    <button type="button" class="button is-small gosocial-like-button"
+                                                        data-table-name="photos" data-table-id="{{.Photo.ID}}"
+                                                        title="Like">
+                                                        <span class="icon{{if $Like.UserLikes}} has-text-danger{{end}}"><i class="fa fa-heart"></i></span>
+                                                        <span class="gosocial-likes">
+                                                            Like
+                                                            {{if gt $Like.Count 0}}
+                                                                ({{$Like.Count}})
+                                                            {{end}}
+                                                        </span>
+                                                    </button>
+                                                </div>
+                                                {{end}}
+                                            </div>
+                                            {{end}}
+
+                                        </div>
+
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+
+                        {{if .NextPageID}}
+                        <div class="has-text-centered">
+                            <a href="{{.Request.URL.Path}}?{{QueryPlus "before_id" .NextPageID}}" class="button">View older notifications</a>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+// Notifications helper.
+document.addEventListener('DOMContentLoaded', () => {
+    let busy = false;
+
+    // For delete buttons: if they click thru the first confirm, do not ask every single time
+    // for the rest of the current page load.
+    let dontAskAgain = false;
+
+    // Bind to the notification table rows.
+    (document.querySelectorAll(".gosocial-notification-row") || []).forEach(node => {
+        let $newBadge = node.querySelector(".gosocial-notification-new"),
+            $deleteButton = node.querySelector(".gosocial-notif-delete-button"),
+            ID = node.dataset.notificationId;
+
+        // Delete buttons for individual notifications.
+        $deleteButton.addEventListener("click", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            let callback = () => {
+                busy = true;
+                return fetch("/v1/notifications/delete", {
+                    method: "POST",
+                    mode: "same-origin",
+                    cache: "no-cache",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        "id": ID,
+                    }),
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log(data);
+
+                    // Hide the notification row immediately.
+                    node.style.display = 'none';
+                }).catch(resp => {
+                    console.error(resp);
+                }).finally(() => {
+                    busy = false;
+                });
+            };
+
+            if (!dontAskAgain) {
+                modalConfirm({
+                    message: "Do you want to DELETE this notification?\n\nNote: If you click Ok, you will not be asked "+
+                    "the next time you want to delete another notification until your next page reload.",
+                }).then(() => {
+                    dontAskAgain = true;
+                    callback();
+                });
+            } else {
+                callback();
+            }
+        });
+
+        // If the notification doesn't have a "NEW!" badge, no action needed.
+        if ($newBadge === null) return;
+
+        // Collect any hyperlinks in this row.
+        let links = Array.from(node.querySelectorAll("a"));
+        links.push(node);
+
+        // Apply a "click" handler to the notification row as a whole, and to all of the hyperlinks in it.
+        // For the hyperlinks: prevent the browser following the link UNTIL the successful ajax request to
+        // mark the notification "read" has run.
+        links.forEach(link => {
+            link.addEventListener("click", (e) => {
+                if (busy) return;
+
+                // In case it's a hyperlink, grab the href.
+                let href = link.attributes.href;
+                if (href !== undefined) {
+                    e.preventDefault();
+                    href = href.textContent;
+                }
+
+                $newBadge.style.display = "none";
+
+                busy = true;
+                return fetch("/v1/notifications/read", {
+                    method: "POST",
+                    mode: "same-origin",
+                    cache: "no-cache",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        "id": ID,
+                    }),
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log(data);
+                }).catch(resp => {
+                    console.error(resp);
+                }).finally(() => {
+                    busy = false;
+                    if (href !== undefined && href !== "#") {
+                        window.location.href = href;
+                    }
+                });
+            })
+        });
+    });
+
+    // "Mute notification" links.
+    // NOTE: to avoid conflict with the "mark notification as read, then follow href" code
+    // above, the mute buttons href is made safer and this function will get its follow-thru
+    // URL from a data attribute.
+    (document.querySelectorAll(".gosocial-mute-notification-link") || []).forEach(node => {
+        node.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const link = node.dataset.link,
+                prompt = node.dataset.confirm.replace(/\\n/g, "\n");
+
+            modalConfirm({message: prompt}).then(() => {
+                window.location = link;
+            });
+        });
+    });
+});
+</script>
+{{end}}

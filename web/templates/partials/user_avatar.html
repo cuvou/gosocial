@@ -1,0 +1,148 @@
+<!-- User avatar widgets -->
+
+<!-- Parameter: .User -->
+{{define "avatar-16x16"}}
+<figure class="image is-16x16 is-inline-block is-clipped">
+    <a href="/u/{{.Username}}" class="has-text-dark">
+        {{if .ProfilePhoto.ID}}
+            {{if and (eq .ProfilePhoto.Visibility "private") (not .UserRelationship.IsPrivateGranted)}}
+                <img src="/static/img/shy-private.png" class="is-rounded">
+            {{else if and (eq .ProfilePhoto.Visibility "friends") (not .UserRelationship.IsFriend)}}
+                <img src="/static/img/shy-friends.png" class="is-rounded">
+            {{else if and .ProfilePhoto.Explicit (not .UserRelationship.IsExplicitSeen)}}
+                <img class="is-rounded" src="/static/img/shy-explicit.png">
+            {{else}}
+                <img src="{{PhotoURL .ProfilePhoto.CroppedFilename}}" class="is-rounded{{if BlurExplicit .ProfilePhoto}} blurred-explicit blurred-slightly{{end}}">
+            {{end}}
+        {{else}}
+        <img src="/static/img/shy.png" class="is-rounded">
+        {{end}}
+    </a>
+</figure>
+{{end}}
+
+<!-- Parameter: .User -->
+{{define "avatar-24x24"}}
+<figure class="image is-24x24 is-inline-block is-clipped">
+    <a href="/u/{{.Username}}" class="has-text-dark">
+        {{if .ProfilePhoto.ID}}
+            {{if and (eq .ProfilePhoto.Visibility "private") (not .UserRelationship.IsPrivateGranted)}}
+                <img src="/static/img/shy-private.png" class="is-rounded">
+            {{else if and (eq .ProfilePhoto.Visibility "friends") (not .UserRelationship.IsFriend)}}
+                <img src="/static/img/shy-friends.png" class="is-rounded">
+            {{else if and .ProfilePhoto.Explicit (not .UserRelationship.IsExplicitSeen)}}
+                <img class="is-rounded" src="/static/img/shy-explicit.png">
+            {{else}}
+                <img src="{{PhotoURL .ProfilePhoto.CroppedFilename}}" class="is-rounded{{if BlurExplicit .ProfilePhoto}} blurred-explicit blurred-slightly{{end}}">
+            {{end}}
+        {{else}}
+        <img src="/static/img/shy.png" class="is-rounded">
+        {{end}}
+    </a>
+</figure>
+{{end}}
+
+<!-- Parameter: .User -->
+{{define "avatar-48x48"}}
+<figure class="image is-48x48 is-inline-block is-clipped">
+    <a href="/u/{{.Username}}" class="has-text-dark">
+        {{if .ProfilePhoto.ID}}
+            {{if and (eq .ProfilePhoto.Visibility "private") (not .UserRelationship.IsPrivateGranted)}}
+                <img src="/static/img/shy-private.png">
+            {{else if and (eq .ProfilePhoto.Visibility "friends") (not .UserRelationship.IsFriend)}}
+                <img src="/static/img/shy-friends.png">
+            {{else if and .ProfilePhoto.Explicit (not .UserRelationship.IsExplicitSeen)}}
+                <img src="/static/img/shy-explicit.png">
+            {{else}}
+                <img src="{{PhotoURL .ProfilePhoto.CroppedFilename}}"{{if BlurExplicit .ProfilePhoto}} class="blurred-explicit"{{end}}>
+            {{end}}
+        {{else}}
+        <img src="/static/img/shy.png">
+        {{end}}
+    </a>
+</figure>
+{{end}}
+
+<!-- Parameter: .User -->
+{{define "avatar-64x64"}}
+<figure class="image is-64x64 is-inline-block is-clipped">
+    <a href="/u/{{.Username}}" class="has-text-dark">
+        {{if .ProfilePhoto.ID}}
+            {{if and (eq .ProfilePhoto.Visibility "private") (not .UserRelationship.IsPrivateGranted)}}
+                <img src="/static/img/shy-private.png">
+            {{else if and (eq .ProfilePhoto.Visibility "friends") (not .UserRelationship.IsFriend)}}
+                <img src="/static/img/shy-friends.png">
+            {{else if and .ProfilePhoto.Explicit (not .UserRelationship.IsExplicitSeen)}}
+                <img src="/static/img/shy-explicit.png">
+            {{else}}
+                <img src="{{PhotoURL .ProfilePhoto.CroppedFilename}}"{{if BlurExplicit .ProfilePhoto}} class="blurred-explicit"{{end}}>
+            {{end}}
+        {{else}}
+        <img src="/static/img/shy.png">
+        {{end}}
+    </a>
+</figure>
+{{end}}
+
+<!-- Parameter: .User -->
+{{define "avatar-96x96"}}
+<figure class="image is-96x96 is-inline-block is-clipped">
+    <a href="/u/{{.Username}}" class="has-text-dark">
+        {{if .ProfilePhoto.ID}}
+            {{if and (eq .ProfilePhoto.Visibility "private") (not .UserRelationship.IsPrivateGranted)}}
+                <img src="/static/img/shy-private.png">
+            {{else if and (eq .ProfilePhoto.Visibility "friends") (not .UserRelationship.IsFriend)}}
+                <img src="/static/img/shy-friends.png">
+            {{else if and .ProfilePhoto.Explicit (not .UserRelationship.IsExplicitSeen)}}
+                <img src="/static/img/shy-explicit.png">
+            {{else}}
+                <img src="{{PhotoURL .ProfilePhoto.CroppedFilename}}"{{if BlurExplicit .ProfilePhoto}} class="blurred-explicit"{{end}}>
+            {{end}}
+        {{else}}
+        <img src="/static/img/shy.png">
+        {{end}}
+    </a>
+</figure>
+{{end}}
+
+<!-- Parameter: .User -->
+{{define "avatar-128x128"}}
+<figure class="image is-128x128 is-inline-block is-clipped">
+    <a href="/u/{{.Username}}" class="has-text-dark">
+        {{if .ProfilePhoto.ID}}
+            {{if and (eq .ProfilePhoto.Visibility "private") (not .UserRelationship.IsPrivateGranted)}}
+                <img src="/static/img/shy-private.png">
+            {{else if and (eq .ProfilePhoto.Visibility "friends") (not .UserRelationship.IsFriend)}}
+                <img src="/static/img/shy-friends.png">
+            {{else if and .ProfilePhoto.Explicit (not .UserRelationship.IsExplicitSeen)}}
+                <img src="/static/img/shy-explicit.png">
+            {{else}}
+                <img src="{{PhotoURL .ProfilePhoto.CroppedFilename}}"{{if BlurExplicit .ProfilePhoto}} class="blurred-explicit"{{end}}>
+            {{end}}
+        {{else}}
+        <img src="/static/img/shy.png">
+        {{end}}
+    </a>
+</figure>
+{{end}}
+
+<!-- Parameter: .User -->
+{{define "avatar-32x32"}}
+<figure class="image is-32x32 is-inline-block is-clipped">
+    <a href="/u/{{.Username}}" class="has-text-dark">
+        {{if .ProfilePhoto.ID}}
+            {{if and (eq .ProfilePhoto.Visibility "private") (not .UserRelationship.IsPrivateGranted)}}
+                <img class="is-rounded" src="/static/img/shy-private.png">
+            {{else if and (eq .ProfilePhoto.Visibility "friends") (not .UserRelationship.IsFriend)}}
+                <img class="is-rounded" src="/static/img/shy-friends.png">
+            {{else if and .ProfilePhoto.Explicit (not .UserRelationship.IsExplicitSeen)}}
+                <img class="is-rounded" src="/static/img/shy-explicit.png">
+            {{else}}
+                <img class="is-rounded{{if BlurExplicit .ProfilePhoto}} blurred-explicit blurred-slightly{{end}}" src="{{PhotoURL .ProfilePhoto.CroppedFilename}}">
+            {{end}}
+        {{else}}
+        <img class="is-rounded" src="/static/img/shy.png">
+        {{end}}
+    </a>
+</figure>
+{{end}}

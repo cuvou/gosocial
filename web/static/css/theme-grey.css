@@ -1,0 +1,42 @@
+:root {
+    --bulma-primary-s: 0%;
+    --bulma-primary-l: 77%;
+    --bulma-link-s: 0%;
+    --bulma-link-l: 37%;
+    --bulma-link-text: hsl(233deg,0%,38%);
+    --bulma-scheme-s: 0%;
+}
+
+/*
+ * Forum Colors: with all the nested boxes, Bulma's default color scheme is
+ * too limited for a good experience.
+ */
+ .gosocial-forum-box-1 {
+    /* Outermost box: Forum or Thread top-level wrappers */
+    background-color: hsl(0, 0%, 96%);
+}
+.gosocial-forum-box-2 {
+    /* Nested box: "Latest Post" on Forum-level views */
+    background-color: hsl(15, 0%, 88%);
+}
+.gosocial-forum-box-3 {
+    /* Nested box: Topics/Posts/Users/View counters */
+    background-color: hsl(14, 0%, 88%);
+}
+
+/* Chat members in top nav bar on desktop */
+.gosocial-navbar-notification-tag.is-link,
+.gosocial-navbar-notification-tag.is-warning {
+    background-color: hsl(0, 0%, 84%) !important;
+    color: #000 !important;
+}
+
+/* Notifications header on dashboard page */
+.card-header.has-background-warning {
+    background-color: hsl(233deg,0%,88%) !important;
+}
+
+/* Bulma hack: make in-page hyperlinks stand out more. */
+a {
+    color: hsl(233deg,60%,61%);
+}
